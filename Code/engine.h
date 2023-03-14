@@ -7,33 +7,47 @@
 #include "platform.h"
 #include <glad/glad.h>
 
-typedef glm::vec2  vec2;
-typedef glm::vec3  vec3;
-typedef glm::vec4  vec4;
-typedef glm::ivec2 ivec2;
-typedef glm::ivec3 ivec3;
-typedef glm::ivec4 ivec4;
+typedef glm::vec2   vec2;
+typedef glm::vec3   vec3;
+typedef glm::vec4   vec4;
+typedef glm::ivec2  ivec2;
+typedef glm::ivec3  ivec3;
+typedef glm::ivec4  ivec4;
+
+struct GLInfo
+{
+    const char* version;
+    const char* vendor;
+    const char* renderer;
+    const char* glslVersion;
+};
+
+struct Vertex
+{
+    vec3 position;
+    vec2 uv;
+};
 
 struct Image
 {
     void* pixels;
     ivec2 size;
-    i32   nchannels;
-    i32   stride;
+    i32 nchannels;
+    i32 stride;
 };
 
 struct Texture
 {
-    GLuint      handle;
+    GLuint handle;
     std::string filepath;
 };
 
 struct Program
 {
-    GLuint             handle;
-    std::string        filepath;
-    std::string        programName;
-    u64                lastWriteTimestamp; // What is this for?
+    GLuint handle;
+    std::string filepath;
+    std::string programName;
+    u64 lastWriteTimestamp; // What is this for?
 };
 
 enum Mode
@@ -42,18 +56,10 @@ enum Mode
     Mode_Count
 };
 
-struct GLInfo
-{
-    std::string version;
-    std::string vendor;
-    std::string renderer;
-    std::string glslVersion;
-};
-
 struct App
 {
     // Loop
-    f32  deltaTime;
+    f32 deltaTime;
     bool isRunning;
 
     // Input
@@ -63,8 +69,8 @@ struct App
 
     ivec2 displaySize;
 
-    std::vector<Texture>  textures;
-    std::vector<Program>  programs;
+    std::vector<Texture> textures;
+    std::vector<Program> programs;
 
     // program indices
     u32 texturedGeometryProgramIdx;
@@ -93,9 +99,12 @@ struct App
 
 void Init(App* app);
 
-void Gui(App* app);
+void RenderImGui(App* app);
 
 void Update(App* app);
 
 void Render(App* app);
 
+void GLClearError();
+
+bool GLLogCall(const char* function, const char* file, int line);

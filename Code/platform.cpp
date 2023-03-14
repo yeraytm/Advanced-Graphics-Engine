@@ -23,7 +23,7 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
-#define WINDOW_TITLE  "Advanced Graphics Programming"
+#define WINDOW_TITLE  "YerayTM - Advanced Graphics Engine"
 #define WINDOW_WIDTH  800
 #define WINDOW_HEIGHT 600
 
@@ -116,12 +116,12 @@ void OnGlfwCloseWindow(GLFWwindow* window)
 
 int main()
 {
-    App app         = {};
-    app.deltaTime   = 1.0f/60.0f;
+    App app = {};
+    app.deltaTime = 1.0f / 60.0f;
     app.displaySize = ivec2(WINDOW_WIDTH, WINDOW_HEIGHT);
-    app.isRunning   = true;
+    app.isRunning = true;
 
-	glfwSetErrorCallback(OnGlfwError);
+    glfwSetErrorCallback(OnGlfwError);
 
     if (!glfwInit())
     {
@@ -154,7 +154,7 @@ int main()
     glfwMakeContextCurrent(window);
 
     // Load all OpenGL functions using the glfw loader function
-    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         ELOG("Failed to initialize OpenGL context\n");
         return -1;
@@ -210,8 +210,6 @@ int main()
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        Gui(&app);
-        ImGui::Render();
 
         // Clear input state if required by ImGui
         if (ImGui::GetIO().WantCaptureKeyboard)
@@ -227,22 +225,38 @@ int main()
 
         // Transition input key/button states
         if (!ImGui::GetIO().WantCaptureKeyboard)
+        {
             for (u32 i = 0; i < KEY_COUNT; ++i)
-                if      (app.input.keys[i] == BUTTON_PRESS)   app.input.keys[i] = BUTTON_PRESSED;
-                else if (app.input.keys[i] == BUTTON_RELEASE) app.input.keys[i] = BUTTON_IDLE;
+            {
+                if (app.input.keys[i] == BUTTON_PRESS)
+                    app.input.keys[i] = BUTTON_PRESSED;
+                else if (app.input.keys[i] == BUTTON_RELEASE)
+                    app.input.keys[i] = BUTTON_IDLE;
+            }
+        }
 
         if (!ImGui::GetIO().WantCaptureMouse)
+        {
             for (u32 i = 0; i < MOUSE_BUTTON_COUNT; ++i)
-                if      (app.input.mouseButtons[i] == BUTTON_PRESS)   app.input.mouseButtons[i] = BUTTON_PRESSED;
-                else if (app.input.mouseButtons[i] == BUTTON_RELEASE) app.input.mouseButtons[i] = BUTTON_IDLE;
+            {
+                if (app.input.mouseButtons[i] == BUTTON_PRESS)
+                    app.input.mouseButtons[i] = BUTTON_PRESSED;
+                else if (app.input.mouseButtons[i] == BUTTON_RELEASE)
+                    app.input.mouseButtons[i] = BUTTON_IDLE;
+            }
+        }
 
         app.input.mouseDelta = glm::vec2(0.0f, 0.0f);
 
         // Render
         Render(&app);
 
+        RenderImGui(&app);
+
         // ImGui Render
+        ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
         if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
             GLFWwindow* backup_current_context = glfwGetCurrentContext();
             ImGui::UpdatePlatformWindows();
@@ -266,6 +280,7 @@ int main()
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 
     glfwDestroyWindow(window);
 
@@ -358,30 +373,30 @@ String GetDirectoryPart(String path)
     return str;
 }
 
-String ReadTextFile(const char* filepath)
+std::string ReadTextFile(const char* filepath)
 {
-    String fileText = {};
-
     FILE* file = fopen(filepath, "rb");
 
     if (file)
     {
         fseek(file, 0, SEEK_END);
-        fileText.len = ftell(file);
+
+        u32 length = ftell(file);
+        std::string fileText(length, '\0');
+
         fseek(file, 0, SEEK_SET);
 
-        fileText.str = (char*)PushSize(fileText.len + 1);
-        fread(fileText.str, sizeof(char), fileText.len, file);
-        fileText.str[fileText.len] = '\0';
+        fread(&fileText[0], sizeof(char), length, file);
 
         fclose(file);
+        return fileText;
     }
     else
     {
         ELOG("fopen() failed reading file %s", filepath);
     }
 
-    return fileText;
+    return "";
 }
 
 u64 GetFileLastWriteTimestamp(const char* filepath)
