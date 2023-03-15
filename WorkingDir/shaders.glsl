@@ -12,8 +12,8 @@ out vec2 v_TexCoord;
 
 void main()
 {
-	gl_Position = vec4(position,1.0);
 	v_TexCoord = texCoord;
+	gl_Position = vec4(position,1.0);
 }
 
 #elif defined(FRAGMENT) ///////////////////////////////////////////////

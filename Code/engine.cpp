@@ -22,10 +22,10 @@
 
 GLuint CreateProgramFromSource(std::string programSource, const char* shaderName)
 {
-    GLchar  infoLogBuffer[1024] = {};
+    GLchar infoLogBuffer[1024] = {};
     GLsizei infoLogBufferSize = sizeof(infoLogBuffer);
     GLsizei infoLogSize;
-    GLint   success;
+    GLint success;
 
     char versionString[] = "#version 430\n";
     char shaderNameDefine[128];
@@ -163,8 +163,8 @@ GLuint CreateTexture2DFromImage(Image image)
 
     GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
 
-    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-    //GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR));
+    //GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR));
 
     GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE));
     GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
@@ -205,6 +205,13 @@ u32 LoadTexture2D(App* app, const char* filepath)
 
 void Init(App* app)
 {
+    // TODO: Initialize your resources here!
+    // - vertex buffers
+    // - element/index buffers
+    // - vaos
+    // - programs (and retrieve uniform indices)
+    // - textures
+
     app->glInfo.version = (const char*)glGetString(GL_VERSION);
     app->glInfo.renderer = (const char*)glGetString(GL_RENDERER);
     app->glInfo.vendor = (const char*)glGetString(GL_VENDOR);
@@ -225,9 +232,6 @@ void Init(App* app)
         0, 2, 3
     };
 
-    GLCall(glEnable(GL_BLEND));
-    GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
-
     GLCall(glGenBuffers(1, &app->embeddedVertices));
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, app->embeddedVertices));
     GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW));
@@ -240,12 +244,16 @@ void Init(App* app)
 
     GLCall(glGenVertexArrays(1, &app->vao));
     GLCall(glBindVertexArray(app->vao));
+
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, app->embeddedVertices));
     GLCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)0));
     GLCall(glEnableVertexAttribArray(0));
+
     GLCall(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)12));
     GLCall(glEnableVertexAttribArray(1));
+
     GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->embeddedElements));
+
     GLCall(glBindVertexArray(0));
 
     app->texturedGeometryProgramIdx = LoadProgram(app, "WorkingDir/shaders.glsl", "TEXTURED_GEOMETRY");
@@ -257,13 +265,6 @@ void Init(App* app)
     app->blackTexIdx = LoadTexture2D(app, "WorkingDir/color_black.png");
     app->normalTexIdx = LoadTexture2D(app, "WorkingDir/color_normal.png");
     app->magentaTexIdx = LoadTexture2D(app, "WorkingDir/color_magenta.png");
-
-    // TODO: Initialize your resources here!
-    // - vertex buffers
-    // - element/index buffers
-    // - vaos
-    // - programs (and retrieve uniform indices)
-    // - textures
 
     app->mode = Mode_TexturedQuad;
 }
@@ -298,6 +299,14 @@ void Render(App* app)
         {
             // TODO: Draw your textured quad here!
             // - clear the framebuffer
+            // - set the viewport
+            // - set the blending state
+            // - bind the texture into unit 0
+            // - bind the program 
+            //   (...and make its texture sample from unit 0)
+            // - bind the vao
+            // - glDrawElements() !!!
+
             GLCall(glClearColor(0.1f, 0.1f, 0.1f, 1.0f));
             GLCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
@@ -306,6 +315,9 @@ void Render(App* app)
             Program& programTexturedGeometry = app->programs[app->texturedGeometryProgramIdx];
             GLCall(glUseProgram(programTexturedGeometry.handle));
             GLCall(glBindVertexArray(app->vao));
+
+            GLCall(glEnable(GL_BLEND));
+            GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
             GLCall(glUniform1i(app->programUniformTexture, 0));
             GLCall(glActiveTexture(GL_TEXTURE0));
@@ -316,14 +328,6 @@ void Render(App* app)
 
             GLCall(glBindVertexArray(0));
             GLCall(glUseProgram(0));
-
-            // - set the viewport
-            // - set the blending state
-            // - bind the texture into unit 0
-            // - bind the program 
-            //   (...and make its texture sample from unit 0)
-            // - bind the vao
-            // - glDrawElements() !!!
         }
         break;
 

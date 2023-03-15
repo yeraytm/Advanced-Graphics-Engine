@@ -249,7 +249,7 @@ int main()
         app.input.mouseDelta = glm::vec2(0.0f, 0.0f);
 
         // Render
-        Render(&app);
+        //Render(&app);
 
         RenderImGui(&app);
 
@@ -373,8 +373,9 @@ String GetDirectoryPart(String path)
     return str;
 }
 
-std::string ReadTextFile(const char* filepath)
+std::string& ReadTextFile(const char* filepath)
 {
+    std::string fileText;
     FILE* file = fopen(filepath, "rb");
 
     if (file)
@@ -382,7 +383,7 @@ std::string ReadTextFile(const char* filepath)
         fseek(file, 0, SEEK_END);
 
         u32 length = ftell(file);
-        std::string fileText(length, '\0');
+        fileText = std::string(length, '\0');
 
         fseek(file, 0, SEEK_SET);
 
@@ -396,7 +397,7 @@ std::string ReadTextFile(const char* filepath)
         ELOG("fopen() failed reading file %s", filepath);
     }
 
-    return "";
+    return fileText;
 }
 
 u64 GetFileLastWriteTimestamp(const char* filepath)
