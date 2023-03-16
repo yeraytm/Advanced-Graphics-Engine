@@ -7,9 +7,9 @@
 
 #include "Engine.h"
 
-#include "imgui.h"
-#include "stb_image.h"
-#include "stb_image_write.h"
+#include "imgui-docking/imgui.h"
+#include "stb/stb_image.h"
+#include "stb/stb_image_write.h"
 
 GLuint CreateProgramFromSource(String programSource, const char* shaderName)
 {
@@ -246,15 +246,15 @@ void Init(App* app)
 
     glBindVertexArray(0);
 
-    app->texturedGeometryProgramIdx = LoadProgram(app, "WorkingDir/shaders.glsl", "TEXTURED_GEOMETRY");
+    app->texturedGeometryProgramIdx = LoadProgram(app, "Assets/shaders.glsl", "TEXTURED_GEOMETRY");
     Program& texturedGeometryProgram = app->programs[app->texturedGeometryProgramIdx];
     app->programUniformTexture = glGetUniformLocation(texturedGeometryProgram.handle, "u_Texture");
 
-    app->diceTexIdx = LoadTexture2D(app, "WorkingDir/dice.png");
-    app->whiteTexIdx = LoadTexture2D(app, "WorkingDir/color_white.png");
-    app->blackTexIdx = LoadTexture2D(app, "WorkingDir/color_black.png");
-    app->normalTexIdx = LoadTexture2D(app, "WorkingDir/color_normal.png");
-    app->magentaTexIdx = LoadTexture2D(app, "WorkingDir/color_magenta.png");
+    app->diceTexIdx = LoadTexture2D(app, "Assets/dice.png");
+    app->whiteTexIdx = LoadTexture2D(app, "Assets/color_white.png");
+    app->blackTexIdx = LoadTexture2D(app, "Assets/color_black.png");
+    app->normalTexIdx = LoadTexture2D(app, "Assets/color_normal.png");
+    app->magentaTexIdx = LoadTexture2D(app, "Assets/color_magenta.png");
 
     app->mode = Mode_TexturedQuad;
 }
