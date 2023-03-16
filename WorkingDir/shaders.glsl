@@ -1,18 +1,24 @@
-///////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////
+
 #ifdef TEXTURED_GEOMETRY
 
 #if defined(VERTEX) ///////////////////////////////////////////////////
 
 layout(location = 0) in vec3 position;
+//layout(location = 1) in vec3 normal;
 layout(location = 1) in vec2 texCoord;
+//layout(location = 3) in vec3 tangent;
+//layout(location = 4) in vec3 bitangent;
 
 out vec2 v_TexCoord;
 
 void main()
 {
 	v_TexCoord = texCoord;
+
+	//float clippingScale = 5.0;
+	//gl_Position = vec4(position, clippingScale);
+	//gl_Position.z = -gl_Position.z;
+
 	gl_Position = vec4(position,1.0);
 }
 
@@ -30,7 +36,8 @@ void main()
 	color = texColor;
 }
 
-#endif
+#endif /////////////////////////////////////////////////////////////////
+
 #endif
 
 // NOTE: You can write several shaders in the same file if you want as

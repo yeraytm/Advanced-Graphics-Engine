@@ -19,8 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Code\engine.cpp" />
-    <ClCompile Include="Code\platform.cpp" />
+    <ClCompile Include="Code\Engine.cpp" />
+    <ClCompile Include="Code\GLDebugger.cpp" />
+    <ClCompile Include="Code\Platform.cpp" />
+    <ClCompile Include="Code\BufferObjects.cpp" />
     <ClCompile Include="ThirdParty\glad\include\glad\glad.c" />
     <ClCompile Include="ThirdParty\imgui-docking\imgui.cpp" />
     <ClCompile Include="ThirdParty\imgui-docking\imgui_demo.cpp" />
@@ -32,8 +34,10 @@
     <ClCompile Include="ThirdParty\stb\stb.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Code\engine.h" />
-    <ClInclude Include="Code\platform.h" />
+    <ClInclude Include="Code\Engine.h" />
+    <ClInclude Include="Code\GLDebugger.h" />
+    <ClInclude Include="Code\Platform.h" />
+    <ClInclude Include="Code\BufferObjects.h" />
     <ClInclude Include="ThirdParty\glad\include\glad\glad.h" />
     <ClInclude Include="ThirdParty\glad\include\glad\khrplatform.h" />
     <ClInclude Include="ThirdParty\imgui-docking\imconfig.h" />

@@ -4,23 +4,16 @@
 
 #pragma once
 
-#include "platform.h"
-#include <glad/glad.h>
+#include "Platform.h"
 
-typedef glm::vec2   vec2;
-typedef glm::vec3   vec3;
-typedef glm::vec4   vec4;
-typedef glm::ivec2  ivec2;
-typedef glm::ivec3  ivec3;
-typedef glm::ivec4  ivec4;
+#include "glad/glad.h"
 
-struct GLInfo
-{
-    const char* version;
-    const char* vendor;
-    const char* renderer;
-    const char* glslVersion;
-};
+typedef glm::vec2  vec2;
+typedef glm::vec3  vec3;
+typedef glm::vec4  vec4;
+typedef glm::ivec2 ivec2;
+typedef glm::ivec3 ivec3;
+typedef glm::ivec4 ivec4;
 
 struct Vertex
 {
@@ -56,6 +49,15 @@ enum Mode
     Mode_Count
 };
 
+struct GLInfo
+{
+    const char* version;
+    const char* vendor;
+    const char* renderer;
+    const char* glslVersion;
+    std::string extensions;
+};
+
 struct App
 {
     // Loop
@@ -72,10 +74,10 @@ struct App
     std::vector<Texture> textures;
     std::vector<Program> programs;
 
-    // program indices
+    // Program indices
     u32 texturedGeometryProgramIdx;
-    
-    // texture indices
+
+    // Texture indices
     u32 diceTexIdx;
     u32 whiteTexIdx;
     u32 blackTexIdx;
@@ -99,12 +101,8 @@ struct App
 
 void Init(App* app);
 
-void RenderImGui(App* app);
+void ImGuiRender(App* app);
 
 void Update(App* app);
 
 void Render(App* app);
-
-void GLClearError();
-
-bool GLLogCall(const char* function, const char* file, int line);
