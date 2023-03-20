@@ -222,29 +222,28 @@ void Init(App* app)
         0, 2, 3
     };
 
-    glGenBuffers(1, &app->embeddedVertices);
-    glBindBuffer(GL_ARRAY_BUFFER, app->embeddedVertices);
+    glGenVertexArrays(1, &app->VAO);
+    glGenBuffers(1, &app->VBO);
+    glGenBuffers(1, &app->EBO);
+
+    glBindVertexArray(app->VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, app->VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glGenBuffers(1, &app->embeddedElements);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->embeddedElements);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-    glGenVertexArrays(1, &app->vao);
-    glBindVertexArray(app->vao);
-
-    glBindBuffer(GL_ARRAY_BUFFER, app->embeddedVertices);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)0);
     glEnableVertexAttribArray(0);
+
 
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)12);
     glEnableVertexAttribArray(1);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->embeddedElements);
-
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     app->texturedGeometryProgramIdx = LoadProgram(app, "Assets/shaders.glsl", "TEXTURED_GEOMETRY");
     Program& texturedGeometryProgram = app->programs[app->texturedGeometryProgramIdx];
@@ -287,6 +286,8 @@ void ImGuiRender(App* app)
 void Update(App* app)
 {
     // You can handle app->input keyboard/mouse here
+    if (app->input.keys[K_ESCAPE] == BUTTON_PRESS)
+        app->isRunning = false;
 }
 
 void Render(App* app)
@@ -295,27 +296,16 @@ void Render(App* app)
     {
     case Mode_TexturedQuad:
     {
-        // TODO: Draw your textured quad here!
-        // - clear the framebuffer
-        // - set the viewport
-        // - set the blending state
-        // - bind the texture into unit 0
-        // - bind the program 
-        //   (...and make its texture sample from unit 0)
-        // - bind the vao
-        // - glDrawElements() !!!
-
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         Program& programTexturedGeometry = app->programs[app->texturedGeometryProgramIdx];
         glUseProgram(programTexturedGeometry.handle);
-        glBindVertexArray(app->vao);
 
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glBindVertexArray(app->VAO);
 
         glUniform1i(app->programUniformTexture, 0);
         glActiveTexture(GL_TEXTURE0);

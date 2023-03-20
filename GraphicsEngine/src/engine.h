@@ -89,14 +89,14 @@ struct App
 
     // Embedded geometry (in-editor simple meshes such as
     // a screen filling quad, a cube, a sphere...)
-    GLuint embeddedVertices;
-    GLuint embeddedElements;
+    GLuint VBO;
+    GLuint EBO;
 
     // Location of the texture uniform in the textured quad shader
     GLuint programUniformTexture;
 
     // VAO object to link our screen filling quad with our textured quad shader
-    GLuint vao;
+    GLuint VAO;
 };
 
 void Init(App* app);

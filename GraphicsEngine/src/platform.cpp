@@ -126,6 +126,7 @@ void OnGlfwResizeFramebuffer(GLFWwindow* window, int width, int height)
 {
     App* app = (App*)glfwGetWindowUserPointer(window);
     app->displaySize = vec2(width, height);
+    glViewport(0, 0, app->displaySize.x, app->displaySize.y);
 }
 
 void OnGlfwCloseWindow(GLFWwindow* window)
@@ -158,8 +159,11 @@ int main()
     if (!window)
     {
         ELOG("glfwCreateWindow() failed\n");
+        glfwTerminate();
         return -1;
     }
+
+    glfwMakeContextCurrent(window);
 
     glfwSetWindowUserPointer(window, &app);
 
@@ -170,8 +174,6 @@ int main()
     glfwSetCharCallback(window, OnGlfwCharEvent);
     glfwSetFramebufferSizeCallback(window, OnGlfwResizeFramebuffer);
     glfwSetWindowCloseCallback(window, OnGlfwCloseWindow);
-
-    glfwMakeContextCurrent(window);
 
     // Load all OpenGL functions using the glfw loader function
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
