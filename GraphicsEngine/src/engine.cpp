@@ -237,7 +237,6 @@ void Init(App* app)
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)0);
     glEnableVertexAttribArray(0);
 
-
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)12);
     glEnableVertexAttribArray(1);
 
@@ -260,6 +259,13 @@ void Init(App* app)
 
 void ImGuiRender(App* app)
 {
+    if (ImGui::BeginMainMenuBar())
+    {
+
+
+        ImGui::EndMainMenuBar();
+    }
+
     ImGui::Begin("Info");
     ImGui::Text("FPS: %f", 1.0f / app->deltaTime);
     //bool openGLStatus = false;
