@@ -11,7 +11,7 @@
 #include "stb/stb_image.h"
 #include "stb/stb_image_write.h"
 
-GLuint CreateProgramFromSource(String programSource, const char* shaderName)
+GLuint CreateShaderProgram(String programSource, const char* shaderName)
 {
     GLchar infoLogBuffer[1024] = {};
     GLsizei infoLogBufferSize = sizeof(infoLogBuffer);
@@ -90,18 +90,18 @@ GLuint CreateProgramFromSource(String programSource, const char* shaderName)
     return programHandle;
 }
 
-u32 LoadProgram(App* app, const char* filepath, const char* programName)
+u32 LoadShaderProgram(App* app, const char* filepath, const char* programName)
 {
     String programSource = ReadTextFile(filepath);
 
-    Program program = {};
-    program.handle = CreateProgramFromSource(programSource, programName);
+    ShaderProgram program = {};
+    program.handle = CreateShaderProgram(programSource, programName);
     program.filepath = filepath;
     program.programName = programName;
     program.lastWriteTimestamp = GetFileLastWriteTimestamp(filepath);
-    app->programs.push_back(program);
+    app->shaderPrograms.push_back(program);
 
-    return app->programs.size() - 1;
+    return app->shaderPrograms.size() - 1;
 }
 
 Image LoadImage(const char* filename)
@@ -125,7 +125,7 @@ void FreeImage(Image image)
     stbi_image_free(image.pixels);
 }
 
-GLuint CreateTexture2DFromImage(Image image)
+u32 CreateTexture2DFromImage(Image image)
 {
     GLenum internalFormat = GL_RGB8;
     GLenum dataFormat = GL_RGB;
@@ -145,16 +145,20 @@ GLuint CreateTexture2DFromImage(Image image)
         ELOG("LoadTexture2D() - Unsupported number of channels");
     }
 
-    GLuint texHandle;
+    u32 texHandle;
     glGenTextures(1, &texHandle);
     glBindTexture(GL_TEXTURE_2D, texHandle);
-    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, image.size.x, image.size.y, 0, dataFormat, dataType, image.pixels);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    
+    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, image.size.x, image.size.y, 0, dataFormat, dataType, image.pixels);
+
     glGenerateMipmap(GL_TEXTURE_2D);
+
     glBindTexture(GL_TEXTURE_2D, 0);
 
     return texHandle;
@@ -186,6 +190,7 @@ u32 LoadTexture2D(App* app, const char* filepath)
 
 void Init(App* app)
 {
+    app->glInfo.openGLStatus = false;
     app->glInfo.version = (const char*)glGetString(GL_VERSION);
     app->glInfo.renderer = (const char*)glGetString(GL_RENDERER);
     app->glInfo.vendor = (const char*)glGetString(GL_VENDOR);
@@ -234,18 +239,18 @@ void Init(App* app)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)12);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(3 * sizeof(f32)));
     glEnableVertexAttribArray(1);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-    app->texturedGeometryProgramIdx = LoadProgram(app, "Assets/shaders.glsl", "TEXTURED_GEOMETRY");
-    Program& texturedGeometryProgram = app->programs[app->texturedGeometryProgramIdx];
+    app->texturedGeometryProgramIdx = LoadShaderProgram(app, "Assets/shaders.glsl", "TEXTURED_GEOMETRY");
+    ShaderProgram& texturedGeometryProgram = app->shaderPrograms[app->texturedGeometryProgramIdx];
     app->programUniformTexture = glGetUniformLocation(texturedGeometryProgram.handle, "u_Texture");
 
     app->diceTexIdx = LoadTexture2D(app, "Assets/dice.png");
@@ -261,32 +266,26 @@ void ImGuiRender(App* app)
 {
     if (ImGui::BeginMainMenuBar())
     {
-
+        if (ImGui::BeginMenu("About"))
+        {
+            ImGui::MenuItem("OpenGL", NULL, &app->glInfo.openGLStatus);
+            ImGui::EndMenu();
+        }
 
         ImGui::EndMainMenuBar();
     }
 
     ImGui::Begin("Info");
     ImGui::Text("FPS: %f", 1.0f / app->deltaTime);
-    //bool openGLStatus = false;
-    //if (ImGui::BeginMenuBar())
-    //{
-    //    if (ImGui::BeginMenu("About"))
-    //    {
-    //        ImGui::MenuItem("OpenGL Status", NULL, &openGLStatus);
-    //        ImGui::EndMenu();
-    //    }
-    //    ImGui::EndMenuBar();
-    //}
-
-    //if (openGLStatus)
-    //{
-    //    ImGui::Begin("OpenGL", &openGLStatus);
-
-    //    ImGui::End();
-    //}
-
+    ImGui::Text("frametime: %f", app->deltaTime);
     ImGui::End();
+
+    if (app->glInfo.openGLStatus)
+    {
+        ImGui::Begin("OpenGL");
+
+        ImGui::End();
+    }
 }
 
 void Update(App* app)
@@ -308,7 +307,7 @@ void Render(App* app)
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        Program& programTexturedGeometry = app->programs[app->texturedGeometryProgramIdx];
+        ShaderProgram& programTexturedGeometry = app->shaderPrograms[app->texturedGeometryProgramIdx];
         glUseProgram(programTexturedGeometry.handle);
 
         glBindVertexArray(app->VAO);

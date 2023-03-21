@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\AssimpLoading.cpp" />
     <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\GLDebugger.cpp" />
     <ClCompile Include="src\Platform.cpp" />

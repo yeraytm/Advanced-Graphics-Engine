@@ -23,6 +23,9 @@
     <ClCompile Include="src\vendor\glad\glad.c" />
     <ClCompile Include="src\vendor\glm\detail\glm.cpp" />
     <ClCompile Include="src\vendor\stb\stb.cpp" />
+    <ClCompile Include="src\AssimpLoading.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\BufferObjects.h">

@@ -375,7 +375,7 @@ String MakePath(String dir, String filename)
 String GetDirectoryPart(String path)
 {
     String str = {};
-    i32 len = (i32)path.len;
+    int len = (int)path.len;
     while (len >= 0)
     {
         len--;

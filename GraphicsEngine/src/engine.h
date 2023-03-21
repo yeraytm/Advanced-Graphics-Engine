@@ -25,19 +25,19 @@ struct Image
 {
     void* pixels;
     ivec2 size;
-    i32 nchannels;
-    i32 stride;
+    int nchannels;
+    int stride;
 };
 
 struct Texture
 {
-    GLuint handle;
+    u32 handle;
     std::string filepath;
 };
 
-struct Program
+struct ShaderProgram
 {
-    GLuint handle;
+    u32 handle;
     std::string filepath;
     std::string programName;
     u64 lastWriteTimestamp; // What is this for?
@@ -51,6 +51,7 @@ enum Mode
 
 struct GLInfo
 {
+    bool openGLStatus;
     const char* version;
     const char* vendor;
     const char* renderer;
@@ -72,7 +73,7 @@ struct App
     ivec2 displaySize;
 
     std::vector<Texture> textures;
-    std::vector<Program> programs;
+    std::vector<ShaderProgram> shaderPrograms;
 
     // Program indices
     u32 texturedGeometryProgramIdx;
@@ -89,14 +90,14 @@ struct App
 
     // Embedded geometry (in-editor simple meshes such as
     // a screen filling quad, a cube, a sphere...)
-    GLuint VBO;
-    GLuint EBO;
+    u32 VBO;
+    u32 EBO;
 
     // Location of the texture uniform in the textured quad shader
-    GLuint programUniformTexture;
+    u32 programUniformTexture;
 
     // VAO object to link our screen filling quad with our textured quad shader
-    GLuint VAO;
+    u32 VAO;
 };
 
 void Init(App* app);
