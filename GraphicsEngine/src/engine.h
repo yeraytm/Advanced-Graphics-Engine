@@ -18,7 +18,8 @@ typedef glm::ivec4 ivec4;
 struct Vertex
 {
     vec3 position;
-    vec2 uv;
+    vec2 texCoords;
+    vec3 normal;
 };
 
 struct Image

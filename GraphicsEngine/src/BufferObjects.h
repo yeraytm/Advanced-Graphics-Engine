@@ -1,12 +1,14 @@
 #pragma once
 
 #include <vector>
+#include "Platform.h"
 #include "GLDebugger.h"
 
-struct VertexBufferElement
+struct VertexBufferAttribute
 {
+	u8 location;
 	unsigned int type;
-	unsigned int count;
+	unsigned int componentCount;
 	unsigned char normalized;
 
 	static unsigned int GetSizeOfType(unsigned int type)
@@ -26,7 +28,7 @@ class VertexBufferLayout
 {
 public:
 	VertexBufferLayout()
-		: m_Stride(0) {}
+		: stride(0) {}
 
 	template<typename T>
 	void Push(unsigned int count)
@@ -58,7 +60,7 @@ public:
 	inline const std::vector<VertexBufferElement>& GetElements() const { return m_Elements; }
 	inline unsigned int GetStride() const { return m_Stride; }
 
-private:
-	std::vector<VertexBufferElement> m_Elements;
-	unsigned int m_Stride;
+public:
+	std::vector<VertexBufferAttribute> attributes;
+	u8 stride;
 };
