@@ -23,7 +23,6 @@
     <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\GLDebugger.cpp" />
     <ClCompile Include="src\Platform.cpp" />
-    <ClCompile Include="src\BufferObjects.cpp" />
     <ClCompile Include="src\vendor\glad\glad.c" />
     <ClCompile Include="src\vendor\glm\detail\glm.cpp" />
     <ClCompile Include="src\vendor\imgui-docking\imgui.cpp" />
@@ -36,10 +35,11 @@
     <ClCompile Include="src\vendor\stb\stb.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\AssimpLoading.h" />
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\GLDebugger.h" />
     <ClInclude Include="src\Platform.h" />
-    <ClInclude Include="src\BufferObjects.h" />
+    <ClInclude Include="src\Layouts.h" />
     <ClInclude Include="src\vendor\glad\glad.h" />
     <ClInclude Include="src\vendor\glad\khrplatform.h" />
     <ClInclude Include="src\vendor\glm\common.hpp" />

@@ -293,7 +293,7 @@ int main()
 
         // Frame time
         f64 currentFrameTime = glfwGetTime();
-        app.deltaTime = (f32)(currentFrameTime - lastFrameTime);
+        app.deltaTime = (float)(currentFrameTime - lastFrameTime);
         lastFrameTime = currentFrameTime;
 
         // Reset frame allocator

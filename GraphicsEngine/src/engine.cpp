@@ -6,6 +6,7 @@
 //
 
 #include "Engine.h"
+#include "AssimpLoading.h"
 
 #include "imgui-docking/imgui.h"
 #include "stb/stb_image.h"
@@ -188,6 +189,60 @@ u32 LoadTexture2D(App* app, const char* filepath)
         return UINT32_MAX;
 }
 
+u32 FindVAO(Mesh& mesh, u32 subMeshIndex, const ShaderProgram& shaderProgram)
+{
+    SubMesh& subMesh = mesh.subMeshes[subMeshIndex];
+
+    // Try Finding a VAO for this submesh/program
+    for (u32 i = 0; i < (u32)subMesh.VAOs.size(); ++i)
+    {
+        if (subMesh.VAOs[i].shaderProgramHandle == shaderProgram.handle)
+            return subMesh.VAOs[i].handle;
+    }
+
+    u32 vaoHandle = 0;
+
+    // Create new VAO for this submesh/program
+    glGenVertexArrays(1, &vaoHandle);
+    glBindVertexArray(vaoHandle);
+
+    glBindBuffer(GL_ARRAY_BUFFER, mesh.VBHandle);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBHandle);
+
+    // We have to link all vertex inputs attributes to attributes in the vertex buffer
+    for (u32 i = 0; i < shaderProgram.vertexLayout.attributes.size(); ++i)
+    {
+        bool attributeWasLinked = false;
+
+        const std::vector<VertexBufferAttribute>& attributes = subMesh.VBLayout.GetAttributes();
+        for (u32 j = 0; j < attributes.size(); ++j)
+        {
+            if (shaderProgram.vertexLayout.attributes[i].location == attributes[j].location)
+            {
+                const u32 index = attributes[j].location;
+                const u32 nComp = attributes[j].componentCount;
+                const u32 offset = attributes[j].offset + subMesh.vertexOffset;
+                const u32 stride = subMesh.VBLayout.GetStride();
+
+                glVertexAttribPointer(index, nComp, GL_FLOAT, GL_FALSE, stride, (void*)(u64)offset);
+                glEnableVertexAttribArray(index);
+
+                attributeWasLinked = true;
+                break;
+            }
+        }
+        assert(attributeWasLinked); // The submesh should provide an attribute for each vertex inputs
+    }
+
+    glBindVertexArray(0);
+
+    // Store the VAO handle in the list of VAOs for this submesh
+    VAO vao = { vaoHandle, shaderProgram.handle };
+    subMesh.VAOs.push_back(vao);
+
+    return vaoHandle;
+}
+
 void Init(App* app)
 {
     app->glInfo.openGLStatus = false;
@@ -215,6 +270,7 @@ void Init(App* app)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    /*
     const Vertex vertices[] = {
         { vec3(-0.5, -0.5, 0.0), vec2(0.0, 0.0) },
         { vec3(0.5, -0.5, 0.0), vec2(1.0, 0.0) },
@@ -227,11 +283,11 @@ void Init(App* app)
         0, 2, 3
     };
 
-    glGenVertexArrays(1, &app->VAO);
+    glGenVertexArrays(1, &app->vao.handle);
     glGenBuffers(1, &app->VBO);
     glGenBuffers(1, &app->EBO);
 
-    glBindVertexArray(app->VAO);
+    glBindVertexArray(app->vao.handle);
 
     glBindBuffer(GL_ARRAY_BUFFER, app->VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
@@ -249,17 +305,26 @@ void Init(App* app)
     glBindVertexArray(0);
     //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-    app->texturedGeometryProgramIdx = LoadShaderProgram(app, "Assets/shaders.glsl", "TEXTURED_GEOMETRY");
-    ShaderProgram& texturedGeometryProgram = app->shaderPrograms[app->texturedGeometryProgramIdx];
-    app->programUniformTexture = glGetUniformLocation(texturedGeometryProgram.handle, "u_Texture");
+    app->texturedQuadProgramID = LoadShaderProgram(app, "Assets/shaders.glsl", "TEXTURED_QUAD");
+    ShaderProgram& texturedQuadProgram = app->shaderPrograms[app->texturedQuadProgramID];
+    app->programUniformTexture = glGetUniformLocation(texturedQuadProgram.handle, "u_Texture");
 
     app->diceTexIdx = LoadTexture2D(app, "Assets/dice.png");
     app->whiteTexIdx = LoadTexture2D(app, "Assets/color_white.png");
     app->blackTexIdx = LoadTexture2D(app, "Assets/color_black.png");
     app->normalTexIdx = LoadTexture2D(app, "Assets/color_normal.png");
     app->magentaTexIdx = LoadTexture2D(app, "Assets/color_magenta.png");
+    */
 
-    app->mode = Mode_TexturedQuad;
+    app->texturedMeshProgramID = LoadShaderProgram(app, "Assets/shaders.glsl", "TEXTURED_MESH");
+    ShaderProgram& texturedMeshProgram = app->shaderPrograms[app->texturedMeshProgramID];
+    app->programUniformTexture = glGetUniformLocation(texturedMeshProgram.handle, "u_Texture");
+    texturedMeshProgram.vertexLayout.attributes.push_back( { 0, 3 });
+    texturedMeshProgram.vertexLayout.attributes.push_back( { 2, 3 });
+
+    app->modelID = LoadModel(app, "Assets/Patrick/Patrick.obj");
+
+    app->mode = Mode_TexturedMesh;
 }
 
 void ImGuiRender(App* app)
@@ -297,20 +362,20 @@ void Update(App* app)
 
 void Render(App* app)
 {
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     switch (app->mode)
     {
     case Mode_TexturedQuad:
     {
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        ShaderProgram& programTexturedQuad = app->shaderPrograms[app->texturedQuadProgramID];
+        glUseProgram(programTexturedQuad.handle);
 
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        ShaderProgram& programTexturedGeometry = app->shaderPrograms[app->texturedGeometryProgramIdx];
-        glUseProgram(programTexturedGeometry.handle);
-
-        glBindVertexArray(app->VAO);
+        glBindVertexArray(app->vao.handle);
 
         glUniform1i(app->programUniformTexture, 0);
         glActiveTexture(GL_TEXTURE0);
@@ -320,6 +385,35 @@ void Render(App* app)
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
         glBindVertexArray(0);
+        glUseProgram(0);
+    }
+    break;
+
+    case Mode_TexturedMesh:
+    {
+        ShaderProgram& texturedMeshProgram = app->shaderPrograms[app->texturedMeshProgramID];
+        glUseProgram(texturedMeshProgram.handle);
+
+        Model& model = app->models[app->modelID];
+        Mesh& mesh = app->meshes[model.meshID];
+
+        for (u32 i = 0; i < mesh.subMeshes.size(); ++i)
+        {
+            u32 vao = FindVAO(mesh, i, texturedMeshProgram);
+            glBindVertexArray(vao);
+
+            u32 subMeshMaterialID = model.materialIDs[i];
+            Material& subMeshMaterial = app->materials[subMeshMaterialID];
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, app->textures[subMeshMaterial.albedoTextureID].handle);
+            glUniform1i(app->programUniformTexture, 0);
+
+            SubMesh& subMesh = mesh.subMeshes[i];
+            glDrawElements(GL_TRIANGLES, subMesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)subMesh.indexOffset);
+
+            glBindVertexArray(0);
+        }
         glUseProgram(0);
     }
     break;
