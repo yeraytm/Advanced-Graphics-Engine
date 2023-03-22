@@ -100,10 +100,12 @@ void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Mesh* myMesh, u32 bas
 void ProcessAssimpMaterial(App* app, aiMaterial* material, Material& myMaterial, String directory)
 {
     aiString name;
+
     aiColor3D diffuseColor;
     aiColor3D emissiveColor;
     aiColor3D specularColor;
     ai_real shininess;
+
     material->Get(AI_MATKEY_NAME, name);
     material->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor);
     material->Get(AI_MATKEY_COLOR_EMISSIVE, emissiveColor);

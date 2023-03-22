@@ -39,22 +39,25 @@ public:
 	template<>
 	void Push<float>(u8 location, u8 count)
 	{
-		m_Attributes.push_back({ location, GL_FLOAT, count, GL_FALSE });
-		m_Stride += count * VertexBufferAttribute::GetSizeOfType(GL_FLOAT);
+		u8 offset = count * VertexBufferAttribute::GetSizeOfType(GL_FLOAT);
+		m_Attributes.push_back({ location, GL_FLOAT, count, offset });
+		m_Stride += offset;
 	}
 
 	template<>
 	void Push<unsigned int>(u8 location, u8 count)
 	{
-		m_Attributes.push_back({ location, GL_UNSIGNED_INT, count, GL_FALSE });
-		m_Stride += count * VertexBufferAttribute::GetSizeOfType(GL_UNSIGNED_INT);
+		u8 offset = count * VertexBufferAttribute::GetSizeOfType(GL_UNSIGNED_INT);
+		m_Attributes.push_back({ location, GL_UNSIGNED_INT, count, offset });
+		m_Stride += offset;
 	}
 
 	template<>
 	void Push<unsigned char>(u8 location, u8 count)
 	{
-		m_Attributes.push_back({ location, GL_UNSIGNED_BYTE, count, GL_TRUE });
-		m_Stride += count * VertexBufferAttribute::GetSizeOfType(GL_UNSIGNED_BYTE);
+		u8 offset = count * VertexBufferAttribute::GetSizeOfType(GL_UNSIGNED_BYTE);
+		m_Attributes.push_back({ location, GL_UNSIGNED_BYTE, count, offset });
+		m_Stride += offset;
 	}
 	
 	inline const std::vector<VertexBufferAttribute>& GetAttributes() const { return m_Attributes; }

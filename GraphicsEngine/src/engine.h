@@ -97,9 +97,11 @@ struct Mesh
 struct Material
 {
     std::string name;
+
     vec3 albedo;
     vec3 emissive;
     float smoothness;
+
     u32 albedoTextureID;
     u32 emissiveTextureID;
     u32 specularTextureID;
