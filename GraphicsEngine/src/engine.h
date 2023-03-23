@@ -9,13 +9,6 @@
 
 #include "glad/glad.h"
 
-typedef glm::vec2  vec2;
-typedef glm::vec3  vec3;
-typedef glm::vec4  vec4;
-typedef glm::ivec2 ivec2;
-typedef glm::ivec3 ivec3;
-typedef glm::ivec4 ivec4;
-
 enum Mode
 {
     Mode_TexturedQuad,
@@ -35,15 +28,15 @@ struct GLInfo
 
 struct Vertex
 {
-    vec3 position;
-    vec2 texCoords;
+    glm::vec3 position;
+    glm::vec2 texCoords;
     //vec3 normal;
 };
 
 struct Image
 {
     void* pixels;
-    ivec2 size;
+    glm::ivec2 size;
     int nchannels;
     int stride;
 };
@@ -70,13 +63,7 @@ struct VAO
     u32 shaderProgramHandle;
 };
 
-struct Model
-{
-    u32 meshID;
-    std::vector<u32> materialIDs;
-};
-
-struct SubMesh
+struct Mesh
 {
     VertexBufferLayout VBLayout;
     std::vector<float> vertices;
@@ -87,9 +74,11 @@ struct SubMesh
     std::vector<VAO> VAOs;
 };
 
-struct Mesh
+struct Model
 {
-    std::vector<SubMesh> subMeshes;
+    std::vector<Mesh> meshes;
+    std::vector<u32> materialIDs;
+
     u32 VBHandle;
     u32 EBHandle;
 };
@@ -98,8 +87,8 @@ struct Material
 {
     std::string name;
 
-    vec3 albedo;
-    vec3 emissive;
+    glm::vec3 albedo;
+    glm::vec3 emissive;
     float smoothness;
 
     u32 albedoTextureID;
@@ -120,7 +109,7 @@ struct App
 
     GLInfo glInfo;
 
-    ivec2 displaySize;
+    glm::ivec2 displaySize;
 
     u32 modelID;
     std::vector<Model> models;

@@ -2,7 +2,7 @@
 
 #include "glad/glad.h"
 
-#define ASSERT(x) if (!(x)) __debugbreak();
+#define ASSERT_DEBUG(x) if (!(x)) __debugbreak();
 
 #ifdef _DEBUG
 #define GLCall(x) GLClearError();\

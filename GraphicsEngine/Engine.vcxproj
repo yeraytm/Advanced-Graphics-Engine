@@ -22,6 +22,7 @@
     <ClCompile Include="src\AssimpLoading.cpp" />
     <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\GLDebugger.cpp" />
+    <ClCompile Include="src\Model.cpp" />
     <ClCompile Include="src\Platform.cpp" />
     <ClCompile Include="src\vendor\glad\glad.c" />
     <ClCompile Include="src\vendor\glm\detail\glm.cpp" />
@@ -38,6 +39,7 @@
     <ClInclude Include="src\AssimpLoading.h" />
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\GLDebugger.h" />
+    <ClInclude Include="src\Model.h" />
     <ClInclude Include="src\Platform.h" />
     <ClInclude Include="src\Layouts.h" />
     <ClInclude Include="src\vendor\glad\glad.h" />
