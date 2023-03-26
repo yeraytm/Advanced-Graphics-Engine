@@ -105,6 +105,41 @@ u32 LoadShaderProgram(App* app, const char* filepath, const char* programName)
     return app->shaderPrograms.size() - 1;
 }
 
+void InputShaderLayout(ShaderProgram& shaderProgram)
+{
+    shaderProgram.vertexLayout.attributes.clear();
+
+    char* attributeName;
+    GLint activeAttributes, attributeNameMaxLength;
+    glGetProgramiv(shaderProgram.handle, GL_ACTIVE_ATTRIBUTES, &activeAttributes);
+    glGetProgramiv(shaderProgram.handle, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &attributeNameMaxLength);
+
+    attributeName = new char[attributeNameMaxLength++];
+
+    for (u32 i = 0; i < activeAttributes; ++i)
+    {
+        GLint attributeSize;
+        GLenum attributeType;
+        glGetActiveAttrib(shaderProgram.handle, i, attributeNameMaxLength + 1, NULL, &attributeSize, &attributeType, attributeName);
+
+        u8 attributeLocation = glGetAttribLocation(shaderProgram.handle, attributeName);
+
+        u8 componentCount = 1;
+        switch (attributeType)
+        {
+        case GL_FLOAT: componentCount = 1; break;
+        case GL_FLOAT_VEC2: componentCount = 2; break;
+        case GL_FLOAT_VEC3: componentCount = 3; break;
+        case GL_FLOAT_VEC4: componentCount = 4; break;
+        default:
+            break;
+        }
+
+        shaderProgram.vertexLayout.attributes.push_back({ attributeLocation, componentCount });
+    }
+    delete[] attributeName;
+}
+
 Image LoadImage(const char* filename)
 {
     Image img = {};
@@ -153,8 +188,8 @@ u32 CreateTexture2DFromImage(Image image)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     
     glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, image.size.x, image.size.y, 0, dataFormat, dataType, image.pixels);
 
@@ -245,20 +280,21 @@ u32 FindVAO(Model& model, u32 meshIndex, const ShaderProgram& shaderProgram)
 
 void Init(App* app)
 {
-    app->glInfo.openGLStatus = false;
-    app->glInfo.version = (const char*)glGetString(GL_VERSION);
-    app->glInfo.renderer = (const char*)glGetString(GL_RENDERER);
-    app->glInfo.vendor = (const char*)glGetString(GL_VENDOR);
-    app->glInfo.glslVersion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
+    app->debugInfo = false;
+    app->openGLStatus = false;
+
+    app->glInfo.version = "Version: " + std::string((const char*)glGetString(GL_VERSION));
+    app->glInfo.renderer = "Renderer: " + std::string((const char*)glGetString(GL_RENDERER));
+    app->glInfo.vendor = "Vendor: " + std::string((const char*)glGetString(GL_VENDOR));
+    app->glInfo.glslVersion = "GLSL Version: " + std::string((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
     int numExtensions;
     glGetIntegerv(GL_NUM_EXTENSIONS, &numExtensions);
+    app->glInfo.extensions.reserve(numExtensions);
     for (int i = 0; i < numExtensions; ++i)
     {
-        app->glInfo.extensions += (const char*)glGetStringi(GL_EXTENSIONS, GLuint(i));
-        app->glInfo.extensions += '\n';
+        app->glInfo.extensions.emplace_back((const char*)glGetStringi(GL_EXTENSIONS, GLuint(i)));
     }
-    std::cout << app->glInfo.extensions << std::endl;
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -298,7 +334,7 @@ void Init(App* app)
     glBindVertexArray(0);
     //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-    app->texturedQuadProgramID = LoadShaderProgram(app, "Assets/shaders.glsl", "TEXTURED_QUAD");
+    app->texturedQuadProgramID = LoadShaderProgram(app, "Assets/Shaders/QuadShader.glsl", "TEXTURED_QUAD");
     ShaderProgram& texturedQuadProgram = app->shaderPrograms[app->texturedQuadProgramID];
     app->programUniformTexture = glGetUniformLocation(texturedQuadProgram.handle, "u_Texture");
 
@@ -309,11 +345,10 @@ void Init(App* app)
     app->magentaTexIdx = LoadTexture2D(app, "Assets/color_magenta.png");
     */
 
-    app->texturedMeshProgramID = LoadShaderProgram(app, "Assets/shaders.glsl", "TEXTURED_MESH");
+    app->texturedMeshProgramID = LoadShaderProgram(app, "Assets/Shaders/MeshShader.glsl", "TEXTURED_MESH");
     ShaderProgram& texturedMeshProgram = app->shaderPrograms[app->texturedMeshProgramID];
     app->programUniformTexture = glGetUniformLocation(texturedMeshProgram.handle, "u_Texture");
-    texturedMeshProgram.vertexLayout.attributes.push_back( { 0, 3 });
-    texturedMeshProgram.vertexLayout.attributes.push_back( { 2, 3 });
+    InputShaderLayout(texturedMeshProgram);
 
     app->modelID = LoadModel(app, "Assets/Patrick/Patrick.obj");
 
@@ -326,22 +361,34 @@ void ImGuiRender(App* app)
     {
         if (ImGui::BeginMenu("About"))
         {
-            ImGui::MenuItem("OpenGL", NULL, &app->glInfo.openGLStatus);
+            ImGui::MenuItem("OpenGL", NULL, &app->openGLStatus);
             ImGui::EndMenu();
         }
-
+        if (ImGui::BeginMenu("Debug"))
+        {
+            ImGui::MenuItem("Info", NULL, &app->debugInfo);
+            ImGui::EndMenu();
+        }
         ImGui::EndMainMenuBar();
     }
 
-    ImGui::Begin("Info");
-    ImGui::Text("FPS: %f", 1.0f / app->deltaTime);
-    ImGui::Text("frametime: %f", app->deltaTime);
-    ImGui::End();
-
-    if (app->glInfo.openGLStatus)
+    if (app->openGLStatus)
     {
-        ImGui::Begin("OpenGL");
+        ImGui::Begin("OpenGL", &app->openGLStatus);
 
+        ImGui::Text(app->glInfo.version.c_str());
+        ImGui::Text(app->glInfo.renderer.c_str());
+        ImGui::Text(app->glInfo.vendor.c_str());
+        ImGui::Text(app->glInfo.glslVersion.c_str());
+
+        ImGui::End();
+    }
+
+    if (app->debugInfo)
+    {
+        ImGui::Begin("App Info", &app->debugInfo);
+        ImGui::Text("FPS: %f", 1.0f / app->deltaTime);
+        ImGui::Text("frametime: %f", app->deltaTime);
         ImGui::End();
     }
 }
@@ -351,6 +398,22 @@ void Update(App* app)
     // You can handle app->input keyboard/mouse here
     if (app->input.keys[K_ESCAPE] == BUTTON_PRESS)
         app->isRunning = false;
+
+    for (u32 i = 0; i < app->shaderPrograms.size(); ++i)
+    {
+        ShaderProgram& shaderProgram = app->shaderPrograms[i];
+        u64 currentTimestamp = GetFileLastWriteTimestamp(shaderProgram.filepath.c_str());
+        if (currentTimestamp > shaderProgram.lastWriteTimestamp)
+        {
+            glDeleteProgram(shaderProgram.handle);
+            String shaderProgramSrc = ReadTextFile(shaderProgram.filepath.c_str());
+            const char* shaderProgramName = shaderProgram.programName.c_str();
+            shaderProgram.handle = CreateShaderProgram(shaderProgramSrc, shaderProgramName);
+            shaderProgram.lastWriteTimestamp = currentTimestamp;
+            app->programUniformTexture = glGetUniformLocation(shaderProgram.handle, "u_Texture");
+            InputShaderLayout(shaderProgram);
+        }
+    }
 }
 
 void Render(App* app)

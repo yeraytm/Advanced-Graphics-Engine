@@ -16,6 +16,7 @@
 #endif
 
 #include "Engine.h"
+#include "GLDebugger.h"
 
 #include "GLFW/glfw3.h"
 #include <stdio.h>
@@ -155,6 +156,8 @@ int main()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
+
     GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE, NULL, NULL);
     if (!window)
     {
@@ -180,6 +183,17 @@ int main()
     {
         ELOG("Failed to initialize OpenGL context\n");
         return -1;
+    }
+
+    // Enable OpenGL devbug context if context allows for it
+    int flags;
+    glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+    if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
+    {
+        glEnable(GL_DEBUG_OUTPUT);
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); // Makes sure errors are displayed at the moment
+        glDebugMessageCallback(OnGLError, nullptr);
+        glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
     }
 
     IMGUI_CHECKVERSION();

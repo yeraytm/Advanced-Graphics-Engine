@@ -338,7 +338,8 @@
     <ClInclude Include="src\vendor\stb\stb_image_write.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Assets\shaders.glsl" />
+    <None Include="Assets\Shaders\MeshShader.glsl" />
+    <None Include="Assets\Shaders\QuadShader.glsl" />
     <None Include="src\vendor\glm\detail\func_common.inl" />
     <None Include="src\vendor\glm\detail\func_common_simd.inl" />
     <None Include="src\vendor\glm\detail\func_exponential.inl" />

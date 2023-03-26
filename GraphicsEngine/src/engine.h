@@ -18,19 +18,11 @@ enum Mode
 
 struct GLInfo
 {
-    bool openGLStatus;
-    const char* version;
-    const char* vendor;
-    const char* renderer;
-    const char* glslVersion;
-    std::string extensions;
-};
-
-struct Vertex
-{
-    glm::vec3 position;
-    glm::vec2 texCoords;
-    //vec3 normal;
+    std::string version;
+    std::string vendor;
+    std::string renderer;
+    std::string glslVersion;
+    std::vector<std::string> extensions;
 };
 
 struct Image
@@ -107,13 +99,14 @@ struct App
     // Input
     Input input;
 
+    bool debugInfo;
     GLInfo glInfo;
+    bool openGLStatus;
 
     glm::ivec2 displaySize;
 
     u32 modelID;
     std::vector<Model> models;
-    std::vector<Mesh> meshes;
     std::vector<Texture> textures;
     std::vector<Material> materials;
     std::vector<ShaderProgram> shaderPrograms;

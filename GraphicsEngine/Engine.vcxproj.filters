@@ -480,6 +480,7 @@
     <None Include="src\vendor\glm\gtx\vector_angle.inl" />
     <None Include="src\vendor\glm\gtx\vector_query.inl" />
     <None Include="src\vendor\glm\gtx\wrap.inl" />
-    <None Include="Assets\shaders.glsl" />
+    <None Include="Assets\Shaders\MeshShader.glsl" />
+    <None Include="Assets\Shaders\QuadShader.glsl" />
   </ItemGroup>
 </Project>

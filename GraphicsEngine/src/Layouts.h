@@ -2,7 +2,6 @@
 
 #include <vector>
 #include "Platform.h"
-#include "GLDebugger.h"
 
 #include "glad/glad.h"
 
