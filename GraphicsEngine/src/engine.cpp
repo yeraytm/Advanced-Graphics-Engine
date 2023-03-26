@@ -381,6 +381,12 @@ void ImGuiRender(App* app)
         ImGui::Text(app->glInfo.vendor.c_str());
         ImGui::Text(app->glInfo.glslVersion.c_str());
 
+        ImGui::Spacing();
+
+        ImGui::Text("Extensions Supported:");
+        for (std::string extension : app->glInfo.extensions)
+            ImGui::Text(extension.c_str());
+
         ImGui::End();
     }
 
