@@ -44,7 +44,7 @@ struct ShaderProgram
     u32 handle;
     std::string filepath;
     std::string programName;
-    u64 lastWriteTimestamp; // What is this for?
+    u64 lastWriteTimestamp;
 
     VertexShaderLayout vertexLayout;
 };

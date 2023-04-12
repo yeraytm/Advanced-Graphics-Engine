@@ -185,7 +185,7 @@ int main()
         return -1;
     }
 
-    // Enable OpenGL devbug context if context allows for it
+    // Enable OpenGL debug context if context allows for it
     int flags;
     glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
     if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
