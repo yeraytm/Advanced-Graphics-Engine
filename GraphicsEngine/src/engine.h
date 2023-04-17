@@ -9,14 +9,14 @@
 
 #include "glad/glad.h"
 
-enum Mode
+enum class RenderMode
 {
-    Mode_TexturedQuad,
-    Mode_TexturedMesh,
-    Mode_Count
+    TexturedQuad,
+    TexturedMesh,
+    Count
 };
 
-struct GLInfo
+struct OpenGLState
 {
     std::string version;
     std::string vendor;
@@ -100,7 +100,7 @@ struct App
     Input input;
 
     bool debugInfo;
-    GLInfo glInfo;
+    OpenGLState glInfo;
     bool openGLStatus;
 
     glm::ivec2 displaySize;
@@ -123,7 +123,7 @@ struct App
     u32 magentaTexIdx;
 
     // Mode
-    Mode mode;
+    RenderMode mode;
 
     // Embedded geometry (in-editor simple meshes such as
     // a screen filling quad, a cube, a sphere...)

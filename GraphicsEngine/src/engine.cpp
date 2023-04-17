@@ -299,6 +299,10 @@ void Init(App* app)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    app->models.push_back(Model{});
+    Model& model = app->models.back();
+    u32 modelID = (u32)app->models.size() - 1u;
+
     /*
     const Vertex vertices[] = {
         { vec3(-0.5, -0.5, 0.0), vec2(0.0, 0.0) },
@@ -352,7 +356,7 @@ void Init(App* app)
 
     app->modelID = LoadModel(app, "Assets/Patrick/Patrick.obj");
 
-    app->mode = Mode_TexturedMesh;
+    app->mode = RenderMode::TexturedMesh;
 }
 
 void ImGuiRender(App* app)
@@ -429,7 +433,7 @@ void Render(App* app)
 
     switch (app->mode)
     {
-    case Mode_TexturedQuad:
+    case RenderMode::TexturedQuad:
     {
         ShaderProgram& programTexturedQuad = app->shaderPrograms[app->texturedQuadProgramID];
         glUseProgram(programTexturedQuad.handle);
@@ -448,13 +452,13 @@ void Render(App* app)
     }
     break;
 
-    case Mode_TexturedMesh:
+    case RenderMode::TexturedMesh:
     {
         ShaderProgram& texturedMeshProgram = app->shaderPrograms[app->texturedMeshProgramID];
         glUseProgram(texturedMeshProgram.handle);
 
         Model& model = app->models[app->modelID];
-
+        u32 numMeshes = model.meshes.size();
         for (u32 meshIndex = 0; meshIndex < model.meshes.size(); ++meshIndex)
         {
             u32 vao = FindVAO(model, meshIndex, texturedMeshProgram);
@@ -476,7 +480,7 @@ void Render(App* app)
     }
     break;
 
-    case Mode_Count:
+    case RenderMode::Count:
         break;
 
     default:
