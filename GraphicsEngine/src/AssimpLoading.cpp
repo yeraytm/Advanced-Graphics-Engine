@@ -1,9 +1,6 @@
-#include "Engine.h"
-#include "Layouts.h"
+#include "AssimpLoading.h"
 
-#include "assimp/cimport.h"
-#include "assimp/scene.h"
-#include "assimp/postprocess.h"
+#include "Layouts.h"
 
 void ProcessAssimpMaterial(App* app, aiMaterial* material, Material& myMaterial, String directory)
 {

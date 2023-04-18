@@ -5,9 +5,9 @@
 #pragma once
 
 #include "Platform.h"
-#include "Layouts.h"
 
-#include "glad/glad.h"
+#include "Layouts.h"
+#include "Entity.h"
 
 enum class RenderMode
 {
@@ -106,7 +106,8 @@ struct App
 
     glm::ivec2 displaySize;
 
-    u32 modelID;
+    Entity patrickEntity;
+
     std::vector<Model> models;
     std::vector<Texture> textures;
     std::vector<Material> materials;

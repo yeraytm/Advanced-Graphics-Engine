@@ -1,13 +1,10 @@
 #pragma once
 
-typedef unsigned int u32;
+#include "Engine.h"
 
-struct App;
-
-struct aiScene;
-struct aiMesh;
-struct aiMaterial;
-struct aiNode;
+#include "assimp/cimport.h"
+#include "assimp/scene.h"
+#include "assimp/postprocess.h"
 
 void ProcessAssimpMaterial(App* app, aiMaterial* material, Material& myMaterial, String directory);
 

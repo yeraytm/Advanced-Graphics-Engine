@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="src\AssimpLoading.cpp" />
     <ClCompile Include="src\Engine.cpp" />
+    <ClCompile Include="src\Entity.cpp" />
     <ClCompile Include="src\GLDebugger.cpp" />
     <ClCompile Include="src\Platform.cpp" />
     <ClCompile Include="src\vendor\glad\glad.c" />
@@ -37,6 +38,7 @@
   <ItemGroup>
     <ClInclude Include="src\AssimpLoading.h" />
     <ClInclude Include="src\Engine.h" />
+    <ClInclude Include="src\Entity.h" />
     <ClInclude Include="src\GLDebugger.h" />
     <ClInclude Include="src\Platform.h" />
     <ClInclude Include="src\Layouts.h" />
