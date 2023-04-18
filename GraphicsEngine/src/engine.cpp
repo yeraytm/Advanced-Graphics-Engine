@@ -151,7 +151,7 @@ Image LoadImage(const char* filename)
     }
     else
     {
-        ELOG("Could not open file %s", filename);
+        ELOG("Could not open file %s\n", filename);
     }
     return img;
 }
@@ -178,7 +178,7 @@ u32 CreateTexture2DFromImage(Image image)
         internalFormat = GL_RGBA8;
         break;
     default:
-        ELOG("LoadTexture2D() - Unsupported number of channels");
+        ELOG("LoadTexture2D() - Unsupported number of channels\n");
     }
 
     u32 texHandle;
@@ -283,27 +283,26 @@ void Init(App* app)
     app->debugInfo = false;
     app->openGLStatus = false;
 
-    app->glInfo.version = "Version: " + std::string((const char*)glGetString(GL_VERSION));
-    app->glInfo.renderer = "Renderer: " + std::string((const char*)glGetString(GL_RENDERER));
-    app->glInfo.vendor = "Vendor: " + std::string((const char*)glGetString(GL_VENDOR));
-    app->glInfo.glslVersion = "GLSL Version: " + std::string((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
+    app->glState.version = "Version: " + std::string((const char*)glGetString(GL_VERSION));
+    app->glState.renderer = "Renderer: " + std::string((const char*)glGetString(GL_RENDERER));
+    app->glState.vendor = "Vendor: " + std::string((const char*)glGetString(GL_VENDOR));
+    app->glState.glslVersion = "GLSL Version: " + std::string((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
-    int numExtensions;
-    glGetIntegerv(GL_NUM_EXTENSIONS, &numExtensions);
-    app->glInfo.extensions.reserve(numExtensions);
-    for (int i = 0; i < numExtensions; ++i)
+    glGetIntegerv(GL_NUM_EXTENSIONS, &app->glState.numExtensions);
+    app->glState.extensions.reserve(app->glState.numExtensions);
+    for (int i = 0; i < app->glState.numExtensions; ++i)
     {
-        app->glInfo.extensions.emplace_back((const char*)glGetStringi(GL_EXTENSIONS, GLuint(i)));
+        app->glState.extensions.emplace_back((const char*)glGetStringi(GL_EXTENSIONS, GLuint(i)));
     }
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    /*
     app->models.push_back(Model{});
     Model& model = app->models.back();
     u32 modelID = (u32)app->models.size() - 1u;
 
-    /*
     const Vertex vertices[] = {
         { vec3(-0.5, -0.5, 0.0), vec2(0.0, 0.0) },
         { vec3(0.5, -0.5, 0.0), vec2(1.0, 0.0) },
@@ -380,16 +379,16 @@ void ImGuiRender(App* app)
     {
         ImGui::Begin("OpenGL", &app->openGLStatus);
 
-        ImGui::Text(app->glInfo.version.c_str());
-        ImGui::Text(app->glInfo.renderer.c_str());
-        ImGui::Text(app->glInfo.vendor.c_str());
-        ImGui::Text(app->glInfo.glslVersion.c_str());
+        ImGui::Text(app->glState.version.c_str());
+        ImGui::Text(app->glState.renderer.c_str());
+        ImGui::Text(app->glState.vendor.c_str());
+        ImGui::Text(app->glState.glslVersion.c_str());
 
         ImGui::Spacing();
 
         ImGui::Text("Extensions Supported:");
-        for (std::string extension : app->glInfo.extensions)
-            ImGui::Text(extension.c_str());
+        for (int i = 0; i < app->glState.numExtensions; ++i)
+            ImGui::Text(app->glState.extensions[i].c_str());
 
         ImGui::End();
     }

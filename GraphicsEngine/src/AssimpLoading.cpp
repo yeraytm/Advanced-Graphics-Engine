@@ -182,7 +182,7 @@ u32 LoadModel(App* app, const char* filename)
 
     if (!scene)
     {
-        ELOG("Error loading mesh %s: %s", filename, aiGetErrorString());
+        ELOG("Error loading mesh %s: %s\n", filename, aiGetErrorString());
         return UINT32_MAX;
     }
 

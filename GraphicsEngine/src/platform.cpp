@@ -422,7 +422,7 @@ String ReadTextFile(const char* filepath)
     }
     else
     {
-        ELOG("fopen() failed reading file %s", filepath);
+        ELOG("fopen() failed reading file %s\n", filepath);
     }
 
     return fileText;

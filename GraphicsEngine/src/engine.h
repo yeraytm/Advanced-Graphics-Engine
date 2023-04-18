@@ -23,6 +23,7 @@ struct OpenGLState
     std::string renderer;
     std::string glslVersion;
     std::vector<std::string> extensions;
+    int numExtensions;
 };
 
 struct Image
@@ -100,7 +101,7 @@ struct App
     Input input;
 
     bool debugInfo;
-    OpenGLState glInfo;
+    OpenGLState glState;
     bool openGLStatus;
 
     glm::ivec2 displaySize;
