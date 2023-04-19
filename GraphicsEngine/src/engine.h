@@ -7,7 +7,6 @@
 #include "Platform.h"
 
 #include "Layouts.h"
-#include "Entity.h"
 
 enum class RenderMode
 {
@@ -50,6 +49,21 @@ struct ShaderProgram
     VertexShaderLayout vertexLayout;
 };
 
+struct Material
+{
+    std::string name;
+
+    glm::vec3 albedo;
+    glm::vec3 emissive;
+    float smoothness;
+
+    u32 albedoTextureID;
+    u32 emissiveTextureID;
+    u32 specularTextureID;
+    u32 normalsTextureID;
+    u32 bumpTextureID;
+};
+
 struct VAO
 {
     u32 handle;
@@ -76,19 +90,19 @@ struct Model
     u32 EBHandle;
 };
 
-struct Material
+class Entity
 {
-    std::string name;
+public:
+    Entity();
+    Entity(const std::string& name);
+    ~Entity();
 
-    glm::vec3 albedo;
-    glm::vec3 emissive;
-    float smoothness;
+public:
+    Model model;
+    u32 modelID;
 
-    u32 albedoTextureID;
-    u32 emissiveTextureID;
-    u32 specularTextureID;
-    u32 normalsTextureID;
-    u32 bumpTextureID;
+private:
+    std::string m_Name;
 };
 
 struct App
@@ -106,7 +120,8 @@ struct App
 
     glm::ivec2 displaySize;
 
-    Entity patrickEntity;
+    u32 numEntities;
+    std::vector<Entity*> entities;
 
     std::vector<Model> models;
     std::vector<Texture> textures;
@@ -148,3 +163,5 @@ void Update(App* app);
 void Render(App* app);
 
 u32 LoadTexture2D(App* app, const char* filepath);
+
+void Render(Entity& entity, const ShaderProgram& shaderProgram, App* app);

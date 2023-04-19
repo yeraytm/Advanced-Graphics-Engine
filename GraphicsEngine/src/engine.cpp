@@ -279,6 +279,41 @@ u32 FindVAO(Model& model, u32 meshIndex, const ShaderProgram& shaderProgram)
     return vaoHandle;
 }
 
+Entity::Entity() : modelID(0), m_Name("DefaultEntityName")
+{
+}
+
+Entity::Entity(const std::string& name) : modelID(0), m_Name(name)
+{
+}
+
+Entity::~Entity()
+{
+}
+
+void RenderEntity(Entity* entity, const ShaderProgram& shaderProgram, App* app)
+{
+    u32 numMeshes = entity->model.meshes.size();
+    for (u32 meshIndex = 0; meshIndex < numMeshes; ++meshIndex)
+    {
+        u32 vao = FindVAO(entity->model, meshIndex, shaderProgram);
+        glBindVertexArray(vao);
+
+        u32 meshMaterialID = entity->model.materialIDs[meshIndex];
+        Material& meshMaterial = app->materials[meshMaterialID];
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
+        glUniform1i(app->programUniformTexture, 0);
+
+        Mesh& mesh = entity->model.meshes[meshIndex];
+        glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.indexOffset);
+
+        glBindVertexArray(0);
+    }
+    glUseProgram(0);
+}
+
 void Init(App* app)
 {
     app->debugInfo = false;
@@ -354,9 +389,11 @@ void Init(App* app)
     app->programUniformTexture = glGetUniformLocation(texturedMeshProgram.handle, "u_Texture");
     InputShaderLayout(texturedMeshProgram);
 
-    app->patrickEntity = Entity();
-    app->patrickEntity.modelID = LoadModel(app, "Assets/Patrick/Patrick.obj");
+    Entity* patrickEntity = new Entity("Patrick");
+    patrickEntity->modelID = LoadModel(app, "Assets/Patrick/Patrick.obj", patrickEntity->model);
+    app->entities.push_back(patrickEntity);
 
+    app->numEntities = app->entities.size();
     app->mode = RenderMode::TexturedMesh;
 }
 
@@ -458,28 +495,10 @@ void Render(App* app)
         ShaderProgram& texturedMeshProgram = app->shaderPrograms[app->texturedMeshProgramID];
         glUseProgram(texturedMeshProgram.handle);
 
-        //app->patrickEntity.Render();
-
-        Model& model = app->models[app->patrickEntity.modelID];
-        u32 numMeshes = model.meshes.size();
-        for (u32 meshIndex = 0; meshIndex < model.meshes.size(); ++meshIndex)
+        for (int i = 0; i < app->numEntities; ++i)
         {
-            u32 vao = FindVAO(model, meshIndex, texturedMeshProgram);
-            glBindVertexArray(vao);
-
-            u32 meshMaterialID = model.materialIDs[meshIndex];
-            Material& meshMaterial = app->materials[meshMaterialID];
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
-            glUniform1i(app->programUniformTexture, 0);
-
-            Mesh& mesh = model.meshes[meshIndex];
-            glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.indexOffset);
-
-            glBindVertexArray(0);
+            RenderEntity(app->entities[i], texturedMeshProgram, app);
         }
-        glUseProgram(0);
     }
     break;
 

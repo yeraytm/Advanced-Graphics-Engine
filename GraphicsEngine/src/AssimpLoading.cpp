@@ -165,7 +165,7 @@ void ProcessAssimpNode(const aiScene* scene, aiNode* node, Model* myModel, u32 b
     }
 }
 
-u32 LoadModel(App* app, const char* filename)
+u32 LoadModel(App* app, const char* filename, Model& model)
 {
     const aiScene* scene = aiImportFile(filename,
         aiProcess_Triangulate |
@@ -184,7 +184,7 @@ u32 LoadModel(App* app, const char* filename)
     }
 
     app->models.push_back(Model{});
-    Model& model = app->models.back();
+    model = app->models.back();
     u32 modelID = (u32)app->models.size() - 1u;
 
     String directory = GetDirectoryPart(MakeString(filename));
