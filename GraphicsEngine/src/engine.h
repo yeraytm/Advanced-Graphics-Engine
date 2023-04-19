@@ -5,8 +5,10 @@
 #pragma once
 
 #include "Platform.h"
-
 #include "Layouts.h"
+#include "Shader.h"
+#include "Texture.h"
+#include "Entity.h"
 
 enum class RenderMode
 {
@@ -23,86 +25,6 @@ struct OpenGLState
     std::string glslVersion;
     std::vector<std::string> extensions;
     int numExtensions;
-};
-
-struct Image
-{
-    void* pixels;
-    glm::ivec2 size;
-    int nchannels;
-    int stride;
-};
-
-struct Texture
-{
-    u32 handle;
-    std::string filepath;
-};
-
-struct ShaderProgram
-{
-    u32 handle;
-    std::string filepath;
-    std::string programName;
-    u64 lastWriteTimestamp;
-
-    VertexShaderLayout vertexLayout;
-};
-
-struct Material
-{
-    std::string name;
-
-    glm::vec3 albedo;
-    glm::vec3 emissive;
-    float smoothness;
-
-    u32 albedoTextureID;
-    u32 emissiveTextureID;
-    u32 specularTextureID;
-    u32 normalsTextureID;
-    u32 bumpTextureID;
-};
-
-struct VAO
-{
-    u32 handle;
-    u32 shaderProgramHandle;
-};
-
-struct Mesh
-{
-    VertexBufferLayout VBLayout;
-    std::vector<float> vertices;
-    std::vector<u32> indices;
-    u32 vertexOffset;
-    u32 indexOffset;
-
-    std::vector<VAO> VAOs;
-};
-
-struct Model
-{
-    std::vector<Mesh> meshes;
-    std::vector<u32> materialIDs;
-
-    u32 VBHandle;
-    u32 EBHandle;
-};
-
-class Entity
-{
-public:
-    Entity();
-    Entity(const std::string& name);
-    ~Entity();
-
-public:
-    Model model;
-    u32 modelID;
-
-private:
-    std::string m_Name;
 };
 
 struct App
@@ -161,7 +83,3 @@ void ImGuiRender(App* app);
 void Update(App* app);
 
 void Render(App* app);
-
-u32 LoadTexture2D(App* app, const char* filepath);
-
-void Render(Entity& entity, const ShaderProgram& shaderProgram, App* app);

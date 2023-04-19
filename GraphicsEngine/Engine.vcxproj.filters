@@ -24,6 +24,8 @@
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="src\Entity.cpp" />
+    <ClCompile Include="src\Shader.cpp" />
+    <ClCompile Include="src\Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Layouts.h">
@@ -334,6 +336,8 @@
     <ClInclude Include="src\vendor\stb\stb_image_write.h" />
     <ClInclude Include="src\AssimpLoading.h" />
     <ClInclude Include="src\Entity.h" />
+    <ClInclude Include="src\Shader.h" />
+    <ClInclude Include="src\Texture.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source">

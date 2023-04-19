@@ -1,6 +1,7 @@
 #include "AssimpLoading.h"
 
 #include "Layouts.h"
+#include "Texture.h"
 
 void ProcessAssimpMaterial(App* app, aiMaterial* material, Material& myMaterial, String directory)
 {
@@ -28,35 +29,35 @@ void ProcessAssimpMaterial(App* app, aiMaterial* material, Material& myMaterial,
         material->GetTexture(aiTextureType_DIFFUSE, 0, &aiFilename);
         String filename = MakeString(aiFilename.C_Str());
         String filepath = MakePath(directory, filename);
-        myMaterial.albedoTextureID = LoadTexture2D(app, filepath.str);
+        myMaterial.albedoTextureID = LoadTexture2D(app->textures, filepath.str);
     }
     if (material->GetTextureCount(aiTextureType_EMISSIVE) > 0)
     {
         material->GetTexture(aiTextureType_EMISSIVE, 0, &aiFilename);
         String filename = MakeString(aiFilename.C_Str());
         String filepath = MakePath(directory, filename);
-        myMaterial.emissiveTextureID = LoadTexture2D(app, filepath.str);
+        myMaterial.emissiveTextureID = LoadTexture2D(app->textures, filepath.str);
     }
     if (material->GetTextureCount(aiTextureType_SPECULAR) > 0)
     {
         material->GetTexture(aiTextureType_SPECULAR, 0, &aiFilename);
         String filename = MakeString(aiFilename.C_Str());
         String filepath = MakePath(directory, filename);
-        myMaterial.specularTextureID = LoadTexture2D(app, filepath.str);
+        myMaterial.specularTextureID = LoadTexture2D(app->textures, filepath.str);
     }
     if (material->GetTextureCount(aiTextureType_NORMALS) > 0)
     {
         material->GetTexture(aiTextureType_NORMALS, 0, &aiFilename);
         String filename = MakeString(aiFilename.C_Str());
         String filepath = MakePath(directory, filename);
-        myMaterial.normalsTextureID = LoadTexture2D(app, filepath.str);
+        myMaterial.normalsTextureID = LoadTexture2D(app->textures, filepath.str);
     }
     if (material->GetTextureCount(aiTextureType_HEIGHT) > 0)
     {
         material->GetTexture(aiTextureType_HEIGHT, 0, &aiFilename);
         String filename = MakeString(aiFilename.C_Str());
         String filepath = MakePath(directory, filename);
-        myMaterial.bumpTextureID = LoadTexture2D(app, filepath.str);
+        myMaterial.bumpTextureID = LoadTexture2D(app->textures, filepath.str);
     }
 
     //myMaterial.createNormalFromBump();
