@@ -69,6 +69,9 @@ u32 FindVAO(Model& model, u32 meshIndex, const ShaderProgram& shaderProgram)
 
 void Init(App* app)
 {
+    app->input.mousePos.x = float(app->displaySize.x / 2);
+    app->input.mousePos.y = float(app->displaySize.y / 2);
+
     app->debugInfo = false;
     app->openGLStatus = false;
 
@@ -87,8 +90,12 @@ void Init(App* app)
     app->camera.position = glm::vec3(0.0f, 0.0f, 5.0f);
     app->camera.front = glm::vec3(0.0f, 0.0f, -1.0f);
     app->camera.up = glm::vec3(0.0f, 1.0f, 0.0f);
-    app->camera.target = glm::vec3(0.0f, 0.0f, 0.0f);
+
     app->camera.speed = 1.5f;
+    app->camera.sensitivity = 0.1f;
+
+    app->camera.yaw = -90.0f;
+    app->camera.pitch = 0.0f;
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
@@ -226,9 +233,22 @@ void Update(App* app)
     //app->camera.position.z = cos(app->currentTime) * radius;
     //app->view = glm::lookAt(app->camera.position, app->camera.target, glm::vec3(0.0f, 1.0f, 0.0f));
 
-    // Walk around
-    app->view = glm::lookAt(app->camera.position, app->camera.position + app->camera.front, app->camera.up);
+    // Camera Rotation
+    app->camera.yaw = glm::mod(app->camera.yaw + app->input.mouseDelta.x * app->camera.sensitivity, 360.0f); // Constrain yaw to only use values between 0-360 as float precision could be lost
+    app->camera.pitch -= app->input.mouseDelta.y * app->camera.sensitivity;
 
+    if (app->camera.pitch > 89.0f)
+        app->camera.pitch = 89.0f;
+    if (app->camera.pitch < -89.0f)
+        app->camera.pitch = -89.0f;
+
+    app->camera.front.x = glm::cos(glm::radians(app->camera.yaw)) * glm::cos(glm::radians(app->camera.pitch));
+    app->camera.front.y = glm::sin(glm::radians(app->camera.pitch));
+    app->camera.front.z = glm::sin(glm::radians(app->camera.yaw)) * glm::cos(glm::radians(app->camera.pitch));
+
+    app->camera.front = glm::normalize(app->camera.front);
+
+    // Camera Movement (Walk Around)
     float speed = app->camera.speed * app->deltaTime;
     if (app->input.keys[K_W] == BUTTON_PRESSED)
         app->camera.position += speed * app->camera.front;
@@ -238,6 +258,8 @@ void Update(App* app)
         app->camera.position -= glm::normalize(glm::cross(app->camera.front, app->camera.up)) * speed;
     if (app->input.keys[K_D] == BUTTON_PRESSED)
         app->camera.position += glm::normalize(glm::cross(app->camera.front, app->camera.up)) * speed;
+
+    app->view = glm::lookAt(app->camera.position, app->camera.position + app->camera.front, app->camera.up);
 
     for (u32 i = 0; i < app->shaderPrograms.size(); ++i)
     {

@@ -179,6 +179,9 @@ int main()
     glfwSetFramebufferSizeCallback(window, OnGlfwResizeFramebuffer);
     glfwSetWindowCloseCallback(window, OnGlfwCloseWindow);
 
+    // GLFW call to capture our mouse
+    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
     // Load all OpenGL functions using the glfw loader function
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
