@@ -65,8 +65,7 @@ void ProcessAssimpMaterial(App* app, aiMaterial* material, Material& myMaterial,
 
 void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Model* myModel, u32 baseMeshMaterialIndex, std::vector<u32>& meshMaterialIndices)
 {
-    std::vector<float> vertices;
-    std::vector<u32> indices;
+    Mesh myMesh = {};
 
     bool hasTexCoords = false;
     bool hasTangentSpace = false;
@@ -74,26 +73,26 @@ void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Model* myModel, u32 b
     // process vertices
     for (unsigned int i = 0; i < mesh->mNumVertices; i++)
     {
-        vertices.push_back(mesh->mVertices[i].x);
-        vertices.push_back(mesh->mVertices[i].y);
-        vertices.push_back(mesh->mVertices[i].z);
-        vertices.push_back(mesh->mNormals[i].x);
-        vertices.push_back(mesh->mNormals[i].y);
-        vertices.push_back(mesh->mNormals[i].z);
+        myMesh.vertices.push_back(mesh->mVertices[i].x);
+        myMesh.vertices.push_back(mesh->mVertices[i].y);
+        myMesh.vertices.push_back(mesh->mVertices[i].z);
+        myMesh.vertices.push_back(mesh->mNormals[i].x);
+        myMesh.vertices.push_back(mesh->mNormals[i].y);
+        myMesh.vertices.push_back(mesh->mNormals[i].z);
 
         if (mesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
         {
             hasTexCoords = true;
-            vertices.push_back(mesh->mTextureCoords[0][i].x);
-            vertices.push_back(mesh->mTextureCoords[0][i].y);
+            myMesh.vertices.push_back(mesh->mTextureCoords[0][i].x);
+            myMesh.vertices.push_back(mesh->mTextureCoords[0][i].y);
         }
 
         if (mesh->mTangents != nullptr && mesh->mBitangents)
         {
             hasTangentSpace = true;
-            vertices.push_back(mesh->mTangents[i].x);
-            vertices.push_back(mesh->mTangents[i].y);
-            vertices.push_back(mesh->mTangents[i].z);
+            myMesh.vertices.push_back(mesh->mTangents[i].x);
+            myMesh.vertices.push_back(mesh->mTangents[i].y);
+            myMesh.vertices.push_back(mesh->mTangents[i].z);
 
             // For some reason ASSIMP gives me the bitangents flipped.
             // Maybe it's my fault, but when I generate my own geometry
@@ -103,9 +102,9 @@ void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Model* myModel, u32 b
             // I think that (even if the documentation says the opposite)
             // it returns a left-handed tangent space matrix.
             // SOLUTION: I invert the components of the bitangent here.
-            vertices.push_back(-mesh->mBitangents[i].x);
-            vertices.push_back(-mesh->mBitangents[i].y);
-            vertices.push_back(-mesh->mBitangents[i].z);
+            myMesh.vertices.push_back(-mesh->mBitangents[i].x);
+            myMesh.vertices.push_back(-mesh->mBitangents[i].y);
+            myMesh.vertices.push_back(-mesh->mBitangents[i].z);
         }
     }
 
@@ -115,7 +114,7 @@ void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Model* myModel, u32 b
         aiFace face = mesh->mFaces[i];
         for (unsigned int j = 0; j < face.mNumIndices; j++)
         {
-            indices.push_back(face.mIndices[j]);
+            myMesh.indices.push_back(face.mIndices[j]);
         }
     }
 
@@ -123,30 +122,25 @@ void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Model* myModel, u32 b
     meshMaterialIndices.push_back(baseMeshMaterialIndex + mesh->mMaterialIndex);
 
     // create the vertex format
-    VertexBufferLayout vertexBufferLayout = {};
-    vertexBufferLayout.attributes.push_back(VertexBufferAttribute{ 0, 3, 0 });
-    vertexBufferLayout.attributes.push_back(VertexBufferAttribute{ 1, 3, 3 * sizeof(float) });
-    vertexBufferLayout.stride = 6 * sizeof(float);
+    myMesh.VBLayout.attributes.push_back(VertexBufferAttribute{ 0, 3, 0 });
+    myMesh.VBLayout.attributes.push_back(VertexBufferAttribute{ 1, 3, 3 * sizeof(float) });
+    myMesh.VBLayout.stride = 6 * sizeof(float);
 
     if (hasTexCoords)
     {
-        vertexBufferLayout.attributes.push_back(VertexBufferAttribute{ 2, 2, vertexBufferLayout.stride });
-        vertexBufferLayout.stride += 2 * sizeof(float);
+        myMesh.VBLayout.attributes.push_back(VertexBufferAttribute{ 2, 2, myMesh.VBLayout.stride });
+        myMesh.VBLayout.stride += 2 * sizeof(float);
     }
     if (hasTangentSpace)
     {
-        vertexBufferLayout.attributes.push_back(VertexBufferAttribute{ 3, 3, vertexBufferLayout.stride });
-        vertexBufferLayout.stride += 3 * sizeof(float);
+        myMesh.VBLayout.attributes.push_back(VertexBufferAttribute{ 3, 3, myMesh.VBLayout.stride });
+        myMesh.VBLayout.stride += 3 * sizeof(float);
 
-        vertexBufferLayout.attributes.push_back(VertexBufferAttribute{ 4, 3, vertexBufferLayout.stride });
-        vertexBufferLayout.stride += 3 * sizeof(float);
+        myMesh.VBLayout.attributes.push_back(VertexBufferAttribute{ 4, 3, myMesh.VBLayout.stride });
+        myMesh.VBLayout.stride += 3 * sizeof(float);
     }
 
     // add the mesh into the model
-    Mesh myMesh = {};
-    myMesh.VBLayout = vertexBufferLayout;
-    myMesh.vertices.swap(vertices);
-    myMesh.indices.swap(indices);
     myModel->meshes.push_back(myMesh);
 }
 

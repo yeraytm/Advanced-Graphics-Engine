@@ -140,6 +140,7 @@ int main()
 {
     App app = {};
     app.deltaTime = 1.0f / 60.0f;
+    app.currentTime = 0.0;
     app.displaySize = glm::ivec2(WINDOW_WIDTH, WINDOW_HEIGHT);
     app.isRunning = true;
 
@@ -306,9 +307,9 @@ int main()
         glfwSwapBuffers(window);
 
         // Frame time
-        f64 currentFrameTime = glfwGetTime();
-        app.deltaTime = (float)(currentFrameTime - lastFrameTime);
-        lastFrameTime = currentFrameTime;
+        app.currentTime = glfwGetTime();
+        app.deltaTime = (float)(app.currentTime - lastFrameTime);
+        lastFrameTime = app.currentTime;
 
         // Reset frame allocator
         GlobalFrameArenaHead = 0;

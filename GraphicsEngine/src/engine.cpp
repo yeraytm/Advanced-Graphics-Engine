@@ -11,6 +11,62 @@
 #include "glad/glad.h"
 #include "imgui-docking/imgui.h"
 
+u32 FindVAO(Model& model, u32 meshIndex, const ShaderProgram& shaderProgram)
+{
+    Mesh& mesh = model.meshes[meshIndex];
+
+    // Try Finding a VAO for this mesh/program
+    for (u32 i = 0; i < (u32)mesh.VAOs.size(); ++i)
+    {
+        if (mesh.VAOs[i].shaderProgramHandle == shaderProgram.handle)
+            return mesh.VAOs[i].handle;
+    }
+
+    u32 vaoHandle = 0;
+
+    // --- If a VAO wasn't found, create a new VAO for this mesh/program
+
+    glGenVertexArrays(1, &vaoHandle);
+    glBindVertexArray(vaoHandle);
+
+    glBindBuffer(GL_ARRAY_BUFFER, model.VBHandle);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model.EBHandle);
+
+    // We have to link all vertex inputs attributes to attributes in the vertex buffer
+    for (u32 i = 0; i < shaderProgram.vertexLayout.attributes.size(); ++i)
+    {
+        bool attributeWasLinked = false;
+
+        const std::vector<VertexBufferAttribute>& attributes = mesh.VBLayout.attributes;
+        for (u32 j = 0; j < attributes.size(); ++j)
+        {
+            if (shaderProgram.vertexLayout.attributes[i].location == attributes[j].location)
+            {
+                const u32 index = attributes[j].location;
+                const u32 nComp = attributes[j].componentCount;
+                const u32 offset = attributes[j].offset + mesh.vertexOffset;
+                const u32 stride = mesh.VBLayout.stride;
+
+                glVertexAttribPointer(index, nComp, GL_FLOAT, GL_FALSE, stride, (void*)(u64)offset);
+                glEnableVertexAttribArray(index);
+
+                attributeWasLinked = true;
+                break;
+            }
+        }
+        assert(attributeWasLinked); // The mesh should provide an attribute for each vertex inputs
+    }
+
+    glBindVertexArray(0);
+
+    // Store the VAO handle in the list of VAOs for this mesh
+    VAO vao = { vaoHandle, shaderProgram.handle };
+    mesh.VAOs.push_back(vao);
+
+    return vaoHandle;
+}
+
+
 void Init(App* app)
 {
     app->debugInfo = false;
@@ -28,9 +84,16 @@ void Init(App* app)
         app->glState.extensions.emplace_back((const char*)glGetStringi(GL_EXTENSIONS, GLuint(i)));
     }
 
+    app->camera.position = glm::vec3(0.0f, 0.0f, 5.0f);
+    app->camera.front = glm::vec3(0.0f, 0.0f, -1.0f);
+    app->camera.up = glm::vec3(0.0f, 1.0f, 0.0f);
+    app->camera.target = glm::vec3(0.0f, 0.0f, 0.0f);
+    app->camera.speed = 1.5f;
+
+    glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
+    
     /*
     app->models.push_back(Model{});
     Model& model = app->models.back();
@@ -81,17 +144,29 @@ void Init(App* app)
     app->magentaTexIdx = LoadTexture2D(app, "Assets/color_magenta.png");
     */
 
-    app->texturedMeshProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/MeshShader.glsl", "TEXTURED_MESH");
-    ShaderProgram& texturedMeshProgram = app->shaderPrograms[app->texturedMeshProgramID];
-    app->programUniformTexture = glGetUniformLocation(texturedMeshProgram.handle, "u_Texture");
-    InputShaderLayout(texturedMeshProgram);
+    app->meshProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/MeshShader.glsl", "TEXTURED_MESH");
+    ShaderProgram& texturedMeshProgram = app->shaderPrograms[app->meshProgramID];
+    app->meshTextureLocation = glGetUniformLocation(texturedMeshProgram.handle, "u_Texture");
 
-    Entity* patrickEntity = new Entity("Patrick");
-    patrickEntity->modelID = LoadModel(app, "Assets/Patrick/Patrick.obj", patrickEntity->model);
+    Entity patrickEntity = Entity();
+    patrickEntity.modelID = LoadModel(app, "Assets/Patrick/Patrick.obj", patrickEntity.model);
     app->entities.push_back(patrickEntity);
 
     app->numEntities = app->entities.size();
     app->mode = RenderMode::TexturedMesh;
+
+    // MVP Matrices initialization & setup 
+    app->model = glm::mat4(1.0f);
+    app->model = glm::rotate(app->model, glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    app->view = glm::mat4(1.0f);
+
+    app->projection = glm::mat4(1.0f);
+    app->projection = glm::perspective(glm::radians(60.0f), float(app->displaySize.x) / float(app->displaySize.y), 0.1f, 100.0f);
+
+    app->modelLoc = glGetUniformLocation(texturedMeshProgram.handle, "model");
+    app->viewLoc = glGetUniformLocation(texturedMeshProgram.handle, "view");
+    app->projectionLoc = glGetUniformLocation(texturedMeshProgram.handle, "projection");
 }
 
 void ImGuiRender(App* app)
@@ -133,7 +208,8 @@ void ImGuiRender(App* app)
     {
         ImGui::Begin("App Info", &app->debugInfo);
         ImGui::Text("FPS: %f", 1.0f / app->deltaTime);
-        ImGui::Text("frametime: %f", app->deltaTime);
+        ImGui::Text("Frametime: %f", app->deltaTime);
+        ImGui::Text("Time: %f", app->currentTime);
         ImGui::End();
     }
 }
@@ -143,6 +219,25 @@ void Update(App* app)
     // You can handle app->input keyboard/mouse here
     if (app->input.keys[K_ESCAPE] == BUTTON_PRESS)
         app->isRunning = false;
+
+    // Rotate around target
+    //const float radius = 10.0f;
+    //app->camera.position.x = sin(app->currentTime) * radius;
+    //app->camera.position.z = cos(app->currentTime) * radius;
+    //app->view = glm::lookAt(app->camera.position, app->camera.target, glm::vec3(0.0f, 1.0f, 0.0f));
+
+    // Walk around
+    app->view = glm::lookAt(app->camera.position, app->camera.position + app->camera.front, app->camera.up);
+
+    float speed = app->camera.speed * app->deltaTime;
+    if (app->input.keys[K_W] == BUTTON_PRESSED)
+        app->camera.position += speed * app->camera.front;
+    if (app->input.keys[K_S] == BUTTON_PRESSED)
+        app->camera.position -= speed * app->camera.front;
+    if (app->input.keys[K_A] == BUTTON_PRESSED)
+        app->camera.position -= glm::normalize(glm::cross(app->camera.front, app->camera.up)) * speed;
+    if (app->input.keys[K_D] == BUTTON_PRESSED)
+        app->camera.position += glm::normalize(glm::cross(app->camera.front, app->camera.up)) * speed;
 
     for (u32 i = 0; i < app->shaderPrograms.size(); ++i)
     {
@@ -155,8 +250,10 @@ void Update(App* app)
             const char* shaderProgramName = shaderProgram.programName.c_str();
             shaderProgram.handle = CreateShaderProgram(shaderProgramSrc, shaderProgramName);
             shaderProgram.lastWriteTimestamp = currentTimestamp;
-            app->programUniformTexture = glGetUniformLocation(shaderProgram.handle, "u_Texture");
-            InputShaderLayout(shaderProgram);
+            //app->meshTextureLocation = glGetUniformLocation(shaderProgram.handle, "u_Texture");
+            //shaderProgram.vertexLayout.attributes.clear();
+            //shaderProgram.vertexLayout.attributes.shrink_to_fit();
+            //InputShaderLayout(shaderProgram);
         }
     }
 }
@@ -168,14 +265,48 @@ void Render(App* app)
 
     switch (app->mode)
     {
+    case RenderMode::TexturedMesh:
+    {
+        ShaderProgram& texturedMeshProgram = app->shaderPrograms[app->meshProgramID];
+        glUseProgram(texturedMeshProgram.handle);
+
+        for (int i = 0; i < app->numEntities; ++i)
+        {
+            u32 numMeshes = app->entities[i].model.meshes.size();
+            for (u32 meshIndex = 0; meshIndex < numMeshes; ++meshIndex)
+            {
+                u32 vao = FindVAO(app->entities[i].model, meshIndex, texturedMeshProgram);
+                glBindVertexArray(vao);
+
+                u32 meshMaterialID = app->entities[i].model.materialIDs[meshIndex];
+                Material& meshMaterial = app->materials[meshMaterialID];
+
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
+                glUniform1i(app->meshTextureLocation, 0);
+
+                glUniformMatrix4fv(app->modelLoc, 1, GL_FALSE, glm::value_ptr(app->model));
+                glUniformMatrix4fv(app->viewLoc, 1, GL_FALSE, glm::value_ptr(app->view));
+                glUniformMatrix4fv(app->projectionLoc, 1, GL_FALSE, glm::value_ptr(app->projection));
+
+                Mesh& mesh = app->entities[i].model.meshes[meshIndex];
+                glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.indexOffset);
+
+                glBindVertexArray(0);
+            }
+        }
+        glUseProgram(0);
+    }
+    break;
+
     case RenderMode::TexturedQuad:
     {
-        ShaderProgram& programTexturedQuad = app->shaderPrograms[app->texturedQuadProgramID];
+        ShaderProgram& programTexturedQuad = app->shaderPrograms[app->quadProgramID];
         glUseProgram(programTexturedQuad.handle);
 
         glBindVertexArray(app->vao.handle);
 
-        glUniform1i(app->programUniformTexture, 0);
+        glUniform1i(app->quadTextureLocation, 0);
         glActiveTexture(GL_TEXTURE0);
         GLuint textureHandle = app->textures[app->diceTexIdx].handle;
         glBindTexture(GL_TEXTURE_2D, textureHandle);
@@ -184,18 +315,6 @@ void Render(App* app)
 
         glBindVertexArray(0);
         glUseProgram(0);
-    }
-    break;
-
-    case RenderMode::TexturedMesh:
-    {
-        ShaderProgram& texturedMeshProgram = app->shaderPrograms[app->texturedMeshProgramID];
-        glUseProgram(texturedMeshProgram.handle);
-
-        for (int i = 0; i < app->numEntities; ++i)
-        {
-            app->entities[i]->Render(texturedMeshProgram, app->materials, app->textures, app->programUniformTexture);
-        }
     }
     break;
 

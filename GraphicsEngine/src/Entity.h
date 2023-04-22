@@ -47,19 +47,10 @@ struct Material
     u32 bumpTextureID;
 };
 
-class Entity
+struct Entity
 {
-public:
-    Entity();
-    Entity(const std::string& name);
-    ~Entity();
-
-    void Render(const ShaderProgram& shaderProgram, std::vector<Material>& materials, std::vector<Texture>& textures, u32 programUniformTexture);
-
-public:
     Model model;
     u32 modelID;
 
-private:
-    std::string m_Name;
+    //ShaderProgram* shader;
 };

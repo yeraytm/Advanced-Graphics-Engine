@@ -15,13 +15,15 @@ layout(location = 2) in vec2 aTexCoord;
 
 out vec2 TexCoord;
 
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
+
 void main()
 {
 	TexCoord = aTexCoord;
 
-	float clippingScale = 5.0;
-	gl_Position = vec4(aPosition, clippingScale);
-	gl_Position.z = -gl_Position.z;
+	gl_Position = projection * view * model * vec4(aPosition, 1.0);
 }
 
 #elif defined(FRAGMENT) ///////////////////////////////////////////////

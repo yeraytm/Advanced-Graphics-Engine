@@ -88,6 +88,9 @@ u32 LoadShaderProgram(std::vector<ShaderProgram>& shaderPrograms, const char* fi
     program.filepath = filepath;
     program.programName = programName;
     program.lastWriteTimestamp = GetFileLastWriteTimestamp(filepath);
+
+    InputShaderLayout(program);
+
     shaderPrograms.push_back(program);
 
     return shaderPrograms.size() - 1;
@@ -95,8 +98,6 @@ u32 LoadShaderProgram(std::vector<ShaderProgram>& shaderPrograms, const char* fi
 
 void InputShaderLayout(ShaderProgram& shaderProgram)
 {
-    shaderProgram.vertexLayout.attributes.clear();
-
     char* attributeName;
     GLint activeAttributes, attributeNameMaxLength;
     glGetProgramiv(shaderProgram.handle, GL_ACTIVE_ATTRIBUTES, &activeAttributes);

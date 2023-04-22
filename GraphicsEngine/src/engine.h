@@ -27,10 +27,20 @@ struct OpenGLState
     int numExtensions;
 };
 
+struct Camera
+{
+    glm::vec3 position;
+    glm::vec3 front;
+    glm::vec3 up;
+    glm::vec3 target;
+    float speed;
+};
+
 struct App
 {
     // Loop
     float deltaTime;
+    f64 currentTime;
     bool isRunning;
 
     // Input
@@ -42,8 +52,10 @@ struct App
 
     glm::ivec2 displaySize;
 
+    Camera camera;
+
     u32 numEntities;
-    std::vector<Entity*> entities;
+    std::vector<Entity> entities;
 
     std::vector<Model> models;
     std::vector<Texture> textures;
@@ -51,8 +63,23 @@ struct App
     std::vector<ShaderProgram> shaderPrograms;
 
     // Program indices
-    u32 texturedQuadProgramID;
-    u32 texturedMeshProgramID;
+    u32 quadProgramID;
+    u32 meshProgramID;
+
+    // Location of the texture uniform in the textured quad shader
+    u32 quadTextureLocation;
+    // Location of the texture uniform in the textured mesh shader
+    u32 meshTextureLocation;
+
+    // Mode
+    RenderMode mode;
+
+    glm::mat4 model;
+    int modelLoc;
+    glm::mat4 view;
+    int viewLoc;
+    glm::mat4 projection;
+    int projectionLoc;
 
     // Texture indices
     u32 diceTexIdx;
@@ -61,17 +88,11 @@ struct App
     u32 normalTexIdx;
     u32 magentaTexIdx;
 
-    // Mode
-    RenderMode mode;
-
     // Embedded geometry (in-editor simple meshes such as
     // a screen filling quad, a cube, a sphere...)
-    u32 VBO;
-    u32 EBO;
-
-    // Location of the texture uniform in the textured quad shader
-    u32 programUniformTexture;
-
+    //u32 VBO;
+    //u32 EBO;
+    
     // VAO object to link our screen filling quad with our textured quad shader
     VAO vao;
 };
