@@ -233,7 +233,7 @@ void Update(App* app)
     //app->camera.position.z = cos(app->currentTime) * radius;
     //app->view = glm::lookAt(app->camera.position, app->camera.target, glm::vec3(0.0f, 1.0f, 0.0f));
 
-    // Camera Rotation
+    // Camera Rotation (Look Around)
     app->camera.yaw = glm::mod(app->camera.yaw + app->input.mouseDelta.x * app->camera.sensitivity, 360.0f); // Constrain yaw to only use values between 0-360 as float precision could be lost
     app->camera.pitch -= app->input.mouseDelta.y * app->camera.sensitivity;
 
