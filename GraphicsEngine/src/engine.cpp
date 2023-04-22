@@ -69,9 +69,6 @@ u32 FindVAO(Model& model, u32 meshIndex, const ShaderProgram& shaderProgram)
 
 void Init(App* app)
 {
-    app->input.mousePos.x = float(app->displaySize.x / 2);
-    app->input.mousePos.y = float(app->displaySize.y / 2);
-
     app->debugInfo = false;
     app->openGLStatus = false;
 

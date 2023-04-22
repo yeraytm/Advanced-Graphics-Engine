@@ -32,6 +32,8 @@
 u8* GlobalFrameArenaMemory = NULL;
 u32 GlobalFrameArenaHead = 0;
 
+bool firstIt = true;
+
 void OnGlfwError(int errorCode, const char* errorMessage)
 {
     fprintf(stderr, "glfw failed with error %d: %s\n", errorCode, errorMessage);
@@ -40,6 +42,14 @@ void OnGlfwError(int errorCode, const char* errorMessage)
 void OnGlfwMouseMoveEvent(GLFWwindow* window, double xpos, double ypos)
 {
     App* app = (App*)glfwGetWindowUserPointer(window);
+
+    if (firstIt)
+    {
+        app->input.mousePos.x = xpos;
+        app->input.mousePos.y = ypos;
+        firstIt = false;
+    }
+
     app->input.mouseDelta.x = xpos - app->input.mousePos.x;
     app->input.mouseDelta.y = ypos - app->input.mousePos.y;
     app->input.mousePos.x = xpos;
