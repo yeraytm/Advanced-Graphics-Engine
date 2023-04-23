@@ -54,6 +54,8 @@ void OnGlfwMouseMoveEvent(GLFWwindow* window, double xpos, double ypos)
     app->input.mouseDelta.y = ypos - app->input.mousePos.y;
     app->input.mousePos.x = xpos;
     app->input.mousePos.y = ypos;
+
+    app->camera.ProcessMouse(app->input.mouseDelta);
 }
 
 void OnGlfwMouseEvent(GLFWwindow* window, int button, int event, int modifiers)
@@ -66,10 +68,10 @@ void OnGlfwMouseEvent(GLFWwindow* window, int button, int event, int modifiers)
         switch (button)
         {
         case GLFW_MOUSE_BUTTON_RIGHT:
-            app->input.mouseButtons[RIGHT] = BUTTON_PRESS;
+            app->input.mouseButtons[MOUSE_RIGHT] = BUTTON_PRESS;
             break;
         case GLFW_MOUSE_BUTTON_LEFT:
-            app->input.mouseButtons[LEFT] = BUTTON_PRESS;
+            app->input.mouseButtons[MOUSE_LEFT] = BUTTON_PRESS;
             break;
         }
         break;
@@ -77,10 +79,10 @@ void OnGlfwMouseEvent(GLFWwindow* window, int button, int event, int modifiers)
         switch (button)
         {
         case GLFW_MOUSE_BUTTON_RIGHT:
-            app->input.mouseButtons[RIGHT] = BUTTON_RELEASE;
+            app->input.mouseButtons[MOUSE_RIGHT] = BUTTON_RELEASE;
             break;
         case GLFW_MOUSE_BUTTON_LEFT:
-            app->input.mouseButtons[LEFT] = BUTTON_RELEASE;
+            app->input.mouseButtons[MOUSE_LEFT] = BUTTON_RELEASE;
             break;
         }
         break;

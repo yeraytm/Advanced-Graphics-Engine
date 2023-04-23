@@ -47,10 +47,18 @@ struct Material
     u32 bumpTextureID;
 };
 
-struct Entity
+class Entity
 {
+public:
+    Entity();
+    Entity(glm::vec3 position);
+    ~Entity();
+
+public:
     Model model;
     u32 modelID;
+
+    glm::vec3 position;
 
     //ShaderProgram* shader;
 };

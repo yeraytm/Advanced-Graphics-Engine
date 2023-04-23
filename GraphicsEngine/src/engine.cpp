@@ -71,6 +71,7 @@ void Init(App* app)
 {
     app->debugInfo = false;
     app->openGLStatus = false;
+    app->sceneInfo = false;
 
     app->glState.version = "Version: " + std::string((const char*)glGetString(GL_VERSION));
     app->glState.renderer = "Renderer: " + std::string((const char*)glGetString(GL_RENDERER));
@@ -84,15 +85,7 @@ void Init(App* app)
         app->glState.extensions.emplace_back((const char*)glGetStringi(GL_EXTENSIONS, GLuint(i)));
     }
 
-    app->camera.position = glm::vec3(0.0f, 0.0f, 5.0f);
-    app->camera.front = glm::vec3(0.0f, 0.0f, -1.0f);
-    app->camera.up = glm::vec3(0.0f, 1.0f, 0.0f);
-
-    app->camera.speed = 1.5f;
-    app->camera.sensitivity = 0.1f;
-
-    app->camera.yaw = -90.0f;
-    app->camera.pitch = 0.0f;
+    app->camera = Camera(glm::vec3(0.0f, 0.0f, 5.0f));
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
@@ -152,25 +145,21 @@ void Init(App* app)
     ShaderProgram& texturedMeshProgram = app->shaderPrograms[app->meshProgramID];
     app->meshTextureLocation = glGetUniformLocation(texturedMeshProgram.handle, "u_Texture");
 
-    Entity patrickEntity = Entity();
+    // Projection Matrix initialization & setup
+    app->projection = glm::mat4(1.0f);
+    app->projection = glm::perspective(glm::radians(60.0f), float(app->displaySize.x) / float(app->displaySize.y), 0.1f, 100.0f);
+
+    // MVP Uniform locations
+    app->modelLoc = glGetUniformLocation(texturedMeshProgram.handle, "model");
+    app->viewLoc = glGetUniformLocation(texturedMeshProgram.handle, "view");
+    app->projectionLoc = glGetUniformLocation(texturedMeshProgram.handle, "projection");
+
+    Entity patrickEntity = Entity(glm::vec3(0.0f));
     patrickEntity.modelID = LoadModel(app, "Assets/Patrick/Patrick.obj", patrickEntity.model);
     app->entities.push_back(patrickEntity);
 
     app->numEntities = app->entities.size();
     app->mode = RenderMode::TexturedMesh;
-
-    // MVP Matrices initialization & setup 
-    app->model = glm::mat4(1.0f);
-    app->model = glm::rotate(app->model, glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-    app->view = glm::mat4(1.0f);
-
-    app->projection = glm::mat4(1.0f);
-    app->projection = glm::perspective(glm::radians(60.0f), float(app->displaySize.x) / float(app->displaySize.y), 0.1f, 100.0f);
-
-    app->modelLoc = glGetUniformLocation(texturedMeshProgram.handle, "model");
-    app->viewLoc = glGetUniformLocation(texturedMeshProgram.handle, "view");
-    app->projectionLoc = glGetUniformLocation(texturedMeshProgram.handle, "projection");
 }
 
 void ImGuiRender(App* app)
@@ -184,7 +173,12 @@ void ImGuiRender(App* app)
         }
         if (ImGui::BeginMenu("Debug"))
         {
-            ImGui::MenuItem("Info", NULL, &app->debugInfo);
+            ImGui::MenuItem("Debug Info", NULL, &app->debugInfo);
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Scene"))
+        {
+            ImGui::MenuItem("Scene Info", NULL, &app->sceneInfo);
             ImGui::EndMenu();
         }
         ImGui::EndMainMenuBar();
@@ -214,6 +208,31 @@ void ImGuiRender(App* app)
         ImGui::Text("FPS: %f", 1.0f / app->deltaTime);
         ImGui::Text("Frametime: %f", app->deltaTime);
         ImGui::Text("Time: %f", app->currentTime);
+        //ImGui::DragFloat3("Patrick Pos", glm::value_ptr(app->entities[0].position));
+        ImGui::End();
+    }
+
+    if (app->sceneInfo)
+    {
+        ImGui::Begin("Scene Info", &app->sceneInfo);
+
+        ImGui::Text("Camera");
+
+        ImGui::DragFloat3("Position", glm::value_ptr(app->camera.position));
+        glm::vec2 yawPitch = glm::vec2(app->camera.yaw, app->camera.pitch);
+        ImGui::DragFloat2("Yaw / Pitch", glm::value_ptr(yawPitch));
+
+        /*
+        ImGui::Separator();
+
+        ImGui::Text("Entities");
+        for (int i = 0; i < app->numEntities; ++i)
+        {
+            std::string label = "Entity " + std::string(i + " Position");
+            ImGui::DragFloat3(label.c_str(), glm::value_ptr(app->entities[i].position));
+        }
+        */
+        
         ImGui::End();
     }
 }
@@ -224,39 +243,20 @@ void Update(App* app)
     if (app->input.keys[K_ESCAPE] == BUTTON_PRESS)
         app->isRunning = false;
 
-    // Rotate around target
+    if (app->input.keys[K_W] == BUTTON_PRESSED)
+        app->camera.ProcessKeyboard(CAMERA_FORWARD, app->deltaTime);
+    if (app->input.keys[K_S] == BUTTON_PRESSED)
+        app->camera.ProcessKeyboard(CAMERA_BACKWARD, app->deltaTime);
+    if (app->input.keys[K_A] == BUTTON_PRESSED)
+        app->camera.ProcessKeyboard(CAMERA_LEFT, app->deltaTime);
+    if (app->input.keys[K_D] == BUTTON_PRESSED)
+        app->camera.ProcessKeyboard(CAMERA_RIGHT, app->deltaTime);
+
+    // Rotate Camera around target
     //const float radius = 10.0f;
     //app->camera.position.x = sin(app->currentTime) * radius;
     //app->camera.position.z = cos(app->currentTime) * radius;
     //app->view = glm::lookAt(app->camera.position, app->camera.target, glm::vec3(0.0f, 1.0f, 0.0f));
-
-    // Camera Rotation (Look Around)
-    app->camera.yaw = glm::mod(app->camera.yaw + app->input.mouseDelta.x * app->camera.sensitivity, 360.0f); // Constrain yaw to only use values between 0-360 as float precision could be lost
-    app->camera.pitch -= app->input.mouseDelta.y * app->camera.sensitivity;
-
-    if (app->camera.pitch > 89.0f)
-        app->camera.pitch = 89.0f;
-    if (app->camera.pitch < -89.0f)
-        app->camera.pitch = -89.0f;
-
-    app->camera.front.x = glm::cos(glm::radians(app->camera.yaw)) * glm::cos(glm::radians(app->camera.pitch));
-    app->camera.front.y = glm::sin(glm::radians(app->camera.pitch));
-    app->camera.front.z = glm::sin(glm::radians(app->camera.yaw)) * glm::cos(glm::radians(app->camera.pitch));
-
-    app->camera.front = glm::normalize(app->camera.front);
-
-    // Camera Movement (Walk Around)
-    float speed = app->camera.speed * app->deltaTime;
-    if (app->input.keys[K_W] == BUTTON_PRESSED)
-        app->camera.position += speed * app->camera.front;
-    if (app->input.keys[K_S] == BUTTON_PRESSED)
-        app->camera.position -= speed * app->camera.front;
-    if (app->input.keys[K_A] == BUTTON_PRESSED)
-        app->camera.position -= glm::normalize(glm::cross(app->camera.front, app->camera.up)) * speed;
-    if (app->input.keys[K_D] == BUTTON_PRESSED)
-        app->camera.position += glm::normalize(glm::cross(app->camera.front, app->camera.up)) * speed;
-
-    app->view = glm::lookAt(app->camera.position, app->camera.position + app->camera.front, app->camera.up);
 
     for (u32 i = 0; i < app->shaderPrograms.size(); ++i)
     {
@@ -304,8 +304,11 @@ void Render(App* app)
                 glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
                 glUniform1i(app->meshTextureLocation, 0);
 
-                glUniformMatrix4fv(app->modelLoc, 1, GL_FALSE, glm::value_ptr(app->model));
-                glUniformMatrix4fv(app->viewLoc, 1, GL_FALSE, glm::value_ptr(app->view));
+                glm::mat4 model = glm::mat4(1.0f);
+                model = glm::translate(model, app->entities[i].position);
+
+                glUniformMatrix4fv(app->modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+                glUniformMatrix4fv(app->viewLoc, 1, GL_FALSE, glm::value_ptr(app->camera.GetViewMatrix()));
                 glUniformMatrix4fv(app->projectionLoc, 1, GL_FALSE, glm::value_ptr(app->projection));
 
                 Mesh& mesh = app->entities[i].model.meshes[meshIndex];

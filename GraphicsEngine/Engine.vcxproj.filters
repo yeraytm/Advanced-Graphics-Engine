@@ -26,6 +26,7 @@
     <ClCompile Include="src\Entity.cpp" />
     <ClCompile Include="src\Shader.cpp" />
     <ClCompile Include="src\Texture.cpp" />
+    <ClCompile Include="src\Camera.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Layouts.h">
@@ -338,6 +339,7 @@
     <ClInclude Include="src\Entity.h" />
     <ClInclude Include="src\Shader.h" />
     <ClInclude Include="src\Texture.h" />
+    <ClInclude Include="src\Camera.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source">

@@ -29,8 +29,8 @@ typedef double                 f64;
 
 enum MouseButton
 {
-    LEFT,
-    RIGHT,
+    MOUSE_LEFT,
+    MOUSE_RIGHT,
     MOUSE_BUTTON_COUNT
 };
 

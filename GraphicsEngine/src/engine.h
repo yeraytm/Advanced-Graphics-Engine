@@ -9,6 +9,7 @@
 #include "Shader.h"
 #include "Texture.h"
 #include "Entity.h"
+#include "Camera.h"
 
 enum class RenderMode
 {
@@ -27,17 +28,6 @@ struct OpenGLState
     int numExtensions;
 };
 
-struct Camera
-{
-    glm::vec3 position;
-    glm::vec3 front;
-    glm::vec3 up;
-    float speed;
-    float sensitivity;
-
-    float yaw, pitch;
-};
-
 struct App
 {
     // Loop
@@ -51,6 +41,7 @@ struct App
     bool debugInfo;
     OpenGLState glState;
     bool openGLStatus;
+    bool sceneInfo;
 
     glm::ivec2 displaySize;
 
@@ -76,11 +67,9 @@ struct App
     // Mode
     RenderMode mode;
 
-    glm::mat4 model;
-    int modelLoc;
-    glm::mat4 view;
-    int viewLoc;
     glm::mat4 projection;
+    int modelLoc;
+    int viewLoc;
     int projectionLoc;
 
     // Texture indices
