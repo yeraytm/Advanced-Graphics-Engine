@@ -13,30 +13,30 @@ layout(location = 2) in vec2 aTexCoord;
 //layout(location = 3) in vec3 aTangent;
 //layout(location = 4) in vec3 aBitangent;
 
-out vec2 TexCoord;
+out vec2 uTexCoord;
 
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
+uniform mat4 uModel;
+uniform mat4 uView;
+uniform mat4 uProjection;
 
 void main()
 {
-	TexCoord = aTexCoord;
+	uTexCoord = aTexCoord;
 
-	gl_Position = projection * view * model * vec4(aPosition, 1.0);
+	gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.0);
 }
 
 #elif defined(FRAGMENT) ///////////////////////////////////////////////
 
 layout(location = 0) out vec4 FragColor;
 
-in vec2 TexCoord;
+in vec2 uTexCoord;
 
-uniform sampler2D u_Texture;
+uniform sampler2D uTexture;
 
 void main()
 {
-	vec4 texColor = texture(u_Texture, TexCoord);
+	vec4 texColor = texture(uTexture, uTexCoord);
 	FragColor = texColor;
 }
 

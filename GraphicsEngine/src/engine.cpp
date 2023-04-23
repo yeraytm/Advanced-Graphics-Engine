@@ -143,16 +143,29 @@ void Init(App* app)
 
     app->meshProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/MeshShader.glsl", "TEXTURED_MESH");
     ShaderProgram& texturedMeshProgram = app->shaderPrograms[app->meshProgramID];
-    app->meshTextureLocation = glGetUniformLocation(texturedMeshProgram.handle, "u_Texture");
+    app->meshTextureLocation = glGetUniformLocation(texturedMeshProgram.handle, "uTexture");
 
     // Projection Matrix initialization & setup
     app->projection = glm::mat4(1.0f);
     app->projection = glm::perspective(glm::radians(60.0f), float(app->displaySize.x) / float(app->displaySize.y), 0.1f, 100.0f);
 
     // MVP Uniform locations
-    app->modelLoc = glGetUniformLocation(texturedMeshProgram.handle, "model");
-    app->viewLoc = glGetUniformLocation(texturedMeshProgram.handle, "view");
-    app->projectionLoc = glGetUniformLocation(texturedMeshProgram.handle, "projection");
+    app->modelLoc = glGetUniformLocation(texturedMeshProgram.handle, "uModel");
+    app->viewLoc = glGetUniformLocation(texturedMeshProgram.handle, "uView");
+    app->projectionLoc = glGetUniformLocation(texturedMeshProgram.handle, "uProjection");
+
+    /*
+    int maxUniformBlockSize;
+    int uniformBufferOffsetAlignment;
+    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxUniformBlockSize);
+    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &maxUniformBlockSize);
+
+    GLuint bufferHandle;
+    glGenBuffers(1, &bufferHandle);
+    glBindBuffer(GL_UNIFORM_BUFFER, bufferHandle);
+    glBufferData(GL_UNIFORM_BUFFER, maxUniformBlockSize, NULL, GL_STREAM_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    */
 
     Entity patrickEntity = Entity(glm::vec3(0.0f));
     patrickEntity.modelID = LoadModel(app, "Assets/Patrick/Patrick.obj", patrickEntity.model);
@@ -252,12 +265,6 @@ void Update(App* app)
     if (app->input.keys[K_D] == BUTTON_PRESSED)
         app->camera.ProcessKeyboard(CAMERA_RIGHT, app->deltaTime);
 
-    // Rotate Camera around target
-    //const float radius = 10.0f;
-    //app->camera.position.x = sin(app->currentTime) * radius;
-    //app->camera.position.z = cos(app->currentTime) * radius;
-    //app->view = glm::lookAt(app->camera.position, app->camera.target, glm::vec3(0.0f, 1.0f, 0.0f));
-
     for (u32 i = 0; i < app->shaderPrograms.size(); ++i)
     {
         ShaderProgram& shaderProgram = app->shaderPrograms[i];
@@ -304,10 +311,7 @@ void Render(App* app)
                 glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
                 glUniform1i(app->meshTextureLocation, 0);
 
-                glm::mat4 model = glm::mat4(1.0f);
-                model = glm::translate(model, app->entities[i].position);
-
-                glUniformMatrix4fv(app->modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+                glUniformMatrix4fv(app->modelLoc, 1, GL_FALSE, glm::value_ptr(app->entities[i].modelMatrix));
                 glUniformMatrix4fv(app->viewLoc, 1, GL_FALSE, glm::value_ptr(app->camera.GetViewMatrix()));
                 glUniformMatrix4fv(app->projectionLoc, 1, GL_FALSE, glm::value_ptr(app->projection));
 

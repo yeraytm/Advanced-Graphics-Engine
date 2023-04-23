@@ -72,3 +72,9 @@ glm::mat4 Camera::GetViewMatrix() const
 {
 	return glm::lookAt(position, position + front, up);
 }
+
+// Rotate Camera around target
+//const float radius = 10.0f;
+//position.x = sin(app->currentTime) * radius;
+//position.z = cos(app->currentTime) * radius;
+//view = glm::lookAt(position, target, glm::vec3(0.0f, 1.0f, 0.0f));

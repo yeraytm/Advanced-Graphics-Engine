@@ -50,8 +50,7 @@ struct Material
 class Entity
 {
 public:
-    Entity();
-    Entity(glm::vec3 position);
+    Entity(glm::vec3 position = glm::vec3(0.0f));
     ~Entity();
 
 public:
@@ -60,5 +59,6 @@ public:
 
     glm::vec3 position;
 
+    glm::mat4 modelMatrix;
     //ShaderProgram* shader;
 };
