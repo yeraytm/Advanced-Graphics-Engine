@@ -2,7 +2,7 @@
 
 #include "Platform.h"
 
-enum CameraDirection
+enum class CameraDirection
 {
     CAMERA_FORWARD,
     CAMERA_BACKWARD,

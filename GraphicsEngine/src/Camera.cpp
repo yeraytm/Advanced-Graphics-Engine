@@ -53,16 +53,16 @@ void Camera::ProcessKeyboard(CameraDirection direction, float dt)
 	float velocity = speed * dt;
 	switch (direction)
 	{
-	case CAMERA_FORWARD:
+	case CameraDirection::CAMERA_FORWARD:
 		position += front * velocity;
 		break;
-	case CAMERA_BACKWARD:
+	case CameraDirection::CAMERA_BACKWARD:
 		position -= front * velocity;
 		break;
-	case CAMERA_LEFT:
+	case CameraDirection::CAMERA_LEFT:
 		position -= right * velocity;
 		break;
-	case CAMERA_RIGHT:
+	case CameraDirection::CAMERA_RIGHT:
 		position += right * velocity;
 		break;
 	}

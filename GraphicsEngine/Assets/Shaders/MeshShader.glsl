@@ -15,15 +15,22 @@ layout(location = 2) in vec2 aTexCoord;
 
 out vec2 uTexCoord;
 
-uniform mat4 uModel;
-uniform mat4 uView;
-uniform mat4 uProjection;
+//uniform mat4 uModel;
+//uniform mat4 uView;
+//uniform mat4 uProjection;
+
+layout(binding = 1, std140) uniform Matrices
+{
+	mat4 uModel;
+	mat4 uMVP;
+};
 
 void main()
 {
 	uTexCoord = aTexCoord;
 
-	gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.0);
+	gl_Position = uMVP * vec4(aPosition, 1.0);
+	//gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.0);
 }
 
 #elif defined(FRAGMENT) ///////////////////////////////////////////////

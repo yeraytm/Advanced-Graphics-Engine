@@ -85,55 +85,85 @@ void Init(App* app)
         app->glState.extensions.emplace_back((const char*)glGetStringi(GL_EXTENSIONS, GLuint(i)));
     }
 
-    app->camera = Camera(glm::vec3(0.0f, 0.0f, 5.0f));
-
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    
+
+    app->meshProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/MeshShader.glsl", "TEXTURED_MESH");
+    ShaderProgram& texturedMeshProgram = app->shaderPrograms[app->meshProgramID];
+    app->meshTextureLocation = glGetUniformLocation(texturedMeshProgram.handle, "uTexture");
+
+    // MVP Uniform locations
+    app->modelLoc = glGetUniformLocation(texturedMeshProgram.handle, "uModel");
+    app->viewLoc = glGetUniformLocation(texturedMeshProgram.handle, "uView");
+    app->projectionLoc = glGetUniformLocation(texturedMeshProgram.handle, "uProjection");
+
+    int maxUniformBlockSize;
+    int uniformBufferOffsetAlignment;
+    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxUniformBlockSize);
+    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &uniformBufferOffsetAlignment);
+
+    glGenBuffers(1, &app->UBO);
+    glBindBuffer(GL_UNIFORM_BUFFER, app->UBO);
+    glBufferData(GL_UNIFORM_BUFFER, maxUniformBlockSize, NULL, GL_STREAM_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+
+    // Camera setup
+    app->camera = Camera(glm::vec3(0.0f, 0.0f, 5.0f));
+
+    // Projection Matrix initialization & setup
+    app->projection = glm::mat4(1.0f);
+    app->projection = glm::perspective(glm::radians(45.0f), float(app->displaySize.x) / float(app->displaySize.y), 0.1f, 100.0f);
+
+    Entity patrickEntity = Entity(glm::vec3(0.0f));
+    patrickEntity.modelID = LoadModel(app, "Assets/Patrick/Patrick.obj", patrickEntity.model);
+    app->entities.push_back(patrickEntity);
+
     /*
     app->models.push_back(Model{});
     Model& model = app->models.back();
     u32 modelID = (u32)app->models.size() - 1u;
-
+    
     const Vertex vertices[] = {
         { vec3(-0.5, -0.5, 0.0), vec2(0.0, 0.0) },
         { vec3(0.5, -0.5, 0.0), vec2(1.0, 0.0) },
         { vec3(0.5,  0.5, 0.0), vec2(1.0, 1.0) },
         { vec3(-0.5,  0.5, 0.0), vec2(0.0, 1.0) }
     };
-
+    
     const u32 indices[] = {
         0, 1, 2,
         0, 2, 3
     };
-
+    
     glGenVertexArrays(1, &app->vao.handle);
     glGenBuffers(1, &app->VBO);
     glGenBuffers(1, &app->EBO);
-
+    
     glBindVertexArray(app->vao.handle);
-
+    
     glBindBuffer(GL_ARRAY_BUFFER, app->VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
+    
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
+    
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
     glEnableVertexAttribArray(0);
-
+    
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(sizeof(vec3)));
     glEnableVertexAttribArray(1);
-
+    
     //glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
+    
     app->texturedQuadProgramID = LoadShaderProgram(app, "Assets/Shaders/QuadShader.glsl", "TEXTURED_QUAD");
     ShaderProgram& texturedQuadProgram = app->shaderPrograms[app->texturedQuadProgramID];
     app->programUniformTexture = glGetUniformLocation(texturedQuadProgram.handle, "u_Texture");
-
+    
     app->diceTexIdx = LoadTexture2D(app, "Assets/dice.png");
     app->whiteTexIdx = LoadTexture2D(app, "Assets/color_white.png");
     app->blackTexIdx = LoadTexture2D(app, "Assets/color_black.png");
@@ -141,40 +171,8 @@ void Init(App* app)
     app->magentaTexIdx = LoadTexture2D(app, "Assets/color_magenta.png");
     */
 
-    app->meshProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/MeshShader.glsl", "TEXTURED_MESH");
-    ShaderProgram& texturedMeshProgram = app->shaderPrograms[app->meshProgramID];
-    app->meshTextureLocation = glGetUniformLocation(texturedMeshProgram.handle, "uTexture");
-
-    // Projection Matrix initialization & setup
-    app->projection = glm::mat4(1.0f);
-    app->projection = glm::perspective(glm::radians(45.0f), float(app->displaySize.x) / float(app->displaySize.y), 0.1f, 100.0f);
-
-    // MVP Uniform locations
-    app->modelLoc = glGetUniformLocation(texturedMeshProgram.handle, "uModel");
-    app->viewLoc = glGetUniformLocation(texturedMeshProgram.handle, "uView");
-    app->projectionLoc = glGetUniformLocation(texturedMeshProgram.handle, "uProjection");
-
-    /*
-    int maxUniformBlockSize;
-    int uniformBufferOffsetAlignment;
-    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxUniformBlockSize);
-    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &maxUniformBlockSize);
-
-    GLuint bufferHandle;
-    glGenBuffers(1, &bufferHandle);
-    glBindBuffer(GL_UNIFORM_BUFFER, bufferHandle);
-    glBufferData(GL_UNIFORM_BUFFER, maxUniformBlockSize, NULL, GL_STREAM_DRAW);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    */
-
-    Entity patrickEntity = Entity(glm::vec3(0.0f));
-    patrickEntity.modelID = LoadModel(app, "Assets/Patrick/Patrick.obj", patrickEntity.model);
-    app->entities.push_back(patrickEntity);
-
     app->numEntities = app->entities.size();
     app->mode = RenderMode::TexturedMesh;
-
-    glViewport(0, 0, app->displaySize.x, app->displaySize.y);
 }
 
 void ImGuiRender(App* app)
@@ -259,13 +257,13 @@ void Update(App* app)
         app->isRunning = false;
 
     if (app->input.keys[K_W] == BUTTON_PRESSED)
-        app->camera.ProcessKeyboard(CAMERA_FORWARD, app->deltaTime);
+        app->camera.ProcessKeyboard(CameraDirection::CAMERA_FORWARD, app->deltaTime);
     if (app->input.keys[K_S] == BUTTON_PRESSED)
-        app->camera.ProcessKeyboard(CAMERA_BACKWARD, app->deltaTime);
+        app->camera.ProcessKeyboard(CameraDirection::CAMERA_BACKWARD, app->deltaTime);
     if (app->input.keys[K_A] == BUTTON_PRESSED)
-        app->camera.ProcessKeyboard(CAMERA_LEFT, app->deltaTime);
+        app->camera.ProcessKeyboard(CameraDirection::CAMERA_LEFT, app->deltaTime);
     if (app->input.keys[K_D] == BUTTON_PRESSED)
-        app->camera.ProcessKeyboard(CAMERA_RIGHT, app->deltaTime);
+        app->camera.ProcessKeyboard(CameraDirection::CAMERA_RIGHT, app->deltaTime);
 
     for (u32 i = 0; i < app->shaderPrograms.size(); ++i)
     {
@@ -291,14 +289,31 @@ void Render(App* app)
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    switch (app->mode)
-    {
-    case RenderMode::TexturedMesh:
-    {
-        ShaderProgram& texturedMeshProgram = app->shaderPrograms[app->meshProgramID];
-        glUseProgram(texturedMeshProgram.handle);
+    glBindBuffer(GL_UNIFORM_BUFFER, app->UBO);
+    u8* bufferData = (u8*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+    u32 bufferHead = 0;
 
-        for (int i = 0; i < app->numEntities; ++i)
+    memcpy(bufferData + bufferHead, glm::value_ptr(app->entities[0].modelMatrix), sizeof(glm::mat4));
+    bufferHead += sizeof(glm::mat4);
+
+    glm::mat4 MVP = app->projection * app->camera.GetViewMatrix() * app->entities[0].modelMatrix;
+    memcpy(bufferData + bufferHead, glm::value_ptr(MVP), sizeof(glm::mat4));
+    bufferHead += sizeof(glm::mat4);
+
+    glUnmapBuffer(GL_UNIFORM_BUFFER);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    u32 blockSize = sizeof(glm::mat4) * 2;
+    glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->UBO, 0, blockSize);
+
+    ShaderProgram& texturedMeshProgram = app->shaderPrograms[app->meshProgramID];
+    glUseProgram(texturedMeshProgram.handle);
+
+    for (u32 i = 0; i < app->numEntities; ++i)
+    {
+        switch (app->mode)
+        {
+        case RenderMode::TexturedMesh:
         {
             u32 numMeshes = app->entities[i].model.meshes.size();
             for (u32 meshIndex = 0; meshIndex < numMeshes; ++meshIndex)
@@ -323,33 +338,33 @@ void Render(App* app)
                 glBindVertexArray(0);
             }
         }
-        glUseProgram(0);
-    }
-    break;
-
-    case RenderMode::TexturedQuad:
-    {
-        ShaderProgram& programTexturedQuad = app->shaderPrograms[app->quadProgramID];
-        glUseProgram(programTexturedQuad.handle);
-
-        glBindVertexArray(app->vao.handle);
-
-        glUniform1i(app->quadTextureLocation, 0);
-        glActiveTexture(GL_TEXTURE0);
-        GLuint textureHandle = app->textures[app->diceTexIdx].handle;
-        glBindTexture(GL_TEXTURE_2D, textureHandle);
-
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
-
-        glBindVertexArray(0);
-        glUseProgram(0);
-    }
-    break;
-
-    case RenderMode::Count:
         break;
 
-    default:
+        case RenderMode::TexturedQuad:
+        {
+            ShaderProgram& programTexturedQuad = app->shaderPrograms[app->quadProgramID];
+            glUseProgram(programTexturedQuad.handle);
+
+            glBindVertexArray(app->vao.handle);
+
+            glUniform1i(app->quadTextureLocation, 0);
+            glActiveTexture(GL_TEXTURE0);
+            GLuint textureHandle = app->textures[app->diceTexIdx].handle;
+            glBindTexture(GL_TEXTURE_2D, textureHandle);
+
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+
+            glBindVertexArray(0);
+            glUseProgram(0);
+        }
         break;
+
+        case RenderMode::Count:
+            break;
+
+        default:
+            break;
+        }
     }
+    glUseProgram(0);
 }

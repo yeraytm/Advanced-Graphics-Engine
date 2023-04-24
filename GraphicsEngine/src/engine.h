@@ -72,6 +72,8 @@ struct App
     int viewLoc;
     int projectionLoc;
 
+    u32 UBO;
+
     // Texture indices
     u32 diceTexIdx;
     u32 whiteTexIdx;

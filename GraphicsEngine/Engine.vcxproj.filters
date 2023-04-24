@@ -27,6 +27,7 @@
     <ClCompile Include="src\Shader.cpp" />
     <ClCompile Include="src\Texture.cpp" />
     <ClCompile Include="src\Camera.cpp" />
+    <ClCompile Include="src\BufferManagement.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Layouts.h">
@@ -340,6 +341,7 @@
     <ClInclude Include="src\Shader.h" />
     <ClInclude Include="src\Texture.h" />
     <ClInclude Include="src\Camera.h" />
+    <ClInclude Include="src\BufferManagement.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source">

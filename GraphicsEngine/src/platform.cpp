@@ -45,15 +45,15 @@ void OnGlfwMouseMoveEvent(GLFWwindow* window, double xpos, double ypos)
 
     if (firstIt)
     {
-        app->input.mousePos.x = xpos;
-        app->input.mousePos.y = ypos;
+        app->input.mousePos.x = float(xpos);
+        app->input.mousePos.y = float(ypos);
         firstIt = false;
     }
 
-    app->input.mouseDelta.x = xpos - app->input.mousePos.x;
-    app->input.mouseDelta.y = ypos - app->input.mousePos.y;
-    app->input.mousePos.x = xpos;
-    app->input.mousePos.y = ypos;
+    app->input.mouseDelta.x = float(xpos) - app->input.mousePos.x;
+    app->input.mouseDelta.y = float(ypos) - app->input.mousePos.y;
+    app->input.mousePos.x = float(xpos);
+    app->input.mousePos.y = float(ypos);
 
     app->camera.ProcessMouse(app->input.mouseDelta);
 }
