@@ -1,16 +1,7 @@
 #include "BufferManagement.h"
 
+#include "Platform.h"
 #include "glad/glad.h"
-
-bool IsPowerOf2(u32 value)
-{
-    return value && !(value & (value - 1));
-}
-
-u32 Align(u32 value, u32 alignment)
-{
-    return (value + alignment - 1) & ~(alignment - 1);
-}
 
 Buffer CreateBuffer(u32 size, GLenum type, GLenum usage)
 {
@@ -42,6 +33,16 @@ void UnmapBuffer(Buffer& buffer)
 {
     glUnmapBuffer(buffer.type);
     glBindBuffer(buffer.type, 0);
+}
+
+bool IsPowerOf2(u32 value)
+{
+    return value && !(value & (value - 1));
+}
+
+u32 Align(u32 value, u32 alignment)
+{
+    return (value + alignment - 1) & ~(alignment - 1);
 }
 
 void AlignHead(Buffer& buffer, u32 alignment)

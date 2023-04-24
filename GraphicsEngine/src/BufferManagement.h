@@ -1,6 +1,8 @@
 #pragma once
 
-#include "Platform.h"
+typedef unsigned int u32;
+typedef unsigned int GLenum;
+typedef unsigned int GLuint;
 
 #define CreateConstantBuffer(size) CreateBuffer(size, GL_UNIFORM_BUFFER, GL_STREAM_DRAW)
 #define CreateStaticVertexBuffer(size) CreateBuffer(size, GL_ARRAY_BUFFER, GL_STATIC_DRAW)
@@ -13,9 +15,6 @@
 #define PushMat3(buffer, value) PushAlignedData(buffer, value_ptr(value), sizeof(value), sizeof(vec4))
 #define PushMat4(buffer, value) PushAlignedData(buffer, value_ptr(value), sizeof(value), sizeof(vec4))
 
-typedef unsigned int GLenum;
-typedef unsigned int GLuint;
-
 struct Buffer
 {
 	GLuint handle;
@@ -25,10 +24,6 @@ struct Buffer
 	void* data; // Mapped data
 };
 
-bool IsPowerOf2(u32 value);
-
-u32 Align(u32 value, u32 alignment);
-
 Buffer CreateBuffer(u32 size, GLenum type, GLenum usage);
 
 void BindBuffer(const Buffer& buffer);
@@ -36,6 +31,10 @@ void BindBuffer(const Buffer& buffer);
 void MapBuffer(Buffer& buffer, GLenum access);
 
 void UnmapBuffer(Buffer& buffer);
+
+bool IsPowerOf2(u32 value);
+
+u32 Align(u32 value, u32 alignment);
 
 void AlignHead(Buffer& buffer, u32 alignment);
 
