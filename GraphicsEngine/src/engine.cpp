@@ -147,7 +147,7 @@ void Init(App* app)
 
     // Projection Matrix initialization & setup
     app->projection = glm::mat4(1.0f);
-    app->projection = glm::perspective(glm::radians(60.0f), float(app->displaySize.x) / float(app->displaySize.y), 0.1f, 100.0f);
+    app->projection = glm::perspective(glm::radians(45.0f), float(app->displaySize.x) / float(app->displaySize.y), 0.1f, 100.0f);
 
     // MVP Uniform locations
     app->modelLoc = glGetUniformLocation(texturedMeshProgram.handle, "uModel");
@@ -173,6 +173,8 @@ void Init(App* app)
 
     app->numEntities = app->entities.size();
     app->mode = RenderMode::TexturedMesh;
+
+    glViewport(0, 0, app->displaySize.x, app->displaySize.y);
 }
 
 void ImGuiRender(App* app)

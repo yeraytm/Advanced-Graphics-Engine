@@ -70,7 +70,7 @@ void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Model* myModel, u32 b
     bool hasTexCoords = false;
     bool hasTangentSpace = false;
 
-    // process vertices
+    // Process vertices
     for (unsigned int i = 0; i < mesh->mNumVertices; i++)
     {
         myMesh.vertices.push_back(mesh->mVertices[i].x);
@@ -80,7 +80,7 @@ void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Model* myModel, u32 b
         myMesh.vertices.push_back(mesh->mNormals[i].y);
         myMesh.vertices.push_back(mesh->mNormals[i].z);
 
-        if (mesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
+        if (mesh->mTextureCoords[0]) // Does the mesh contain texture coordinates?
         {
             hasTexCoords = true;
             myMesh.vertices.push_back(mesh->mTextureCoords[0][i].x);
@@ -108,7 +108,7 @@ void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Model* myModel, u32 b
         }
     }
 
-    // process indices
+    // Process indices
     for (unsigned int i = 0; i < mesh->mNumFaces; i++)
     {
         aiFace face = mesh->mFaces[i];
@@ -118,10 +118,10 @@ void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Model* myModel, u32 b
         }
     }
 
-    // store the proper (previously proceessed) material for this mesh
+    // Store the proper (previously proceessed) material for this mesh
     meshMaterialIndices.push_back(baseMeshMaterialIndex + mesh->mMaterialIndex);
 
-    // create the vertex format
+    // Create the vertex format
     myMesh.VBLayout.attributes.push_back(VertexBufferAttribute{ 0, 3, 0 });
     myMesh.VBLayout.attributes.push_back(VertexBufferAttribute{ 1, 3, 3 * sizeof(float) });
     myMesh.VBLayout.stride = 6 * sizeof(float);
