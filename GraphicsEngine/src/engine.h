@@ -72,6 +72,7 @@ struct App
     int viewLoc;
     int projectionLoc;
 
+    int uniformBufferOffsetAlignment;
     u32 UBO;
 
     // Texture indices

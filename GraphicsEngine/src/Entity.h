@@ -50,8 +50,11 @@ struct Material
 class Entity
 {
 public:
-    Entity(glm::vec3 position = glm::vec3(0.0f));
+    Entity(glm::vec3 newPosition = glm::vec3(0.0f));
     ~Entity();
+
+    void Translate();
+    //void Roatate();
 
 public:
     Model model;
@@ -60,5 +63,8 @@ public:
     glm::vec3 position;
 
     glm::mat4 modelMatrix;
+
+    u32 localParamOffset;
+    u32 localParamSize;
     //ShaderProgram* shader;
 };

@@ -1,10 +1,15 @@
 #include "Entity.h"
 
-Entity::Entity(glm::vec3 position) : modelID(0), position(position), modelMatrix(glm::mat4(1.0f))
+Entity::Entity(glm::vec3 newPosition) : modelID(0), position(newPosition), modelMatrix(glm::mat4(1.0f)), localParamOffset(0), localParamSize(0)
 {
-	modelMatrix = glm::translate(modelMatrix, position);
+	modelMatrix = glm::translate(modelMatrix, newPosition);
 }
 
 Entity::~Entity()
 {
+}
+
+void Entity::Translate()
+{
+	modelMatrix = glm::translate(modelMatrix, position);
 }

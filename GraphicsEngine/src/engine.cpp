@@ -7,6 +7,7 @@
 
 #include "Engine.h"
 #include "AssimpLoading.h"
+#include "BufferManagement.h"
 
 #include "glad/glad.h"
 #include "imgui-docking/imgui.h"
@@ -94,14 +95,13 @@ void Init(App* app)
     app->meshTextureLocation = glGetUniformLocation(texturedMeshProgram.handle, "uTexture");
 
     // MVP Uniform locations
-    app->modelLoc = glGetUniformLocation(texturedMeshProgram.handle, "uModel");
-    app->viewLoc = glGetUniformLocation(texturedMeshProgram.handle, "uView");
-    app->projectionLoc = glGetUniformLocation(texturedMeshProgram.handle, "uProjection");
+    //app->modelLoc = glGetUniformLocation(texturedMeshProgram.handle, "uModel");
+    //app->viewLoc = glGetUniformLocation(texturedMeshProgram.handle, "uView");
+    //app->projectionLoc = glGetUniformLocation(texturedMeshProgram.handle, "uProjection");
 
     int maxUniformBlockSize;
-    int uniformBufferOffsetAlignment;
     glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxUniformBlockSize);
-    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &uniformBufferOffsetAlignment);
+    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBufferOffsetAlignment);
 
     glGenBuffers(1, &app->UBO);
     glBindBuffer(GL_UNIFORM_BUFFER, app->UBO);
@@ -120,6 +120,14 @@ void Init(App* app)
     Entity patrickEntity = Entity(glm::vec3(0.0f));
     patrickEntity.modelID = LoadModel(app, "Assets/Patrick/Patrick.obj", patrickEntity.model);
     app->entities.push_back(patrickEntity);
+
+    Entity e1 = Entity(glm::vec3(-6.0f, 0.0f, 0.0f));
+    e1.modelID = LoadModel(app, "Assets/Patrick/Patrick.obj", e1.model);
+    app->entities.push_back(e1);
+
+    Entity e2 = Entity(glm::vec3(6.0f, 0.0f, 0.0f));
+    e2.modelID = LoadModel(app, "Assets/Patrick/Patrick.obj", e2.model);
+    app->entities.push_back(e2);
 
     /*
     app->models.push_back(Model{});
@@ -235,16 +243,17 @@ void ImGuiRender(App* app)
         glm::vec2 yawPitch = glm::vec2(app->camera.yaw, app->camera.pitch);
         ImGui::DragFloat2("Yaw / Pitch", glm::value_ptr(yawPitch));
 
-        /*
-        ImGui::Separator();
+        //ImGui::Separator();
 
-        ImGui::Text("Entities");
-        for (int i = 0; i < app->numEntities; ++i)
-        {
-            std::string label = "Entity " + std::string(i + " Position");
-            ImGui::DragFloat3(label.c_str(), glm::value_ptr(app->entities[i].position));
-        }
-        */
+        //ImGui::Text("Entities");
+        //for (int i = 0; i < app->numEntities; ++i)
+        //{
+        //    std::string label = "Entity " + i + std::string(" Position");
+        //    if (ImGui::DragFloat3(label.c_str(), glm::value_ptr(app->entities[i].position)))
+        //    {
+        //        app->entities[i].Translate();
+        //    }
+        //}
         
         ImGui::End();
     }
@@ -264,6 +273,28 @@ void Update(App* app)
         app->camera.ProcessKeyboard(CameraDirection::CAMERA_LEFT, app->deltaTime);
     if (app->input.keys[K_D] == BUTTON_PRESSED)
         app->camera.ProcessKeyboard(CameraDirection::CAMERA_RIGHT, app->deltaTime);
+
+    glBindBuffer(GL_UNIFORM_BUFFER, app->UBO);
+    u8* bufferData = (u8*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+    u32 bufferHead = 0;
+
+    for (u32 i = 0; i < app->numEntities; ++i)
+    {
+        bufferHead = Align(bufferHead, app->uniformBufferOffsetAlignment);
+        app->entities[i].localParamOffset = bufferHead;
+
+        memcpy(bufferData + bufferHead, glm::value_ptr(app->entities[i].modelMatrix), sizeof(glm::mat4));
+        bufferHead += sizeof(glm::mat4);
+
+        glm::mat4 MVP = app->projection * app->camera.GetViewMatrix() * app->entities[i].modelMatrix;
+        memcpy(bufferData + bufferHead, glm::value_ptr(MVP), sizeof(glm::mat4));
+        bufferHead += sizeof(glm::mat4);
+
+        app->entities[i].localParamSize = bufferHead - app->entities[i].localParamOffset;
+    }
+
+    glUnmapBuffer(GL_UNIFORM_BUFFER);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     for (u32 i = 0; i < app->shaderPrograms.size(); ++i)
     {
@@ -289,28 +320,15 @@ void Render(App* app)
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glBindBuffer(GL_UNIFORM_BUFFER, app->UBO);
-    u8* bufferData = (u8*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-    u32 bufferHead = 0;
-
-    memcpy(bufferData + bufferHead, glm::value_ptr(app->entities[0].modelMatrix), sizeof(glm::mat4));
-    bufferHead += sizeof(glm::mat4);
-
-    glm::mat4 MVP = app->projection * app->camera.GetViewMatrix() * app->entities[0].modelMatrix;
-    memcpy(bufferData + bufferHead, glm::value_ptr(MVP), sizeof(glm::mat4));
-    bufferHead += sizeof(glm::mat4);
-
-    glUnmapBuffer(GL_UNIFORM_BUFFER);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-    u32 blockSize = sizeof(glm::mat4) * 2;
-    glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->UBO, 0, blockSize);
+    //
 
     ShaderProgram& texturedMeshProgram = app->shaderPrograms[app->meshProgramID];
     glUseProgram(texturedMeshProgram.handle);
 
     for (u32 i = 0; i < app->numEntities; ++i)
     {
+        glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->UBO, app->entities[i].localParamOffset, app->entities[i].localParamSize);
+
         switch (app->mode)
         {
         case RenderMode::TexturedMesh:
@@ -328,9 +346,9 @@ void Render(App* app)
                 glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
                 glUniform1i(app->meshTextureLocation, 0);
 
-                glUniformMatrix4fv(app->modelLoc, 1, GL_FALSE, glm::value_ptr(app->entities[i].modelMatrix));
-                glUniformMatrix4fv(app->viewLoc, 1, GL_FALSE, glm::value_ptr(app->camera.GetViewMatrix()));
-                glUniformMatrix4fv(app->projectionLoc, 1, GL_FALSE, glm::value_ptr(app->projection));
+                //glUniformMatrix4fv(app->modelLoc, 1, GL_FALSE, glm::value_ptr(app->entities[i].modelMatrix));
+                //glUniformMatrix4fv(app->viewLoc, 1, GL_FALSE, glm::value_ptr(app->camera.GetViewMatrix()));
+                //glUniformMatrix4fv(app->projectionLoc, 1, GL_FALSE, glm::value_ptr(app->projection));
 
                 Mesh& mesh = app->entities[i].model.meshes[meshIndex];
                 glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.indexOffset);
