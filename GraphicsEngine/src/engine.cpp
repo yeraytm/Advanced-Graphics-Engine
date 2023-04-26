@@ -111,7 +111,7 @@ void Init(App* app)
     glViewport(0, 0, app->displaySize.x, app->displaySize.y);
 
     // Camera setup
-    app->camera = Camera(glm::vec3(0.0f, 0.0f, 5.0f));
+    app->camera = Camera(glm::vec3(0.0f, 0.0f, 10.0f));
 
     // Projection Matrix initialization & setup
     app->projection = glm::mat4(1.0f);
@@ -245,15 +245,15 @@ void ImGuiRender(App* app)
 
         //ImGui::Separator();
 
-        //ImGui::Text("Entities");
-        //for (int i = 0; i < app->numEntities; ++i)
-        //{
-        //    std::string label = "Entity " + i + std::string(" Position");
-        //    if (ImGui::DragFloat3(label.c_str(), glm::value_ptr(app->entities[i].position)))
-        //    {
-        //        app->entities[i].Translate();
-        //    }
-        //}
+        ImGui::Text("Entities");
+        for (int i = 0; i < app->numEntities; ++i)
+        {
+            std::string label = "Entity " + i + std::string(" Position");
+            if (ImGui::DragFloat3(label.c_str(), glm::value_ptr(app->entities[i].position), 0.1f))
+            {
+                app->entities[i].Translate();
+            }
+        }
         
         ImGui::End();
     }

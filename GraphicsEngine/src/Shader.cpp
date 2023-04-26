@@ -103,13 +103,13 @@ void InputShaderLayout(ShaderProgram& shaderProgram)
     glGetProgramiv(shaderProgram.handle, GL_ACTIVE_ATTRIBUTES, &activeAttributes);
     glGetProgramiv(shaderProgram.handle, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &attributeNameMaxLength);
 
-    attributeName = new char[attributeNameMaxLength++];
+    attributeName = new char[++attributeNameMaxLength];
 
     for (u32 i = 0; i < activeAttributes; ++i)
     {
         GLint attributeSize;
         GLenum attributeType;
-        glGetActiveAttrib(shaderProgram.handle, i, attributeNameMaxLength + 1, NULL, &attributeSize, &attributeType, attributeName);
+        glGetActiveAttrib(shaderProgram.handle, i, attributeNameMaxLength, NULL, &attributeSize, &attributeType, attributeName);
 
         u8 attributeLocation = glGetAttribLocation(shaderProgram.handle, attributeName);
 
