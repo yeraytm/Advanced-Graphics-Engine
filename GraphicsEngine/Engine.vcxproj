@@ -48,6 +48,7 @@
     <ClInclude Include="src\GLDebugger.h" />
     <ClInclude Include="src\Platform.h" />
     <ClInclude Include="src\Layouts.h" />
+    <ClInclude Include="src\Primitives.h" />
     <ClInclude Include="src\Shader.h" />
     <ClInclude Include="src\Texture.h" />
     <ClInclude Include="src\vendor\glad\glad.h" />

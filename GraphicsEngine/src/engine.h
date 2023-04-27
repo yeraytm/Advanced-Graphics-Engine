@@ -13,9 +13,8 @@
 
 enum class RenderMode
 {
-    TexturedQuad,
-    TexturedMesh,
-    Count
+    QUAD,
+    TEXTURE_MESH
 };
 
 struct OpenGLState
@@ -35,17 +34,15 @@ struct App
     f64 currentTime;
     bool isRunning;
 
+    glm::ivec2 displaySize;
+
     // Input
     Input input;
 
-    bool debugInfo;
     OpenGLState glState;
     bool openGLStatus;
+    bool debugInfo;
     bool sceneInfo;
-
-    glm::ivec2 displaySize;
-
-    Camera camera;
 
     u32 numEntities;
     std::vector<Entity> entities;
@@ -64,16 +61,17 @@ struct App
     // Location of the texture uniform in the textured mesh shader
     u32 meshTextureLocation;
 
-    // Mode
-    RenderMode mode;
+    Camera camera;
 
     glm::mat4 projection;
-    int modelLoc;
-    int viewLoc;
-    int projectionLoc;
 
     int uniformBufferOffsetAlignment;
     u32 UBO;
+
+    Entity quad;
+
+    // Mode
+    RenderMode mode;
 
     // Texture indices
     u32 diceTexIdx;
@@ -81,14 +79,6 @@ struct App
     u32 blackTexIdx;
     u32 normalTexIdx;
     u32 magentaTexIdx;
-
-    // Embedded geometry (in-editor simple meshes such as
-    // a screen filling quad, a cube, a sphere...)
-    //u32 VBO;
-    //u32 EBO;
-    
-    // VAO object to link our screen filling quad with our textured quad shader
-    VAO vao;
 };
 
 void Init(App* app);

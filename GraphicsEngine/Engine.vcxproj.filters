@@ -342,6 +342,7 @@
     <ClInclude Include="src\Texture.h" />
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\BufferManagement.h" />
+    <ClInclude Include="src\Primitives.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source">

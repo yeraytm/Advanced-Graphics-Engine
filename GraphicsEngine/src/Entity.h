@@ -28,8 +28,8 @@ struct Model
     std::vector<Mesh> meshes;
     std::vector<u32> materialIDs;
 
-    u32 VBHandle;
-    u32 EBHandle;
+    u32 VBHandle = 0;
+    u32 EBHandle = 0;
 };
 
 struct Material
@@ -50,21 +50,20 @@ struct Material
 class Entity
 {
 public:
-    Entity(glm::vec3 newPosition = glm::vec3(0.0f));
+    Entity(std::string newName = "NoName", glm::vec3 newPosition = glm::vec3(0.0f), bool primitive = false);
     ~Entity();
 
-    void Translate();
-    //void Roatate();
-
 public:
-    Model model;
-    u32 modelID;
+    std::string name;
+    bool isPrimitive;
 
     glm::vec3 position;
-
     glm::mat4 modelMatrix;
 
     u32 localParamOffset;
     u32 localParamSize;
+
+    Model model;
+    u32 modelID;
     //ShaderProgram* shader;
 };

@@ -63,7 +63,7 @@ void ProcessAssimpMaterial(App* app, aiMaterial* material, Material& myMaterial,
     //myMaterial.createNormalFromBump();
 }
 
-void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Model* myModel, u32 baseMeshMaterialIndex, std::vector<u32>& meshMaterialIndices)
+void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Model* myModel, u32 baseMeshMaterialIndex, std::vector<u32>& modelMaterialIndices)
 {
     Mesh myMesh = {};
 
@@ -119,7 +119,7 @@ void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Model* myModel, u32 b
     }
 
     // Store the proper (previously proceessed) material for this mesh
-    meshMaterialIndices.push_back(baseMeshMaterialIndex + mesh->mMaterialIndex);
+    modelMaterialIndices.push_back(baseMeshMaterialIndex + mesh->mMaterialIndex);
 
     // Create the vertex format
     myMesh.VBLayout.attributes.push_back(VertexBufferAttribute{ 0, 3, 0 });
@@ -144,19 +144,19 @@ void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Model* myModel, u32 b
     myModel->meshes.push_back(myMesh);
 }
 
-void ProcessAssimpNode(const aiScene* scene, aiNode* node, Model* myModel, u32 baseMeshMaterialIndex, std::vector<u32>& meshMaterialIndices)
+void ProcessAssimpNode(const aiScene* scene, aiNode* node, Model* myModel, u32 baseMeshMaterialIndex, std::vector<u32>& modelMaterialIndices)
 {
     // process all the node's meshes (if any)
     for (unsigned int i = 0; i < node->mNumMeshes; i++)
     {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        ProcessAssimpMesh(scene, mesh, myModel, baseMeshMaterialIndex, meshMaterialIndices);
+        ProcessAssimpMesh(scene, mesh, myModel, baseMeshMaterialIndex, modelMaterialIndices);
     }
 
     // then do the same for each of its children
     for (unsigned int i = 0; i < node->mNumChildren; i++)
     {
-        ProcessAssimpNode(scene, node->mChildren[i], myModel, baseMeshMaterialIndex, meshMaterialIndices);
+        ProcessAssimpNode(scene, node->mChildren[i], myModel, baseMeshMaterialIndex, modelMaterialIndices);
     }
 }
 
