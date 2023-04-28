@@ -13,9 +13,9 @@
 #include "glad/glad.h"
 #include "imgui-docking/imgui.h"
 
-u32 FindVAO(Model& model, u32 meshIndex, const ShaderProgram& shaderProgram, bool hasIndices)
+u32 FindVAO(Model* model, u32 meshIndex, const ShaderProgram& shaderProgram, bool hasIndices)
 {
-    Mesh& mesh = model.meshes[meshIndex];
+    Mesh& mesh = model->meshes[meshIndex];
 
     // Try Finding a VAO for this mesh/program
     for (u32 i = 0; i < (u32)mesh.VAOs.size(); ++i)
@@ -31,9 +31,9 @@ u32 FindVAO(Model& model, u32 meshIndex, const ShaderProgram& shaderProgram, boo
     glGenVertexArrays(1, &vaoHandle);
     glBindVertexArray(vaoHandle);
 
-    glBindBuffer(GL_ARRAY_BUFFER, model.VBHandle);
+    glBindBuffer(GL_ARRAY_BUFFER, model->VBHandle);
     if (hasIndices)
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model.EBHandle);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model->EBHandle);
 
     // We have to link all vertex inputs attributes to attributes in the vertex buffer
     for (u32 i = 0; i < shaderProgram.vertexLayout.attributes.size(); ++i)
@@ -143,20 +143,26 @@ void Init(App* app)
     app->meshTextureLocation = glGetUniformLocation(texturedMeshProgram.handle, "uTexture");
 
     Entity patrickEntity = Entity(glm::vec3(0.0f));
+    patrickEntity.model = new Model();
     patrickEntity.modelID = LoadModel(app, "Assets/Patrick/Patrick.obj", patrickEntity.model);
     app->entities.push_back(patrickEntity);
 
-    Entity e1 = Entity(glm::vec3(-6.0f, 0.0f, 0.0f));
-    e1.modelID = LoadModel(app, "Assets/Patrick/Patrick.obj", e1.model);
-    app->entities.push_back(e1);
+    Entity patrickClone1 = Entity(glm::vec3(-6.0f, 0.0f, 0.0f));
+    patrickClone1.model = patrickEntity.model;
+    patrickClone1.modelID = patrickEntity.modelID;
+    app->entities.push_back(patrickClone1);
 
-    Entity e2 = Entity(glm::vec3(6.0f, 0.0f, 0.0f));
-    e2.modelID = LoadModel(app, "Assets/Patrick/Patrick.obj", e2.model);
-    app->entities.push_back(e2);
+    Entity patrickClone2 = Entity(glm::vec3(6.0f, 0.0f, 0.0f));
+    patrickClone2.model = patrickEntity.model;
+    patrickClone2.modelID = patrickEntity.modelID;
+    app->entities.push_back(patrickClone2);
 
     Entity cube = Entity(glm::vec3(0.0f, 0.0f, 3.0f), false);
+    cube.model = new Model();
     cube.modelID = CreateCube(app, cube.model);
     app->entities.push_back(cube);
+
+
 
     //app->quad = Entity(glm::vec3(0.0f, 0.0f, 3.0f));
     //app->quad.modelID = CreateQuad(app, app->quad.model);
@@ -314,22 +320,22 @@ void Render(App* app)
 
             glUseProgram(texturedMeshProgram.handle);
 
-            Model& model = app->entities[i].model;
-            u32 numMeshes = model.meshes.size();
+            Model* model = app->entities[i].model;
+            u32 numMeshes = model->meshes.size();
             for (u32 meshIndex = 0; meshIndex < numMeshes; ++meshIndex)
             {
                 u32 vao = FindVAO(model, meshIndex, texturedMeshProgram, app->entities[i].hasIndices);
 
                 glBindVertexArray(vao);
 
-                u32 meshMaterialID = model.materialIDs[meshIndex];
+                u32 meshMaterialID = model->materialIDs[meshIndex];
                 Material& meshMaterial = app->materials[meshMaterialID];
 
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
                 glUniform1i(app->meshTextureLocation, 0);
 
-                Mesh& mesh = model.meshes[meshIndex];
+                Mesh& mesh = model->meshes[meshIndex];
 
                 if (app->entities[i].hasIndices)
                     glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.indexOffset);
@@ -348,19 +354,19 @@ void Render(App* app)
     {
         glUseProgram(texturedQuadProgram.handle);
 
-        Model& model = app->quad.model;
+        Model* model = app->quad.model;
 
         u32 vao = FindVAO(model, 0, texturedQuadProgram, app->quad.hasIndices);
         glBindVertexArray(vao);
 
-        u32 meshMaterialID = model.materialIDs[0];
+        u32 meshMaterialID = model->materialIDs[0];
         Material& meshMaterial = app->materials[meshMaterialID];
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
         glUniform1i(app->quadTextureLocation, 0);
 
-        Mesh& mesh = model.meshes[0];
+        Mesh& mesh = model->meshes[0];
         glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.indexOffset);
 
         glBindVertexArray(0);

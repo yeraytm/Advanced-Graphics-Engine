@@ -47,7 +47,7 @@ struct App
     u32 numEntities;
     std::vector<Entity> entities;
 
-    std::vector<Model> models;
+    std::vector<Model*> models;
     std::vector<Texture> textures;
     std::vector<Material> materials;
     std::vector<ShaderProgram> shaderPrograms;

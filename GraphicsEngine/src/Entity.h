@@ -63,7 +63,7 @@ public:
     u32 localParamOffset;
     u32 localParamSize;
 
-    Model model;
+    Model* model;
     u32 modelID;
     //ShaderProgram* shader;
 };

@@ -2,16 +2,15 @@
 
 #include "Engine.h"
 
-u32 CreateQuad(App* app, Model& model)
+u32 CreateQuad(App* app, Model* model)
 {
-    app->models.push_back(Model{});
-    model = app->models.back();
+    app->models.push_back(model);
     u32 modelID = (u32)app->models.size() - 1u;
 
     Material material = {};
     material.name = "Quad";
     material.albedoTextureID = app->whiteTexIdx;
-    model.materialIDs.push_back((u32)app->materials.size());
+    model->materialIDs.push_back((u32)app->materials.size());
     app->materials.push_back(material);
 
     Mesh mesh = {};
@@ -52,32 +51,31 @@ u32 CreateQuad(App* app, Model& model)
     mesh.vertexOffset = 0;
     mesh.indexOffset = 0;
 
-    glGenBuffers(1, &model.VBHandle);
-    glBindBuffer(GL_ARRAY_BUFFER, model.VBHandle);
+    glGenBuffers(1, &model->VBHandle);
+    glBindBuffer(GL_ARRAY_BUFFER, model->VBHandle);
     glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(float), mesh.vertices.data(), GL_STATIC_DRAW);
 
-    glGenBuffers(1, &model.EBHandle);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model.EBHandle);
+    glGenBuffers(1, &model->EBHandle);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model->EBHandle);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(u32), mesh.indices.data(), GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    model.meshes.push_back(mesh);
+    model->meshes.push_back(mesh);
 
     return modelID;
 }
 
-u32 CreateCube(App* app, Model& model)
+u32 CreateCube(App* app, Model* model)
 {
-    app->models.push_back(Model{});
-    model = app->models.back();
+    app->models.push_back(model);
     u32 modelID = (u32)app->models.size() - 1u;
 
     Material material = {};
     material.name = "Cube";
     material.albedoTextureID = app->whiteTexIdx;
-    model.materialIDs.push_back((u32)app->materials.size());
+    model->materialIDs.push_back((u32)app->materials.size());
     app->materials.push_back(material);
 
     Mesh mesh = {};
@@ -239,8 +237,8 @@ u32 CreateCube(App* app, Model& model)
     mesh.vertexOffset = 0;
     mesh.indexOffset = 0;
 
-    glGenBuffers(1, &model.VBHandle);
-    glBindBuffer(GL_ARRAY_BUFFER, model.VBHandle);
+    glGenBuffers(1, &model->VBHandle);
+    glBindBuffer(GL_ARRAY_BUFFER, model->VBHandle);
     glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(float), mesh.vertices.data(), GL_STATIC_DRAW);
 
     //glGenBuffers(1, &model.EBHandle);
@@ -250,7 +248,7 @@ u32 CreateCube(App* app, Model& model)
     ///glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    model.meshes.push_back(mesh);
+    model->meshes.push_back(mesh);
 
     return modelID;
 }

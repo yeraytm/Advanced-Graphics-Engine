@@ -160,7 +160,7 @@ void ProcessAssimpNode(const aiScene* scene, aiNode* node, Model* myModel, u32 b
     }
 }
 
-u32 LoadModel(App* app, const char* filename, Model& model)
+u32 LoadModel(App* app, const char* filename, Model* model)
 {
     const aiScene* scene = aiImportFile(filename,
         aiProcess_Triangulate |
@@ -178,10 +178,6 @@ u32 LoadModel(App* app, const char* filename, Model& model)
         return UINT32_MAX;
     }
 
-    app->models.push_back(Model{});
-    model = app->models.back();
-    u32 modelID = (u32)app->models.size() - 1u;
-
     String directory = GetDirectoryPart(MakeString(filename));
 
     // Create a list of materials
@@ -193,47 +189,50 @@ u32 LoadModel(App* app, const char* filename, Model& model)
         ProcessAssimpMaterial(app, scene->mMaterials[i], material, directory);
     }
 
-    ProcessAssimpNode(scene, scene->mRootNode, &model, baseMeshMaterialIndex, model.materialIDs);
+    ProcessAssimpNode(scene, scene->mRootNode, model, baseMeshMaterialIndex, model->materialIDs);
 
     aiReleaseImport(scene);
 
     u32 vertexBufferSize = 0;
     u32 indexBufferSize = 0;
 
-    for (u32 i = 0; i < model.meshes.size(); ++i)
+    for (u32 i = 0; i < model->meshes.size(); ++i)
     {
-        vertexBufferSize += model.meshes[i].vertices.size() * sizeof(float);
-        indexBufferSize += model.meshes[i].indices.size() * sizeof(u32);
+        vertexBufferSize += model->meshes[i].vertices.size() * sizeof(float);
+        indexBufferSize += model->meshes[i].indices.size() * sizeof(u32);
     }
 
-    glGenBuffers(1, &model.VBHandle);
-    glBindBuffer(GL_ARRAY_BUFFER, model.VBHandle);
+    glGenBuffers(1, &model->VBHandle);
+    glBindBuffer(GL_ARRAY_BUFFER, model->VBHandle);
     glBufferData(GL_ARRAY_BUFFER, vertexBufferSize, NULL, GL_STATIC_DRAW);
 
-    glGenBuffers(1, &model.EBHandle);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model.EBHandle);
+    glGenBuffers(1, &model->EBHandle);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model->EBHandle);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBufferSize, NULL, GL_STATIC_DRAW);
 
     u32 indicesOffset = 0;
     u32 verticesOffset = 0;
 
-    for (u32 i = 0; i < model.meshes.size(); ++i)
+    for (u32 i = 0; i < model->meshes.size(); ++i)
     {
-        const void* verticesData = model.meshes[i].vertices.data();
-        const u32 verticesSize = model.meshes[i].vertices.size() * sizeof(float);
+        const void* verticesData = model->meshes[i].vertices.data();
+        const u32 verticesSize = model->meshes[i].vertices.size() * sizeof(float);
         glBufferSubData(GL_ARRAY_BUFFER, verticesOffset, verticesSize, verticesData);
-        model.meshes[i].vertexOffset = verticesOffset;
+        model->meshes[i].vertexOffset = verticesOffset;
         verticesOffset += verticesSize;
 
-        const void* indicesData = model.meshes[i].indices.data();
-        const u32 indicesSize = model.meshes[i].indices.size() * sizeof(u32);
+        const void* indicesData = model->meshes[i].indices.data();
+        const u32 indicesSize = model->meshes[i].indices.size() * sizeof(u32);
         glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, indicesOffset, indicesSize, indicesData);
-        model.meshes[i].indexOffset = indicesOffset;
+        model->meshes[i].indexOffset = indicesOffset;
         indicesOffset += indicesSize;
     }
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    app->models.push_back(model);
+    u32 modelID = (u32)app->models.size() - 1u;
 
     return modelID;
 }
