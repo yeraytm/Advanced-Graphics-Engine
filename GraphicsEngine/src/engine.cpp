@@ -121,12 +121,6 @@ void Init(App* app)
     glBufferData(GL_UNIFORM_BUFFER, maxUniformBlockSize, NULL, GL_STREAM_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-    app->diceTexIdx = LoadTexture2D(app->textures, "Assets/dice.png");
-    app->whiteTexIdx = LoadTexture2D(app->textures, "Assets/color_white.png");
-    app->blackTexIdx = LoadTexture2D(app->textures, "Assets/color_black.png");
-    app->normalTexIdx = LoadTexture2D(app->textures, "Assets/color_normal.png");
-    app->magentaTexIdx = LoadTexture2D(app->textures, "Assets/color_magenta.png");
-
     // Camera setup
     app->camera = Camera(glm::vec3(0.0f, 0.0f, 10.0f));
 
@@ -142,25 +136,37 @@ void Init(App* app)
     ShaderProgram& texturedMeshProgram = app->shaderPrograms[app->meshProgramID];
     app->meshTextureLocation = glGetUniformLocation(texturedMeshProgram.handle, "uTexture");
 
+    app->diceTexIdx = LoadTexture2D(app->textures, "Assets/dice.png");
+    app->whiteTexIdx = LoadTexture2D(app->textures, "Assets/color_white.png");
+    app->blackTexIdx = LoadTexture2D(app->textures, "Assets/color_black.png");
+    app->normalTexIdx = LoadTexture2D(app->textures, "Assets/color_normal.png");
+    app->magentaTexIdx = LoadTexture2D(app->textures, "Assets/color_magenta.png");
+
+    Model* patrickModel = new Model();
+    u32 patrickModelID = LoadModel(app, "Assets/Patrick/Patrick.obj", patrickModel);
+
+    Model* cubeModel = new Model();
+    u32 cubeModelID = CreateCube(app, cubeModel);
+
     Entity patrickEntity = Entity(glm::vec3(0.0f));
-    patrickEntity.model = new Model();
-    patrickEntity.modelID = LoadModel(app, "Assets/Patrick/Patrick.obj", patrickEntity.model);
+    patrickEntity.model = patrickModel;
+    patrickEntity.modelID = patrickModelID;
     app->entities.push_back(patrickEntity);
 
     Entity patrickClone1 = Entity(glm::vec3(-6.0f, 0.0f, 0.0f));
-    patrickClone1.model = patrickEntity.model;
-    patrickClone1.modelID = patrickEntity.modelID;
+    patrickClone1.model = patrickModel;
+    patrickClone1.modelID = patrickModelID;
     app->entities.push_back(patrickClone1);
 
     Entity patrickClone2 = Entity(glm::vec3(6.0f, 0.0f, 0.0f));
-    patrickClone2.model = patrickEntity.model;
-    patrickClone2.modelID = patrickEntity.modelID;
+    patrickClone2.model = patrickModel;
+    patrickClone2.modelID = patrickModelID;
     app->entities.push_back(patrickClone2);
 
-    Entity cube = Entity(glm::vec3(0.0f, 0.0f, 3.0f), false);
-    cube.model = new Model();
-    cube.modelID = CreateCube(app, cube.model);
-    app->entities.push_back(cube);
+    Entity cubeEntity = Entity(glm::vec3(0.0f, 0.0f, 3.0f), false);
+    cubeEntity.model = cubeModel;
+    cubeEntity.modelID = cubeModelID;
+    app->entities.push_back(cubeEntity);
 
 
 
@@ -239,8 +245,8 @@ void ImGuiRender(App* app)
 
         ImGui::DragFloat3("Position", &app->camera.position[0]);
         ImGui::DragFloat("Speed", &app->camera.speed);
-        glm::vec2 yawPitch = glm::vec2(app->camera.yaw, app->camera.pitch);
-        ImGui::DragFloat2("Yaw / Pitch", &yawPitch[0]);
+        //glm::vec2 yawPitch = glm::vec2(app->camera.yaw, app->camera.pitch);
+        //ImGui::DragFloat2("Yaw / Pitch", &yawPitch[0]);
 
         //ImGui::Separator();
 

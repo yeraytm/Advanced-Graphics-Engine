@@ -1,11 +1,9 @@
 #include "Camera.h"
 
-Camera::Camera(glm::vec3 cameraPosition,
-	float cameraSpeed, float cameraMouseSensitivty,
-	float yawAngle, float pitchAngle)
-	: position(cameraPosition), front(glm::vec3(0.0f, 0.0f, -1.0f)), worldUp(glm::vec3(0.0f, 1.0f, 0.0f)),
-	speed(cameraSpeed), sensitivity(cameraMouseSensitivty),
-	yaw(yawAngle), pitch(pitchAngle)
+Camera::Camera(glm::vec3 newPosition)
+	: position(newPosition), speed(2.0f),
+	front(glm::vec3(0.0f, 0.0f, -1.0f)), up(glm::vec3(0.0f)), right(glm::vec3(0.0f)), worldUp(glm::vec3(0.0f, 1.0f, 0.0f)),
+	yaw(-90.0f), pitch(0.0f), sensitivity(0.1f)
 {
 	UpdateVectors();
 }

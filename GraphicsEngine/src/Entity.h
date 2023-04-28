@@ -47,17 +47,15 @@ struct Material
     u32 bumpTextureID;
 };
 
-class Entity
+struct Entity
 {
 public:
-    Entity(glm::vec3 newPosition = glm::vec3(0.0f), bool hasIndices = true);
+    Entity();
+    Entity(glm::vec3 newPosition, bool hasIndices = true);
     ~Entity();
 
 public:
     glm::vec3 position;
-
-    bool hasIndices;
-
     glm::mat4 modelMatrix;
 
     u32 localParamOffset;
@@ -65,5 +63,5 @@ public:
 
     Model* model;
     u32 modelID;
-    //ShaderProgram* shader;
+    bool hasIndices;
 };

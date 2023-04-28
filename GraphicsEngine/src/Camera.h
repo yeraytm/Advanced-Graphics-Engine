@@ -15,9 +15,7 @@ enum class CameraDirection
 class Camera
 {
 public:
-	Camera(glm::vec3 cameraPosition = glm::vec3(0.0f),
-        float cameraSpeed = 2.0f, float cameraMouseSensitivty = 0.1f,
-        float yawAngle = -90.0f, float pitchAngle = 0.0f);
+	Camera(glm::vec3 cameraPosition = glm::vec3(0.0f));
 	~Camera();
 
     void ProcessMouse(glm::vec2 mouseDelta);
@@ -26,9 +24,6 @@ public:
 
 public:
     glm::vec3 position;
-
-    // Euler Angles
-    float yaw, pitch;
 
     // Options
     float speed;
@@ -41,6 +36,9 @@ private:
     glm::vec3 up;
     glm::vec3 right;
     glm::vec3 worldUp;
+
+    // Euler Angles
+    float yaw, pitch;
 
     // Options
     float sensitivity;
