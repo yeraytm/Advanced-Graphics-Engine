@@ -50,14 +50,14 @@ struct Material
 class Entity
 {
 public:
-    Entity(std::string newName = "NoName", glm::vec3 newPosition = glm::vec3(0.0f), bool primitive = false);
+    Entity(glm::vec3 newPosition = glm::vec3(0.0f), bool hasIndices = true);
     ~Entity();
 
 public:
-    std::string name;
-    bool isPrimitive;
-
     glm::vec3 position;
+
+    bool hasIndices;
+
     glm::mat4 modelMatrix;
 
     u32 localParamOffset;

@@ -13,7 +13,7 @@
 #include "glad/glad.h"
 #include "imgui-docking/imgui.h"
 
-u32 FindVAO(Model& model, u32 meshIndex, const ShaderProgram& shaderProgram, bool primitive)
+u32 FindVAO(Model& model, u32 meshIndex, const ShaderProgram& shaderProgram, bool hasIndices)
 {
     Mesh& mesh = model.meshes[meshIndex];
 
@@ -32,7 +32,7 @@ u32 FindVAO(Model& model, u32 meshIndex, const ShaderProgram& shaderProgram, boo
     glBindVertexArray(vaoHandle);
 
     glBindBuffer(GL_ARRAY_BUFFER, model.VBHandle);
-    if (!primitive)
+    if (hasIndices)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model.EBHandle);
 
     // We have to link all vertex inputs attributes to attributes in the vertex buffer
@@ -142,19 +142,19 @@ void Init(App* app)
     ShaderProgram& texturedMeshProgram = app->shaderPrograms[app->meshProgramID];
     app->meshTextureLocation = glGetUniformLocation(texturedMeshProgram.handle, "uTexture");
 
-    Entity patrickEntity = Entity("Patrick 1", glm::vec3(0.0f));
+    Entity patrickEntity = Entity(glm::vec3(0.0f));
     patrickEntity.modelID = LoadModel(app, "Assets/Patrick/Patrick.obj", patrickEntity.model);
     app->entities.push_back(patrickEntity);
 
-    Entity e1 = Entity("Patrick 2", glm::vec3(-6.0f, 0.0f, 0.0f));
+    Entity e1 = Entity(glm::vec3(-6.0f, 0.0f, 0.0f));
     e1.modelID = LoadModel(app, "Assets/Patrick/Patrick.obj", e1.model);
     app->entities.push_back(e1);
 
-    Entity e2 = Entity("Patrick 3", glm::vec3(6.0f, 0.0f, 0.0f));
+    Entity e2 = Entity(glm::vec3(6.0f, 0.0f, 0.0f));
     e2.modelID = LoadModel(app, "Assets/Patrick/Patrick.obj", e2.model);
     app->entities.push_back(e2);
 
-    Entity cube = Entity("Cube", glm::vec3(0.0f, 0.0f, 3.0f), true);
+    Entity cube = Entity(glm::vec3(0.0f, 0.0f, 3.0f), false);
     cube.modelID = CreateCube(app, cube.model);
     app->entities.push_back(cube);
 
@@ -222,7 +222,6 @@ void ImGuiRender(App* app)
         ImGui::Text("FPS: %f", 1.0f / app->deltaTime);
         ImGui::Text("Frametime: %f", app->deltaTime);
         ImGui::Text("Time: %f", app->currentTime);
-        //ImGui::DragFloat3("Patrick Pos", &app->entities[0].position[0]);
         ImGui::End();
     }
 
@@ -233,6 +232,7 @@ void ImGuiRender(App* app)
         ImGui::Text("Camera");
 
         ImGui::DragFloat3("Position", &app->camera.position[0]);
+        ImGui::DragFloat("Speed", &app->camera.speed);
         glm::vec2 yawPitch = glm::vec2(app->camera.yaw, app->camera.pitch);
         ImGui::DragFloat2("Yaw / Pitch", &yawPitch[0]);
 
@@ -243,7 +243,7 @@ void ImGuiRender(App* app)
         //{
         //    if (ImGui::DragFloat3(std::to_string(i).c_str(), &app->entities[i].position[0], 0.1f))
         //    {
-        //        app->entities[i].Translate();
+        //        // Move to the corresponding position
         //    }
         //}
         
@@ -257,6 +257,11 @@ void Update(App* app)
     if (app->input.keys[K_ESCAPE] == BUTTON_PRESS)
         app->isRunning = false;
 
+    if (app->input.keys[K_LSHIFT] == BUTTON_PRESS)
+        app->camera.speed *= 3.0f;
+    else if (app->input.keys[K_LSHIFT] == BUTTON_RELEASE)
+        app->camera.speed = 2.0f;
+
     if (app->input.keys[K_W] == BUTTON_PRESSED)
         app->camera.ProcessKeyboard(CameraDirection::CAMERA_FORWARD, app->deltaTime);
     if (app->input.keys[K_S] == BUTTON_PRESSED)
@@ -265,6 +270,10 @@ void Update(App* app)
         app->camera.ProcessKeyboard(CameraDirection::CAMERA_LEFT, app->deltaTime);
     if (app->input.keys[K_D] == BUTTON_PRESSED)
         app->camera.ProcessKeyboard(CameraDirection::CAMERA_RIGHT, app->deltaTime);
+    if (app->input.keys[K_Q] == BUTTON_PRESSED)
+        app->camera.ProcessKeyboard(CameraDirection::CAMERA_UP, app->deltaTime);
+    if (app->input.keys[K_E] == BUTTON_PRESSED)
+        app->camera.ProcessKeyboard(CameraDirection::CAMERA_DOWN, app->deltaTime);
 
     for (u32 i = 0; i < app->shaderPrograms.size(); ++i)
     {
@@ -309,7 +318,7 @@ void Render(App* app)
             u32 numMeshes = model.meshes.size();
             for (u32 meshIndex = 0; meshIndex < numMeshes; ++meshIndex)
             {
-                u32 vao = FindVAO(model, meshIndex, texturedMeshProgram, app->entities[i].isPrimitive);
+                u32 vao = FindVAO(model, meshIndex, texturedMeshProgram, app->entities[i].hasIndices);
 
                 glBindVertexArray(vao);
 
@@ -322,10 +331,10 @@ void Render(App* app)
 
                 Mesh& mesh = model.meshes[meshIndex];
 
-                if (!app->entities[i].isPrimitive)
+                if (app->entities[i].hasIndices)
                     glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.indexOffset);
                 else
-                    glDrawArrays(GL_TRIANGLES, 0, 36);
+                    glDrawArrays(GL_TRIANGLES, 0, 36); // Check for different primitives without indices, the only one supported by now is the cube (quad is indexed tho)
 
                 glBindVertexArray(0);
             }
@@ -341,7 +350,7 @@ void Render(App* app)
 
         Model& model = app->quad.model;
 
-        u32 vao = FindVAO(model, 0, texturedQuadProgram, app->quad.isPrimitive);
+        u32 vao = FindVAO(model, 0, texturedQuadProgram, app->quad.hasIndices);
         glBindVertexArray(vao);
 
         u32 meshMaterialID = model.materialIDs[0];

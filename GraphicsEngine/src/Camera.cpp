@@ -1,9 +1,9 @@
 #include "Camera.h"
 
-Camera::Camera(glm::vec3 cameraPosition, glm::vec3 cameraUp,
+Camera::Camera(glm::vec3 cameraPosition,
 	float cameraSpeed, float cameraMouseSensitivty,
 	float yawAngle, float pitchAngle)
-	: position(cameraPosition), front(glm::vec3(0.0f, 0.0f, -1.0f)), worldUp(cameraUp),
+	: position(cameraPosition), front(glm::vec3(0.0f, 0.0f, -1.0f)), worldUp(glm::vec3(0.0f, 1.0f, 0.0f)),
 	speed(cameraSpeed), sensitivity(cameraMouseSensitivty),
 	yaw(yawAngle), pitch(pitchAngle)
 {
@@ -64,6 +64,12 @@ void Camera::ProcessKeyboard(CameraDirection direction, float dt)
 		break;
 	case CameraDirection::CAMERA_RIGHT:
 		position += right * velocity;
+		break;
+	case CameraDirection::CAMERA_UP:
+		position += up * velocity;
+		break;
+	case CameraDirection::CAMERA_DOWN:
+		position -= up * velocity;
 		break;
 	}
 }

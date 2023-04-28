@@ -7,14 +7,16 @@ enum class CameraDirection
     CAMERA_FORWARD,
     CAMERA_BACKWARD,
     CAMERA_LEFT,
-    CAMERA_RIGHT
+    CAMERA_RIGHT,
+    CAMERA_UP,
+    CAMERA_DOWN
 };
 
 class Camera
 {
 public:
-	Camera(glm::vec3 cameraPosition = glm::vec3(0.0f), glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f),
-        float cameraSpeed = 1.5f, float cameraMouseSensitivty = 0.1f,
+	Camera(glm::vec3 cameraPosition = glm::vec3(0.0f),
+        float cameraSpeed = 2.0f, float cameraMouseSensitivty = 0.1f,
         float yawAngle = -90.0f, float pitchAngle = 0.0f);
 	~Camera();
 
@@ -28,6 +30,9 @@ public:
     // Euler Angles
     float yaw, pitch;
 
+    // Options
+    float speed;
+
 private:
     void UpdateVectors();
 
@@ -38,6 +43,5 @@ private:
     glm::vec3 worldUp;
 
     // Options
-    float speed;
     float sensitivity;
 };
