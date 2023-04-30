@@ -125,7 +125,7 @@ void Init(App* app)
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     // CAMERA & PROJECTION //
-    app->camera = Camera(glm::vec3(0.0f, 0.0f, 5.0f));
+    app->camera = Camera(glm::vec3(0.0f, 3.0f, 10.0f));
 
     app->projection = glm::mat4(1.0f);
     app->projection = glm::perspective(glm::radians(45.0f), float(app->displaySize.x) / float(app->displaySize.y), 0.1f, 100.0f);
@@ -148,36 +148,45 @@ void Init(App* app)
     app->normalTexIdx = LoadTexture2D(app->textures, "Assets/color_normal.png");
     app->magentaTexIdx = LoadTexture2D(app->textures, "Assets/color_magenta.png");
 
-    Material defaultMaterial = {};
-    defaultMaterial.name = "Default Material";
-    defaultMaterial.albedo = glm::vec3(1.0f, 0.5f, 0.31f);
-    defaultMaterial.emissive = glm::vec3(0.0f);
-    defaultMaterial.smoothness = 0.0f;
-    defaultMaterial.albedoTextureID = app->magentaTexIdx;
+    Material defaultMaterial1 = {};
+    defaultMaterial1.name = "Default Material";
+    defaultMaterial1.albedo = glm::vec3(1.0f, 0.5f, 0.31f);
+    defaultMaterial1.emissive = glm::vec3(0.0f);
+    defaultMaterial1.smoothness = 0.0f;
+    defaultMaterial1.albedoTextureID = app->magentaTexIdx;
+
+    Material defaultMaterial2 = {};
+    defaultMaterial2.name = "Default Material";
+    defaultMaterial2.albedo = glm::vec3(1.0f, 0.5f, 0.31f);
+    defaultMaterial2.emissive = glm::vec3(0.0f);
+    defaultMaterial2.smoothness = 0.0f;
+    defaultMaterial2.albedoTextureID = app->whiteTexIdx;
+
+    Model* planeModel = new Model();
+    u32 planeModelID = CreatePrimitive(PrimitiveType::PLANE, app, planeModel, defaultMaterial2);
 
     Model* cubeModel = new Model();
-    u32 cubeModelID = CreatePrimitive(PrimitiveType::CUBE, app, cubeModel, defaultMaterial);
+    u32 cubeModelID = CreatePrimitive(PrimitiveType::CUBE, app, cubeModel, defaultMaterial1);
 
     Model* sphereModel = new Model();
-    u32 sphereModelID = CreatePrimitive(PrimitiveType::SPHERE, app, sphereModel, defaultMaterial);
+    u32 sphereModelID = CreatePrimitive(PrimitiveType::SPHERE, app, sphereModel, defaultMaterial1);
 
     //Model* patrickModel = new Model();
     //u32 patrickModelID = LoadModel(app, "Assets/Patrick/Patrick.obj", patrickModel);
 
-    Entity sphereEntity = Entity(EntityType::MODEL, app->meshProgramID, glm::vec3(0.0f, 0.0f, -5.0f));
-    sphereEntity.model = sphereModel;
-    sphereEntity.modelID = sphereModelID;
+    // ENTITIES //
+    Entity planeEntity = Entity(EntityType::MODEL, app->meshProgramID, glm::vec3(0.0f, -2.0f, 0.0f), planeModel, planeModelID);
+    planeEntity.modelMatrix = glm::rotate(planeEntity.modelMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    planeEntity.modelMatrix = glm::scale(planeEntity.modelMatrix, glm::vec3(16.0f));
+    app->entities.push_back(planeEntity);
+
+    Entity sphereEntity = Entity(EntityType::MODEL, app->meshProgramID, glm::vec3(0.0f, 0.0f, -5.0f), sphereModel, sphereModelID);
     app->entities.push_back(sphereEntity);
 
-    // ENTITIES //
-    Entity cubeEntity = Entity(EntityType::PRIMITIVE, app->cubeProgramID, glm::vec3(0.0f, 0.0f, 0.0f));
-    cubeEntity.model = cubeModel;
-    cubeEntity.modelID = cubeModelID;
+    Entity cubeEntity = Entity(EntityType::PRIMITIVE, app->cubeProgramID, glm::vec3(0.0f, 0.0f, 0.0f), cubeModel, cubeModelID);
     app->entities.push_back(cubeEntity);
 
-    Entity cubeLightEntity = Entity(EntityType::LIGHT, app->lightProgramID, glm::vec3(1.0f, 1.0f, 0.5f));
-    cubeLightEntity.model = cubeModel;
-    cubeLightEntity.modelID = cubeModelID;
+    Entity cubeLightEntity = Entity(EntityType::LIGHT, app->lightProgramID, glm::vec3(1.0f, 1.0f, 0.5f), cubeModel, cubeModelID);
     cubeLightEntity.modelMatrix = glm::scale(cubeLightEntity.modelMatrix, glm::vec3(0.2f));
     app->entities.push_back(cubeLightEntity);
 
@@ -198,7 +207,9 @@ void Init(App* app)
     patrickClone2.model = patrickModel;
     patrickClone2.modelID = patrickModelID;
     app->entities.push_back(patrickClone2);
+    */
 
+    /*
     app->quad = Entity(glm::vec3(0.0f, 0.0f, 3.0f));
     app->quad.modelID = CreateQuad(app, app->quad.model);
     app->entities.push_back(quad);
@@ -326,10 +337,6 @@ void Update(App* app)
             const char* shaderProgramName = shaderProgram.programName.c_str();
             shaderProgram.handle = CreateShaderProgram(shaderProgramSrc, shaderProgramName);
             shaderProgram.lastWriteTimestamp = currentTimestamp;
-            //app->meshTextureLocation = glGetUniformLocation(shaderProgram.handle, "u_Texture");
-            //shaderProgram.vertexLayout.attributes.clear();
-            //shaderProgram.vertexLayout.attributes.shrink_to_fit();
-            //InputShaderLayout(shaderProgram);
         }
     }
 }
@@ -341,9 +348,6 @@ void Render(App* app)
 
     UpdateUniformBuffer(app);
 
-    ShaderProgram& texturedMeshProgram = app->shaderPrograms[app->meshProgramID];
-    ShaderProgram& texturedQuadProgram = app->shaderPrograms[app->quadProgramID];
-
     switch (app->mode)
     {
     case RenderMode::TEXTURE_MESH:
@@ -351,23 +355,23 @@ void Render(App* app)
         for (u32 i = 0; i < app->numEntities; ++i)
         {
             Entity& entity = app->entities[i];
+            ShaderProgram& shader = app->shaderPrograms[entity.shaderID];
+            Model* model = entity.model;
 
             glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->UBO, entity.localParamOffset, entity.localParamSize);
 
-            ShaderProgram& shader = app->shaderPrograms[entity.shaderID];
             glUseProgram(shader.handle);
 
-            Model* model = entity.model;
             u32 numMeshes = model->meshes.size();
             for (u32 meshIndex = 0; meshIndex < numMeshes; ++meshIndex)
             {
                 u32 vao = FindVAO(model, meshIndex, shader);
-
                 glBindVertexArray(vao);
 
                 u32 meshMaterialID = model->materialIDs[meshIndex];
                 Material& meshMaterial = app->materials[meshMaterialID];
 
+                // Uniforms
                 switch (entity.type)
                 {
                 case EntityType::MODEL:
@@ -393,7 +397,6 @@ void Render(App* app)
                 }
 
                 Mesh& mesh = model->meshes[meshIndex];
-
                 if (model->isIndexed)
                     glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.indexOffset);
                 else
@@ -409,6 +412,8 @@ void Render(App* app)
 
     case RenderMode::QUAD:
     {
+        ShaderProgram& texturedQuadProgram = app->shaderPrograms[app->quadProgramID];
+
         glUseProgram(texturedQuadProgram.handle);
 
         Model* model = app->quad.model;

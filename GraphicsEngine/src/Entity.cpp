@@ -10,6 +10,11 @@ Entity::Entity(EntityType type, u32 shaderID, glm::vec3 newPosition) : type(type
 	modelMatrix = glm::translate(modelMatrix, position);
 }
 
+Entity::Entity(EntityType type, u32 shaderID, glm::vec3 newPosition, Model* model, u32 modelID) : type(type), position(newPosition), modelMatrix(glm::mat4(1.0f)), localParamOffset(0), localParamSize(0), model(model), modelID(modelID), shaderID(shaderID)
+{
+	modelMatrix = glm::translate(modelMatrix, position);
+}
+
 Entity::~Entity()
 {
 }
