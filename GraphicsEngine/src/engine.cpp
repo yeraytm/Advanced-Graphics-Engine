@@ -13,7 +13,7 @@
 #include "glad/glad.h"
 #include "imgui-docking/imgui.h"
 
-u32 FindVAO(Model* model, u32 meshIndex, const ShaderProgram& shaderProgram, bool hasIndices)
+u32 FindVAO(Model* model, u32 meshIndex, const ShaderProgram& shaderProgram)
 {
     Mesh& mesh = model->meshes[meshIndex];
 
@@ -32,7 +32,7 @@ u32 FindVAO(Model* model, u32 meshIndex, const ShaderProgram& shaderProgram, boo
     glBindVertexArray(vaoHandle);
 
     glBindBuffer(GL_ARRAY_BUFFER, model->VBHandle);
-    if (hasIndices)
+    if (model->isIndexed)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model->EBHandle);
 
     // We have to link all vertex shader inputs attributes to attributes in the vertex buffer
@@ -156,43 +156,26 @@ void Init(App* app)
     defaultMaterial.albedoTextureID = app->magentaTexIdx;
 
     Model* cubeModel = new Model();
-    u32 cubeModelID = CreateCube(app, defaultMaterial, cubeModel);
+    u32 cubeModelID = CreatePrimitive(PrimitiveType::CUBE, app, cubeModel, defaultMaterial);
 
     Model* sphereModel = new Model();
-    u32 sphereModelID = CreateSphere(app, defaultMaterial, sphereModel, 16, 16);
-
-    Entity sphereEntity = Entity(Entity::MODEL, app->meshProgramID, glm::vec3(0.0f, 0.0f, -5.0f));
-    sphereEntity.model = sphereModel;
-    sphereEntity.modelID = sphereModelID;
-    app->entities.push_back(sphereEntity);
+    u32 sphereModelID = CreatePrimitive(PrimitiveType::SPHERE, app, sphereModel, defaultMaterial);
 
     //Model* patrickModel = new Model();
     //u32 patrickModelID = LoadModel(app, "Assets/Patrick/Patrick.obj", patrickModel);
 
+    Entity sphereEntity = Entity(EntityType::MODEL, app->meshProgramID, glm::vec3(0.0f, 0.0f, -5.0f));
+    sphereEntity.model = sphereModel;
+    sphereEntity.modelID = sphereModelID;
+    app->entities.push_back(sphereEntity);
+
     // ENTITIES //
-    /*
-    Entity patrickEntity = Entity(Entity::MODEL, glm::vec3(0.0f));
-    patrickEntity.model = patrickModel;
-    patrickEntity.modelID = patrickModelID;
-    app->entities.push_back(patrickEntity);
-
-    Entity patrickClone1 = Entity(Entity::MODEL, glm::vec3(-6.0f, 0.0f, 0.0f));
-    patrickClone1.model = patrickModel;
-    patrickClone1.modelID = patrickModelID;
-    app->entities.push_back(patrickClone1);
-
-    Entity patrickClone2 = Entity(Entity::MODEL, glm::vec3(6.0f, 0.0f, 0.0f));
-    patrickClone2.model = patrickModel;
-    patrickClone2.modelID = patrickModelID;
-    app->entities.push_back(patrickClone2);
-    */
-
-    Entity cubeEntity = Entity(Entity::CUBE, app->cubeProgramID, glm::vec3(0.0f, 0.0f, 0.0f), false);
+    Entity cubeEntity = Entity(EntityType::PRIMITIVE, app->cubeProgramID, glm::vec3(0.0f, 0.0f, 0.0f));
     cubeEntity.model = cubeModel;
     cubeEntity.modelID = cubeModelID;
     app->entities.push_back(cubeEntity);
 
-    Entity cubeLightEntity = Entity(Entity::LIGHT, app->lightProgramID, glm::vec3(1.0f, 1.0f, 0.5f), false);
+    Entity cubeLightEntity = Entity(EntityType::LIGHT, app->lightProgramID, glm::vec3(1.0f, 1.0f, 0.5f));
     cubeLightEntity.model = cubeModel;
     cubeLightEntity.modelID = cubeModelID;
     cubeLightEntity.modelMatrix = glm::scale(cubeLightEntity.modelMatrix, glm::vec3(0.2f));
@@ -200,17 +183,32 @@ void Init(App* app)
 
     app->lightPos = cubeLightEntity.position;
 
-    //app->quad = Entity(glm::vec3(0.0f, 0.0f, 3.0f));
-    //app->quad.modelID = CreateQuad(app, app->quad.model);
-    //app->entities.push_back(quad);
+    /*
+    Entity patrickEntity = Entity(Entity::MODEL, glm::vec3(0.0f));
+    patrickEntity.model = patrickModel;
+    patrickEntity.modelID = patrickModelID;
+    app->entities.push_back(patrickEntity);
+    
+    Entity patrickClone1 = Entity(Entity::MODEL, glm::vec3(-6.0f, 0.0f, 0.0f));
+    patrickClone1.model = patrickModel;
+    patrickClone1.modelID = patrickModelID;
+    app->entities.push_back(patrickClone1);
+    
+    Entity patrickClone2 = Entity(Entity::MODEL, glm::vec3(6.0f, 0.0f, 0.0f));
+    patrickClone2.model = patrickModel;
+    patrickClone2.modelID = patrickModelID;
+    app->entities.push_back(patrickClone2);
+
+    app->quad = Entity(glm::vec3(0.0f, 0.0f, 3.0f));
+    app->quad.modelID = CreateQuad(app, app->quad.model);
+    app->entities.push_back(quad);
+    */
 
     // ENGINE SETTINGS //
-
     app->numEntities = app->entities.size();
     app->mode = RenderMode::TEXTURE_MESH;
 
     // OPENGL SETTINGS //
-
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -356,57 +354,52 @@ void Render(App* app)
 
             glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->UBO, entity.localParamOffset, entity.localParamSize);
 
-            glUseProgram(app->shaderPrograms[entity.shaderID].handle);
+            ShaderProgram& shader = app->shaderPrograms[entity.shaderID];
+            glUseProgram(shader.handle);
 
             Model* model = entity.model;
             u32 numMeshes = model->meshes.size();
             for (u32 meshIndex = 0; meshIndex < numMeshes; ++meshIndex)
             {
-                u32 vao = FindVAO(model, meshIndex, app->shaderPrograms[entity.shaderID], entity.hasIndices);
+                u32 vao = FindVAO(model, meshIndex, shader);
 
                 glBindVertexArray(vao);
 
                 u32 meshMaterialID = model->materialIDs[meshIndex];
                 Material& meshMaterial = app->materials[meshMaterialID];
 
-                switch (app->entities[i].type)
+                switch (entity.type)
                 {
-                case Entity::Type::MODEL:
+                case EntityType::MODEL:
                 {
                     glActiveTexture(GL_TEXTURE0);
                     glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
                     glUniform1i(app->meshTextureLocation, 0);
                 }
                 break;
-                case Entity::Type::CUBE:
+                case EntityType::PRIMITIVE:
                 {
                     glActiveTexture(GL_TEXTURE0);
                     glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
                     glUniform1i(app->cubeTextureLocation, 0);
 
-                    glUniform3fv(glGetUniformLocation(app->shaderPrograms[entity.shaderID].handle, "uObjColor"), 1, &meshMaterial.albedo[0]);
                     glm::vec3 lightColor = glm::vec3(1.0f);
-                    glUniform3fv(glGetUniformLocation(app->shaderPrograms[entity.shaderID].handle, "uLightColor"), 1, &lightColor[0]);
-                    glUniform3fv(glGetUniformLocation(app->shaderPrograms[entity.shaderID].handle, "uLightPos"), 1, &app->lightPos[0]);
-                    glUniform3fv(glGetUniformLocation(app->shaderPrograms[entity.shaderID].handle, "uViewPos"), 1, &app->camera.position[0]);
+                    glUniform3fv(glGetUniformLocation(shader.handle, "uObjColor"), 1, &meshMaterial.albedo[0]);
+                    glUniform3fv(glGetUniformLocation(shader.handle, "uLightColor"), 1, &lightColor[0]);
+                    glUniform3fv(glGetUniformLocation(shader.handle, "uLightPos"), 1, &app->lightPos[0]);
+                    glUniform3fv(glGetUniformLocation(shader.handle, "uViewPos"), 1, &app->camera.position[0]);
                 }
                 break;
                 }
 
                 Mesh& mesh = model->meshes[meshIndex];
 
-                switch (entity.type)
-                {
-                case Entity::Type::MODEL:
+                if (model->isIndexed)
                     glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.indexOffset);
-                    break;
-                case Entity::Type::CUBE:
-                    glDrawArrays(GL_TRIANGLES, 0, 36); // Check for different primitives without indices, the only one supported by now is the cube (quad is indexed tho)
-                    break;
-                case Entity::Type::LIGHT:
-                    glDrawArrays(GL_TRIANGLES, 0, 36); // Check for different primitives without indices, the only one supported by now is the cube (quad is indexed tho)
-                    break;
-                }
+                else
+                    // Check for different primitives without indices (only Cube by now)
+                    glDrawArrays(GL_TRIANGLES, 0, 36);
+
                 glBindVertexArray(0);
             }
             glUseProgram(0);
@@ -420,7 +413,7 @@ void Render(App* app)
 
         Model* model = app->quad.model;
 
-        u32 vao = FindVAO(model, 0, texturedQuadProgram, app->quad.hasIndices);
+        u32 vao = FindVAO(model, 0, texturedQuadProgram);
         glBindVertexArray(vao);
 
         u32 meshMaterialID = model->materialIDs[0];

@@ -30,6 +30,8 @@ struct Model
 
     u32 VBHandle = 0;
     u32 EBHandle = 0;
+
+    bool isIndexed = true;
 };
 
 struct Material
@@ -47,23 +49,23 @@ struct Material
     u32 bumpTextureID;
 };
 
+enum class EntityType
+{
+    DEFAULT,
+    PRIMITIVE,
+    MODEL,
+    LIGHT
+};
+
 struct Entity
 {
 public:
-    enum Type
-    {
-        DEFAULT,
-        CUBE,
-        MODEL,
-        LIGHT
-    };
-
     Entity();
-    Entity(Type type, u32 shaderID, glm::vec3 newPosition, bool hasIndices = true);
+    Entity(EntityType type, u32 shaderID, glm::vec3 newPosition);
     ~Entity();
 
 public:
-    Type type;
+    EntityType type;
 
     glm::vec3 position;
     glm::mat4 modelMatrix;
@@ -73,6 +75,5 @@ public:
 
     Model* model;
     u32 modelID;
-    bool hasIndices;
     u32 shaderID;
 };
