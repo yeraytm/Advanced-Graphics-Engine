@@ -35,7 +35,7 @@ u32 FindVAO(Model* model, u32 meshIndex, const ShaderProgram& shaderProgram, boo
     if (hasIndices)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model->EBHandle);
 
-    // We have to link all vertex inputs attributes to attributes in the vertex buffer
+    // We have to link all vertex shader inputs attributes to attributes in the vertex buffer
     for (u32 i = 0; i < shaderProgram.vertexLayout.attributes.size(); ++i)
     {
         bool attributeWasLinked = false;
@@ -96,10 +96,12 @@ void UpdateUniformBuffer(App* app)
 
 void Init(App* app)
 {
+    // IMGUI WINDOWS //
     app->debugInfo = false;
     app->openGLStatus = false;
     app->sceneInfo = false;
 
+    // OPENGL DEBUG //
     app->glState.version = "Version: " + std::string((const char*)glGetString(GL_VERSION));
     app->glState.renderer = "Renderer: " + std::string((const char*)glGetString(GL_RENDERER));
     app->glState.vendor = "Vendor: " + std::string((const char*)glGetString(GL_VENDOR));
@@ -112,6 +114,7 @@ void Init(App* app)
         app->glState.extensions.emplace_back((const char*)glGetStringi(GL_EXTENSIONS, GLuint(i)));
     }
 
+    // OPENGL UNIFORM BUFFER //
     int maxUniformBlockSize;
     glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxUniformBlockSize);
     glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBufferOffsetAlignment);
@@ -121,20 +124,23 @@ void Init(App* app)
     glBufferData(GL_UNIFORM_BUFFER, maxUniformBlockSize, NULL, GL_STREAM_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-    // Camera setup
-    app->camera = Camera(glm::vec3(0.0f, 0.0f, 10.0f));
+    // CAMERA & PROJECTION //
+    app->camera = Camera(glm::vec3(0.0f, 0.0f, 5.0f));
 
-    // Projection Matrix initialization & setup
     app->projection = glm::mat4(1.0f);
     app->projection = glm::perspective(glm::radians(45.0f), float(app->displaySize.x) / float(app->displaySize.y), 0.1f, 100.0f);
 
+    // RESOURCES //
     app->quadProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/QuadShader.glsl", "TEXTURED_QUAD");
-    ShaderProgram& texturedQuadProgram = app->shaderPrograms[app->quadProgramID];
-    app->quadTextureLocation = glGetUniformLocation(texturedQuadProgram.handle, "uTexture");
+    app->quadTextureLocation = glGetUniformLocation(app->shaderPrograms[app->quadProgramID].handle, "uTexture");
 
     app->meshProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/MeshShader.glsl", "TEXTURED_MESH");
-    ShaderProgram& texturedMeshProgram = app->shaderPrograms[app->meshProgramID];
-    app->meshTextureLocation = glGetUniformLocation(texturedMeshProgram.handle, "uTexture");
+    app->meshTextureLocation = glGetUniformLocation(app->shaderPrograms[app->meshProgramID].handle, "uTexture");
+
+    app->cubeProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/CubeShader.glsl", "CUBE_MESH");
+    app->cubeTextureLocation = glGetUniformLocation(app->shaderPrograms[app->cubeProgramID].handle, "uTexture");
+
+    app->lightProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/LightShader.glsl", "LIGHT_SOURCE");
 
     app->diceTexIdx = LoadTexture2D(app->textures, "Assets/dice.png");
     app->whiteTexIdx = LoadTexture2D(app->textures, "Assets/color_white.png");
@@ -142,44 +148,68 @@ void Init(App* app)
     app->normalTexIdx = LoadTexture2D(app->textures, "Assets/color_normal.png");
     app->magentaTexIdx = LoadTexture2D(app->textures, "Assets/color_magenta.png");
 
-    Model* patrickModel = new Model();
-    u32 patrickModelID = LoadModel(app, "Assets/Patrick/Patrick.obj", patrickModel);
+    Material defaultMaterial = {};
+    defaultMaterial.name = "Default Material";
+    defaultMaterial.albedo = glm::vec3(1.0f, 0.5f, 0.31f);
+    defaultMaterial.emissive = glm::vec3(0.0f);
+    defaultMaterial.smoothness = 0.0f;
+    defaultMaterial.albedoTextureID = app->magentaTexIdx;
 
     Model* cubeModel = new Model();
-    u32 cubeModelID = CreateCube(app, cubeModel);
+    u32 cubeModelID = CreateCube(app, defaultMaterial, cubeModel);
 
-    Entity patrickEntity = Entity(glm::vec3(0.0f));
+    Model* sphereModel = new Model();
+    u32 sphereModelID = CreateSphere(app, defaultMaterial, sphereModel, 16, 16);
+
+    Entity sphereEntity = Entity(Entity::MODEL, app->meshProgramID, glm::vec3(0.0f, 0.0f, -5.0f));
+    sphereEntity.model = sphereModel;
+    sphereEntity.modelID = sphereModelID;
+    app->entities.push_back(sphereEntity);
+
+    //Model* patrickModel = new Model();
+    //u32 patrickModelID = LoadModel(app, "Assets/Patrick/Patrick.obj", patrickModel);
+
+    // ENTITIES //
+    /*
+    Entity patrickEntity = Entity(Entity::MODEL, glm::vec3(0.0f));
     patrickEntity.model = patrickModel;
     patrickEntity.modelID = patrickModelID;
     app->entities.push_back(patrickEntity);
 
-    Entity patrickClone1 = Entity(glm::vec3(-6.0f, 0.0f, 0.0f));
+    Entity patrickClone1 = Entity(Entity::MODEL, glm::vec3(-6.0f, 0.0f, 0.0f));
     patrickClone1.model = patrickModel;
     patrickClone1.modelID = patrickModelID;
     app->entities.push_back(patrickClone1);
 
-    Entity patrickClone2 = Entity(glm::vec3(6.0f, 0.0f, 0.0f));
+    Entity patrickClone2 = Entity(Entity::MODEL, glm::vec3(6.0f, 0.0f, 0.0f));
     patrickClone2.model = patrickModel;
     patrickClone2.modelID = patrickModelID;
     app->entities.push_back(patrickClone2);
+    */
 
-    Entity cubeEntity = Entity(glm::vec3(0.0f, 0.0f, 3.0f), false);
+    Entity cubeEntity = Entity(Entity::CUBE, app->cubeProgramID, glm::vec3(0.0f, 0.0f, 0.0f), false);
     cubeEntity.model = cubeModel;
     cubeEntity.modelID = cubeModelID;
     app->entities.push_back(cubeEntity);
 
+    Entity cubeLightEntity = Entity(Entity::LIGHT, app->lightProgramID, glm::vec3(1.0f, 1.0f, 0.5f), false);
+    cubeLightEntity.model = cubeModel;
+    cubeLightEntity.modelID = cubeModelID;
+    cubeLightEntity.modelMatrix = glm::scale(cubeLightEntity.modelMatrix, glm::vec3(0.2f));
+    app->entities.push_back(cubeLightEntity);
 
+    app->lightPos = cubeLightEntity.position;
 
     //app->quad = Entity(glm::vec3(0.0f, 0.0f, 3.0f));
     //app->quad.modelID = CreateQuad(app, app->quad.model);
     //app->entities.push_back(quad);
 
-    /////////////////////////////////////////////////////
+    // ENGINE SETTINGS //
 
     app->numEntities = app->entities.size();
     app->mode = RenderMode::TEXTURE_MESH;
 
-    /////////////////////////////////////////////////////
+    // OPENGL SETTINGS //
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
@@ -248,9 +278,9 @@ void ImGuiRender(App* app)
         //glm::vec2 yawPitch = glm::vec2(app->camera.yaw, app->camera.pitch);
         //ImGui::DragFloat2("Yaw / Pitch", &yawPitch[0]);
 
-        //ImGui::Separator();
+        ImGui::Separator();
 
-        //ImGui::Text("Entities");
+        ImGui::Text("Entities");
         //for (int i = 0; i < app->numEntities; ++i)
         //{
         //    if (ImGui::DragFloat3(std::to_string(i).c_str(), &app->entities[i].position[0], 0.1f))
@@ -285,7 +315,7 @@ void Update(App* app)
     if (app->input.keys[K_Q] == BUTTON_PRESSED)
         app->camera.ProcessKeyboard(CameraDirection::CAMERA_UP, app->deltaTime);
     if (app->input.keys[K_E] == BUTTON_PRESSED)
-        app->camera.ProcessKeyboard(CameraDirection::CAMERA_DOWN, app->deltaTime);
+        app->camera.ProcessKeyboard(CameraDirection::CAMERA_DOWN, app->deltaTime);    
 
     for (u32 i = 0; i < app->shaderPrograms.size(); ++i)
     {
@@ -322,35 +352,63 @@ void Render(App* app)
     {
         for (u32 i = 0; i < app->numEntities; ++i)
         {
-            glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->UBO, app->entities[i].localParamOffset, app->entities[i].localParamSize);
+            Entity& entity = app->entities[i];
 
-            glUseProgram(texturedMeshProgram.handle);
+            glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->UBO, entity.localParamOffset, entity.localParamSize);
 
-            Model* model = app->entities[i].model;
+            glUseProgram(app->shaderPrograms[entity.shaderID].handle);
+
+            Model* model = entity.model;
             u32 numMeshes = model->meshes.size();
             for (u32 meshIndex = 0; meshIndex < numMeshes; ++meshIndex)
             {
-                u32 vao = FindVAO(model, meshIndex, texturedMeshProgram, app->entities[i].hasIndices);
+                u32 vao = FindVAO(model, meshIndex, app->shaderPrograms[entity.shaderID], entity.hasIndices);
 
                 glBindVertexArray(vao);
 
                 u32 meshMaterialID = model->materialIDs[meshIndex];
                 Material& meshMaterial = app->materials[meshMaterialID];
 
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
-                glUniform1i(app->meshTextureLocation, 0);
+                switch (app->entities[i].type)
+                {
+                case Entity::Type::MODEL:
+                {
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
+                    glUniform1i(app->meshTextureLocation, 0);
+                }
+                break;
+                case Entity::Type::CUBE:
+                {
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
+                    glUniform1i(app->cubeTextureLocation, 0);
+
+                    glUniform3fv(glGetUniformLocation(app->shaderPrograms[entity.shaderID].handle, "uObjColor"), 1, &meshMaterial.albedo[0]);
+                    glm::vec3 lightColor = glm::vec3(1.0f);
+                    glUniform3fv(glGetUniformLocation(app->shaderPrograms[entity.shaderID].handle, "uLightColor"), 1, &lightColor[0]);
+                    glUniform3fv(glGetUniformLocation(app->shaderPrograms[entity.shaderID].handle, "uLightPos"), 1, &app->lightPos[0]);
+                    glUniform3fv(glGetUniformLocation(app->shaderPrograms[entity.shaderID].handle, "uViewPos"), 1, &app->camera.position[0]);
+                }
+                break;
+                }
 
                 Mesh& mesh = model->meshes[meshIndex];
 
-                if (app->entities[i].hasIndices)
+                switch (entity.type)
+                {
+                case Entity::Type::MODEL:
                     glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.indexOffset);
-                else
+                    break;
+                case Entity::Type::CUBE:
                     glDrawArrays(GL_TRIANGLES, 0, 36); // Check for different primitives without indices, the only one supported by now is the cube (quad is indexed tho)
-
+                    break;
+                case Entity::Type::LIGHT:
+                    glDrawArrays(GL_TRIANGLES, 0, 36); // Check for different primitives without indices, the only one supported by now is the cube (quad is indexed tho)
+                    break;
+                }
                 glBindVertexArray(0);
             }
-
             glUseProgram(0);
         }
     }

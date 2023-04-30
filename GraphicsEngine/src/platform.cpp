@@ -157,6 +157,8 @@ int main()
     app.displaySize = glm::ivec2(WINDOW_WIDTH, WINDOW_HEIGHT);
     app.isRunning = true;
 
+    app.input.mousePos = glm::vec2(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT / 2.0f);
+
     glfwSetErrorCallback(OnGlfwError);
 
     if (!glfwInit())

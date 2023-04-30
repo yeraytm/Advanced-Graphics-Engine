@@ -55,11 +55,17 @@ struct App
     // Program indices
     u32 quadProgramID;
     u32 meshProgramID;
+    u32 lightProgramID;
+    u32 cubeProgramID;
 
     // Location of the texture uniform in the textured quad shader
     u32 quadTextureLocation;
     // Location of the texture uniform in the textured mesh shader
     u32 meshTextureLocation;
+
+    u32 cubeTextureLocation;
+
+    glm::vec3 lightPos;
 
     Camera camera;
 

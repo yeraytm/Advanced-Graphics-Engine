@@ -491,5 +491,7 @@
     <None Include="src\vendor\glm\gtx\wrap.inl" />
     <None Include="Assets\Shaders\MeshShader.glsl" />
     <None Include="Assets\Shaders\QuadShader.glsl" />
+    <None Include="Assets\Shaders\LightShader.glsl" />
+    <None Include="Assets\Shaders\CubeShader.glsl" />
   </ItemGroup>
 </Project>

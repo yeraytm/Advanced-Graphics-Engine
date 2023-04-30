@@ -50,11 +50,21 @@ struct Material
 struct Entity
 {
 public:
+    enum Type
+    {
+        DEFAULT,
+        CUBE,
+        MODEL,
+        LIGHT
+    };
+
     Entity();
-    Entity(glm::vec3 newPosition, bool hasIndices = true);
+    Entity(Type type, u32 shaderID, glm::vec3 newPosition, bool hasIndices = true);
     ~Entity();
 
 public:
+    Type type;
+
     glm::vec3 position;
     glm::mat4 modelMatrix;
 
@@ -64,4 +74,5 @@ public:
     Model* model;
     u32 modelID;
     bool hasIndices;
+    u32 shaderID;
 };
