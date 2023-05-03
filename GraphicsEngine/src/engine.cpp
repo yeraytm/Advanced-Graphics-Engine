@@ -84,7 +84,7 @@ void UpdateUniformBuffer(App* app)
         bufferHead += sizeof(glm::mat4);
 
         glm::mat4 MVP = app->projection * app->camera.GetViewMatrix() * app->entities[i].modelMatrix;
-        memcpy(bufferData + bufferHead, &MVP, sizeof(glm::mat4));
+        memcpy(bufferData + bufferHead, &MVP[0][0], sizeof(glm::mat4));
         bufferHead += sizeof(glm::mat4);
 
         app->entities[i].localParamSize = bufferHead - app->entities[i].localParamOffset;
@@ -186,7 +186,7 @@ void Init(App* app)
     Entity cubeEntity = Entity(EntityType::PRIMITIVE, app->cubeProgramID, glm::vec3(0.0f, 0.0f, 0.0f), cubeModel, cubeModelID);
     app->entities.push_back(cubeEntity);
 
-    Entity cubeLightEntity = Entity(EntityType::LIGHT, app->lightProgramID, glm::vec3(1.0f, 1.0f, 0.5f), cubeModel, cubeModelID);
+    Entity cubeLightEntity = Entity(EntityType::LIGHT, app->lightProgramID, glm::vec3(0.0f, 0.75f, 1.0f), cubeModel, cubeModelID);
     cubeLightEntity.modelMatrix = glm::scale(cubeLightEntity.modelMatrix, glm::vec3(0.2f));
     app->entities.push_back(cubeLightEntity);
 
