@@ -21,7 +21,6 @@ void ProcessAssimpMaterial(App* app, aiMaterial* material, Material& myMaterial,
     material->Get(AI_MATKEY_SHININESS, shininess);
 
     myMaterial.name = name.C_Str();
-    myMaterial.ambient = glm::vec3(ambientColor.r, ambientColor.g, ambientColor.b);
     myMaterial.diffuse = glm::vec3(diffuseColor.r, diffuseColor.g, diffuseColor.b);
     myMaterial.specular = glm::vec3(specularColor.r, specularColor.g, specularColor.b);
     myMaterial.emissive = glm::vec3(emissiveColor.r, emissiveColor.g, emissiveColor.b);

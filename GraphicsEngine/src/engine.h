@@ -68,6 +68,8 @@ struct App
 
     int uniformBufferOffsetAlignment;
     Buffer UBO;
+    u32 globalParamOffset;
+    u32 globalParamSize;
 
     u32 numLights;
     std::vector<Light> lights;

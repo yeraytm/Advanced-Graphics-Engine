@@ -70,27 +70,46 @@ u32 FindVAO(Model* model, u32 meshIndex, const ShaderProgram& shaderProgram)
 
 void UpdateUniformBuffer(App* app)
 {
-    glBindBuffer(GL_UNIFORM_BUFFER, app->UBO.handle);
-    u8* bufferData = (u8*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-    u32 bufferHead = 0;
+    MapBuffer(app->UBO, GL_WRITE_ONLY);
 
+    // Global Parameters //
+    app->globalParamOffset = app->UBO.head;
+
+    PushVec3(app->UBO, app->camera.position);
+
+    // Lights
+    PushUInt(app->UBO, app->numLights);
+    for (u32 i = 0; i < app->numLights; ++i)
+    {
+        AlignHead(app->UBO, sizeof(glm::vec4));
+
+        Light& light = app->lights[i];
+        PushUInt(app->UBO, (u32)light.type);
+        PushVec3(app->UBO, light.position);
+        PushVec3(app->UBO, light.direction);
+        PushVec3(app->UBO, light.ambient);
+        PushVec3(app->UBO, light.diffuse);
+        PushVec3(app->UBO, light.specular);
+    }
+    app->globalParamSize = app->UBO.head - app->globalParamOffset;
+
+    // Local Parameters //
     for (u32 i = 0; i < app->numEntities; ++i)
     {
-        bufferHead = Align(bufferHead, app->uniformBufferOffsetAlignment);
-        app->entities[i].localParamOffset = bufferHead;
+        AlignHead(app->UBO, app->uniformBufferOffsetAlignment);
 
-        memcpy(bufferData + bufferHead, &app->entities[i].modelMatrix[0][0], sizeof(glm::mat4));
-        bufferHead += sizeof(glm::mat4);
+        Entity& entity = app->entities[i];
+        entity.localParamOffset = app->UBO.head;
 
-        glm::mat4 MVP = app->projection * app->camera.GetViewMatrix() * app->entities[i].modelMatrix;
-        memcpy(bufferData + bufferHead, &MVP[0][0], sizeof(glm::mat4));
-        bufferHead += sizeof(glm::mat4);
+        glm::mat4& modelMatrix = entity.modelMatrix;
+        PushMat4(app->UBO, modelMatrix);
 
-        app->entities[i].localParamSize = bufferHead - app->entities[i].localParamOffset;
+        glm::mat4 MVP = app->projection * app->camera.GetViewMatrix() * modelMatrix;
+        PushMat4(app->UBO, MVP);
+
+        entity.localParamSize = app->UBO.head - entity.localParamOffset;
     }
-
-    glUnmapBuffer(GL_UNIFORM_BUFFER);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    UnmapBuffer(app->UBO);
 }
 
 void Init(App* app)
@@ -131,7 +150,7 @@ void Init(App* app)
     app->meshTextureAlbedoLocation = glGetUniformLocation(app->shaderPrograms[meshProgramID].handle, "material.albedo");
 
     u32 cubeProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/CubeShader.glsl", "CUBE_MESH");
-    app->cubeTextureAlbedoLocation = glGetUniformLocation(app->shaderPrograms[cubeProgramID].handle, "material.diffuse");
+    app->cubeTextureAlbedoLocation = glGetUniformLocation(app->shaderPrograms[cubeProgramID].handle, "material.albedo");
     app->cubeTextureSpecularLocation = glGetUniformLocation(app->shaderPrograms[cubeProgramID].handle, "material.specular");
 
     u32 lightProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/LightShader.glsl", "LIGHT_SOURCE");
@@ -149,7 +168,6 @@ void Init(App* app)
     // MATERIALS //
     Material defaultMaterial = {};
     defaultMaterial.name = "Default Material";
-    defaultMaterial.ambient = glm::vec3(1.0f, 0.5f, 0.31f);
     defaultMaterial.diffuse = glm::vec3(1.0f, 0.5f, 0.31f);
     defaultMaterial.specular = glm::vec3(0.5f);
     defaultMaterial.emissive = glm::vec3(0.0f);
@@ -159,7 +177,6 @@ void Init(App* app)
 
     Material whiteMaterial = {};
     whiteMaterial.name = "White Material";
-    whiteMaterial.ambient = glm::vec3(1.0f);
     whiteMaterial.diffuse = glm::vec3(1.0f);
     whiteMaterial.specular = glm::vec3(0.5);
     whiteMaterial.emissive = glm::vec3(0.0f);
@@ -176,8 +193,8 @@ void Init(App* app)
     Model* sphereModel = new Model();
     u32 sphereModelID = CreatePrimitive(PrimitiveType::SPHERE, app, sphereModel, defaultMaterial);
 
-    //Model* patrickModel = new Model();
-    //u32 patrickModelID = LoadModel(app, "Assets/Patrick/Patrick.obj", patrickModel);
+    Model* patrickModel = new Model();
+    u32 patrickModelID = LoadModel(app, "Assets/Patrick/Patrick.obj", patrickModel);
 
     // ENTITIES //
     Entity planeEntity = Entity(EntityType::MODEL, meshProgramID, glm::vec3(0.0f, -5.0f, 0.0f), planeModel, planeModelID);
@@ -203,39 +220,53 @@ void Init(App* app)
 
     for (u32 i = 0; i < 10; ++i)
     {
-        Entity cubeEntity = Entity(EntityType::PRIMITIVE, cubeProgramID, cubePositions[i], cubeModel, cubeModelID);
-        float angle = 20.0f * i;
-        cubeEntity.modelMatrix = glm::rotate(cubeEntity.modelMatrix, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-        app->entities.push_back(cubeEntity);
+        //Entity cubeEntity = Entity(EntityType::PRIMITIVE, cubeProgramID, cubePositions[i], cubeModel, cubeModelID);
+        //float angle = 20.0f * i;
+        //cubeEntity.modelMatrix = glm::rotate(cubeEntity.modelMatrix, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+        //app->entities.push_back(cubeEntity);
+
+        Entity cubeLightEntity = Entity(EntityType::LIGHT, lightProgramID, cubePositions[i], cubeModel, cubeModelID);
+        cubeLightEntity.modelMatrix = glm::scale(cubeLightEntity.modelMatrix, glm::vec3(0.2f));
+        app->entities.push_back(cubeLightEntity);
+
+        Light pointLight;
+        pointLight.type = LightType::POINT;
+        pointLight.position = cubeLightEntity.position;
+        pointLight.direction = glm::vec3(0.0f);
+        pointLight.ambient = glm::vec3(0.2f);
+        pointLight.diffuse = glm::vec3(0.5f);
+        pointLight.specular = glm::vec3(1.0f);
+        app->lights.push_back(pointLight);
     }
 
-    //Entity cubeEntity = Entity(EntityType::PRIMITIVE, cubeProgramID, glm::vec3(0.0f, 0.0f, 0.0f), cubeModel, cubeModelID);
-    //app->entities.push_back(cubeEntity);
+    Entity cubeEntity = Entity(EntityType::PRIMITIVE, cubeProgramID, glm::vec3(0.0f, 0.0f, 0.0f), cubeModel, cubeModelID);
+    app->entities.push_back(cubeEntity);
 
-    //Entity patrickEntity = Entity(EntityType::MODEL, meshProgramID, glm::vec3(0.0f, 0.0f, 0.0f), patrickModel, patrickModelID);
-    //app->entities.push_back(patrickEntity);
+    Entity patrickEntity = Entity(EntityType::MODEL, meshProgramID, glm::vec3(0.0f, 0.0f, -5.0f), patrickModel, patrickModelID);
+    app->entities.push_back(patrickEntity);
 
-    Entity cubeLightEntity = Entity(EntityType::LIGHT, lightProgramID, glm::vec3(0.0f, 0.5f, 5.0f), cubeModel, cubeModelID);
-    cubeLightEntity.modelMatrix = glm::scale(cubeLightEntity.modelMatrix, glm::vec3(0.2f));
-    app->entities.push_back(cubeLightEntity);
+    //Entity cubeLightEntity = Entity(EntityType::LIGHT, lightProgramID, glm::vec3(0.0f, 0.5f, 5.0f), cubeModel, cubeModelID);
+    //cubeLightEntity.modelMatrix = glm::scale(cubeLightEntity.modelMatrix, glm::vec3(0.2f));
+    //app->entities.push_back(cubeLightEntity);
+
+    //Light pointLight;
+    //pointLight.type = LightType::POINT;
+    //pointLight.position = cubeLightEntity.position;
+    //pointLight.direction = glm::vec3(0.0f);
+    //pointLight.ambient = glm::vec3(0.2f);
+    //pointLight.diffuse = glm::vec3(0.5f);
+    //pointLight.specular = glm::vec3(1.0f);
+    //app->lights.push_back(pointLight);
 
     Light dirLight;
     dirLight.type = LightType::DIRECTIONAL;
     dirLight.position = glm::vec3(0.0f);
     dirLight.direction = glm::vec3(0.0f, 1.0f, 0.0f); // -0.2f, -1.0f, -0.3f
+    dirLight.direction = glm::vec3(-0.2f, -1.0f, -0.3f);
     dirLight.ambient = glm::vec3(0.2f);
     dirLight.diffuse = glm::vec3(0.5f);
     dirLight.specular = glm::vec3(1.0f);
     app->lights.push_back(dirLight);
-
-    Light pointLight;
-    pointLight.type = LightType::POINT;
-    pointLight.position = cubeLightEntity.position;
-    pointLight.direction = glm::vec3(0.0f);
-    pointLight.ambient = glm::vec3(0.2f);
-    pointLight.diffuse = glm::vec3(0.5f);
-    pointLight.specular = glm::vec3(1.0f);
-    app->lights.push_back(pointLight);
 
     // ENGINE SETTINGS //
     app->numLights = app->lights.size();
@@ -381,6 +412,7 @@ void Render(App* app)
             ShaderProgram& shader = app->shaderPrograms[entity.shaderID];
             Model* model = entity.model;
 
+            glBindBufferRange(GL_UNIFORM_BUFFER, 0, app->UBO.handle, app->globalParamOffset, app->globalParamSize);
             glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->UBO.handle, entity.localParamOffset, entity.localParamSize);
 
             glUseProgram(shader.handle);
@@ -405,24 +437,8 @@ void Render(App* app)
                     glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
 
                     // Material
-                    glUniform3fv(glGetUniformLocation(shader.handle, "material.ambient"), 1, &meshMaterial.ambient[0]);
-                    glUniform3fv(glGetUniformLocation(shader.handle, "material.diffuse"), 1, &meshMaterial.diffuse[0]);
                     glUniform3fv(glGetUniformLocation(shader.handle, "material.specular"), 1, &meshMaterial.specular[0]);
                     glUniform1f(glGetUniformLocation(shader.handle, "material.shininess"), meshMaterial.shininess);
-
-                    // Lights
-                    for (u32 i = 0; i < app->numLights; ++i)
-                    {
-                        std::string it = std::to_string(i);
-                        glUniform1i(glGetUniformLocation(shader.handle, ("lights[" + it + "].type").c_str()), (int)app->lights[i].type);
-                        glUniform3fv(glGetUniformLocation(shader.handle, ("lights[" + it + "].position").c_str()), 1, &app->lights[i].position[0]);
-                        glUniform3fv(glGetUniformLocation(shader.handle, ("lights[" + it + "].direction").c_str()), 1, &app->lights[i].direction[0]);
-                        glUniform3fv(glGetUniformLocation(shader.handle, ("lights[" + it + "].ambient").c_str()), 1, &app->lights[i].ambient[0]);
-                        glUniform3fv(glGetUniformLocation(shader.handle, ("lights[" + it + "].diffuse").c_str()), 1, &app->lights[i].diffuse[0]);
-                        glUniform3fv(glGetUniformLocation(shader.handle, ("lights[" + it + "].specular").c_str()), 1, &app->lights[i].specular[0]);
-                    }
-
-                    glUniform3fv(glGetUniformLocation(shader.handle, "uViewPos"), 1, &app->camera.position[0]);
                 }
                 break;
                 case EntityType::PRIMITIVE:
@@ -439,20 +455,6 @@ void Render(App* app)
 
                     // Material
                     glUniform1f(glGetUniformLocation(shader.handle, "material.shininess"), meshMaterial.shininess);
-
-                    // Lights
-                    for (u32 i = 0; i < app->numLights; ++i)
-                    {
-                        std::string it = std::to_string(i);
-                        glUniform1i(glGetUniformLocation(shader.handle, ("lights[" + it + "].type").c_str()), (int)app->lights[i].type);
-                        glUniform3fv(glGetUniformLocation(shader.handle, ("lights[" + it + "].position").c_str()), 1, &app->lights[i].position[0]);
-                        glUniform3fv(glGetUniformLocation(shader.handle, ("lights[" + it + "].direction").c_str()), 1, &app->lights[i].direction[0]);
-                        glUniform3fv(glGetUniformLocation(shader.handle, ("lights[" + it + "].ambient").c_str()), 1, &app->lights[i].ambient[0]);
-                        glUniform3fv(glGetUniformLocation(shader.handle, ("lights[" + it + "].diffuse").c_str()), 1, &app->lights[i].diffuse[0]);
-                        glUniform3fv(glGetUniformLocation(shader.handle, ("lights[" + it + "].specular").c_str()), 1, &app->lights[i].specular[0]);
-                    }
-
-                    glUniform3fv(glGetUniformLocation(shader.handle, "uViewPos"), 1, &app->camera.position[0]);
                 }
                 break;
                 }
