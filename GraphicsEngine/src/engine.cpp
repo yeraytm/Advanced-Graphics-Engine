@@ -12,106 +12,6 @@
 #include "glad/glad.h"
 #include "imgui-docking/imgui.h"
 
-u32 FindVAO(Model* model, u32 meshIndex, const ShaderProgram& shaderProgram)
-{
-    Mesh& mesh = model->meshes[meshIndex];
-
-    // Try Finding a VAO for this mesh/program
-    for (u32 i = 0; i < (u32)mesh.VAOs.size(); ++i)
-    {
-        if (mesh.VAOs[i].shaderProgramHandle == shaderProgram.handle)
-            return mesh.VAOs[i].handle;
-    }
-
-    u32 vaoHandle = 0;
-
-    // --- If a VAO wasn't found, create a new VAO for this mesh/program
-
-    glGenVertexArrays(1, &vaoHandle);
-    glBindVertexArray(vaoHandle);
-
-    glBindBuffer(GL_ARRAY_BUFFER, model->VBHandle);
-    if (model->isIndexed)
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model->EBHandle);
-
-    // We have to link all vertex shader inputs attributes to attributes in the vertex buffer
-    for (u32 i = 0; i < shaderProgram.vertexLayout.attributes.size(); ++i)
-    {
-        bool attributeWasLinked = false;
-
-        const std::vector<VertexBufferAttribute>& attributes = mesh.VBLayout.attributes;
-        for (u32 j = 0; j < attributes.size(); ++j)
-        {
-            if (shaderProgram.vertexLayout.attributes[i].location == attributes[j].location)
-            {
-                const u32 index = attributes[j].location;
-                const u32 nComp = attributes[j].componentCount;
-                const u32 offset = attributes[j].offset + mesh.vertexOffset;
-                const u32 stride = mesh.VBLayout.stride;
-
-                glVertexAttribPointer(index, nComp, GL_FLOAT, GL_FALSE, stride, (void*)(u64)offset);
-                glEnableVertexAttribArray(index);
-
-                attributeWasLinked = true;
-                break;
-            }
-        }
-        assert(attributeWasLinked); // The mesh should provide an attribute for each vertex inputs
-    }
-
-    glBindVertexArray(0);
-
-    // Store the VAO handle in the list of VAOs for this mesh
-    VAO vao = { vaoHandle, shaderProgram.handle };
-    mesh.VAOs.push_back(vao);
-
-    return vaoHandle;
-}
-
-void UpdateUniformBuffer(App* app)
-{
-    MapBuffer(app->UBO, GL_WRITE_ONLY);
-
-    // Global Parameters //
-    app->globalParamOffset = app->UBO.head;
-
-    PushVec3(app->UBO, app->camera.position);
-
-    // Lights
-    PushUInt(app->UBO, app->numLights);
-    for (u32 i = 0; i < app->numLights; ++i)
-    {
-        AlignHead(app->UBO, sizeof(glm::vec4));
-
-        Light& light = app->lights[i];
-        PushUInt(app->UBO, (u32)light.type);
-        PushVec3(app->UBO, light.position);
-        PushVec3(app->UBO, light.direction);
-        PushVec3(app->UBO, light.ambient);
-        PushVec3(app->UBO, light.diffuse);
-        PushVec3(app->UBO, light.specular);
-    }
-    app->globalParamSize = app->UBO.head - app->globalParamOffset;
-
-    // Local Parameters //
-    for (u32 i = 0; i < app->numEntities; ++i)
-    {
-        AlignHead(app->UBO, app->uniformBufferOffsetAlignment);
-
-        Entity& entity = app->entities[i];
-        entity.localParamOffset = app->UBO.head;
-
-        glm::mat4& modelMatrix = entity.modelMatrix;
-        PushMat4(app->UBO, modelMatrix);
-
-        glm::mat4 MVP = app->projection * app->camera.GetViewMatrix() * modelMatrix;
-        PushMat4(app->UBO, MVP);
-
-        entity.localParamSize = app->UBO.head - entity.localParamOffset;
-    }
-    UnmapBuffer(app->UBO);
-}
-
 void Init(App* app)
 {
     // IMGUI WINDOWS //
@@ -194,7 +94,7 @@ void Init(App* app)
     u32 sphereModelID = CreatePrimitive(PrimitiveType::SPHERE, app, sphereModel, defaultMaterial);
 
     Model* patrickModel = new Model();
-    u32 patrickModelID = LoadModel(app, "Assets/Patrick/Patrick.obj", patrickModel);
+    u32 patrickModelID = LoadModel(app, "Assets/Patrick/patrick.obj", patrickModel);
 
     // ENTITIES //
     Entity planeEntity = Entity(EntityType::MODEL, meshProgramID, glm::vec3(0.0f, -5.0f, 0.0f), planeModel, planeModelID);
@@ -220,53 +120,26 @@ void Init(App* app)
 
     for (u32 i = 0; i < 10; ++i)
     {
-        //Entity cubeEntity = Entity(EntityType::PRIMITIVE, cubeProgramID, cubePositions[i], cubeModel, cubeModelID);
-        //float angle = 20.0f * i;
-        //cubeEntity.modelMatrix = glm::rotate(cubeEntity.modelMatrix, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-        //app->entities.push_back(cubeEntity);
-
-        Entity cubeLightEntity = Entity(EntityType::LIGHT, lightProgramID, cubePositions[i], cubeModel, cubeModelID);
-        cubeLightEntity.modelMatrix = glm::scale(cubeLightEntity.modelMatrix, glm::vec3(0.2f));
-        app->entities.push_back(cubeLightEntity);
-
-        Light pointLight;
-        pointLight.type = LightType::POINT;
-        pointLight.position = cubeLightEntity.position;
-        pointLight.direction = glm::vec3(0.0f);
-        pointLight.ambient = glm::vec3(0.2f);
-        pointLight.diffuse = glm::vec3(0.5f);
-        pointLight.specular = glm::vec3(1.0f);
-        app->lights.push_back(pointLight);
+        Entity cubeEntity = Entity(EntityType::PRIMITIVE, cubeProgramID, cubePositions[i], cubeModel, cubeModelID);
+        float angle = 20.0f * i;
+        cubeEntity.modelMatrix = glm::rotate(cubeEntity.modelMatrix, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+        app->entities.push_back(cubeEntity);
     }
 
-    Entity cubeEntity = Entity(EntityType::PRIMITIVE, cubeProgramID, glm::vec3(0.0f, 0.0f, 0.0f), cubeModel, cubeModelID);
-    app->entities.push_back(cubeEntity);
+    //Entity cubeEntity = Entity(EntityType::PRIMITIVE, cubeProgramID, glm::vec3(0.0f, 0.0f, 0.0f), cubeModel, cubeModelID);
+    //app->entities.push_back(cubeEntity);
 
     Entity patrickEntity = Entity(EntityType::MODEL, meshProgramID, glm::vec3(0.0f, 0.0f, -5.0f), patrickModel, patrickModelID);
     app->entities.push_back(patrickEntity);
 
-    //Entity cubeLightEntity = Entity(EntityType::LIGHT, lightProgramID, glm::vec3(0.0f, 0.5f, 5.0f), cubeModel, cubeModelID);
-    //cubeLightEntity.modelMatrix = glm::scale(cubeLightEntity.modelMatrix, glm::vec3(0.2f));
-    //app->entities.push_back(cubeLightEntity);
+    Entity cubeLightEntity = Entity(EntityType::LIGHT, lightProgramID, glm::vec3(0.0f, 0.5f, 5.0f), cubeModel, cubeModelID);
+    cubeLightEntity.modelMatrix = glm::scale(cubeLightEntity.modelMatrix, glm::vec3(0.2f));
+    app->entities.push_back(cubeLightEntity);
 
-    //Light pointLight;
-    //pointLight.type = LightType::POINT;
-    //pointLight.position = cubeLightEntity.position;
-    //pointLight.direction = glm::vec3(0.0f);
-    //pointLight.ambient = glm::vec3(0.2f);
-    //pointLight.diffuse = glm::vec3(0.5f);
-    //pointLight.specular = glm::vec3(1.0f);
-    //app->lights.push_back(pointLight);
+    // LIGHTS //
+    CreatePointLight(app, cubeLightEntity.position, glm::vec3(0.2f), glm::vec3(0.5f), glm::vec3(1.0f));
 
-    Light dirLight;
-    dirLight.type = LightType::DIRECTIONAL;
-    dirLight.position = glm::vec3(0.0f);
-    dirLight.direction = glm::vec3(0.0f, 1.0f, 0.0f); // -0.2f, -1.0f, -0.3f
-    dirLight.direction = glm::vec3(-0.2f, -1.0f, -0.3f);
-    dirLight.ambient = glm::vec3(0.2f);
-    dirLight.diffuse = glm::vec3(0.5f);
-    dirLight.specular = glm::vec3(1.0f);
-    app->lights.push_back(dirLight);
+    CreateDirectionalLight(app, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.2f), glm::vec3(0.5f), glm::vec3(1.0f)); // -0.2f, -1.0f, -0.3f
 
     // ENGINE SETTINGS //
     app->numLights = app->lights.size();
@@ -501,4 +374,116 @@ void Render(App* app)
     break;
     */
     }
+}
+
+u32 FindVAO(Model* model, u32 meshIndex, const ShaderProgram& shaderProgram)
+{
+    Mesh& mesh = model->meshes[meshIndex];
+
+    // Try Finding a VAO for this mesh/program
+    for (u32 i = 0; i < (u32)mesh.VAOs.size(); ++i)
+    {
+        if (mesh.VAOs[i].shaderProgramHandle == shaderProgram.handle)
+            return mesh.VAOs[i].handle;
+    }
+
+    u32 vaoHandle = 0;
+
+    // --- If a VAO wasn't found, create a new VAO for this mesh/program
+
+    glGenVertexArrays(1, &vaoHandle);
+    glBindVertexArray(vaoHandle);
+
+    glBindBuffer(GL_ARRAY_BUFFER, model->VBHandle);
+    if (model->isIndexed)
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model->EBHandle);
+
+    // We have to link all vertex shader inputs attributes to attributes in the vertex buffer
+    for (u32 i = 0; i < shaderProgram.vertexLayout.attributes.size(); ++i)
+    {
+        bool attributeWasLinked = false;
+
+        const std::vector<VertexBufferAttribute>& attributes = mesh.VBLayout.attributes;
+        for (u32 j = 0; j < attributes.size(); ++j)
+        {
+            if (shaderProgram.vertexLayout.attributes[i].location == attributes[j].location)
+            {
+                const u32 index = attributes[j].location;
+                const u32 nComp = attributes[j].componentCount;
+                const u32 offset = attributes[j].offset + mesh.vertexOffset;
+                const u32 stride = mesh.VBLayout.stride;
+
+                glVertexAttribPointer(index, nComp, GL_FLOAT, GL_FALSE, stride, (void*)(u64)offset);
+                glEnableVertexAttribArray(index);
+
+                attributeWasLinked = true;
+                break;
+            }
+        }
+        assert(attributeWasLinked); // The mesh should provide an attribute for each vertex inputs
+    }
+
+    glBindVertexArray(0);
+
+    // Store the VAO handle in the list of VAOs for this mesh
+    VAO vao = { vaoHandle, shaderProgram.handle };
+    mesh.VAOs.push_back(vao);
+
+    return vaoHandle;
+}
+
+void UpdateUniformBuffer(App* app)
+{
+    MapBuffer(app->UBO, GL_WRITE_ONLY);
+
+    // Global Parameters //
+    app->globalParamOffset = app->UBO.head;
+
+    PushVec3(app->UBO, app->camera.position);
+
+    // Lights
+    PushUInt(app->UBO, app->numLights);
+    for (u32 i = 0; i < app->numLights; ++i)
+    {
+        AlignHead(app->UBO, sizeof(glm::vec4));
+
+        Light& light = app->lights[i];
+        PushUInt(app->UBO, (u32)light.type);
+        PushVec3(app->UBO, light.position);
+        PushVec3(app->UBO, light.direction);
+        PushVec3(app->UBO, light.ambient);
+        PushVec3(app->UBO, light.diffuse);
+        PushVec3(app->UBO, light.specular);
+    }
+    app->globalParamSize = app->UBO.head - app->globalParamOffset;
+
+    // Local Parameters //
+    for (u32 i = 0; i < app->numEntities; ++i)
+    {
+        AlignHead(app->UBO, app->uniformBufferOffsetAlignment);
+
+        Entity& entity = app->entities[i];
+        entity.localParamOffset = app->UBO.head;
+
+        glm::mat4& modelMatrix = entity.modelMatrix;
+        PushMat4(app->UBO, modelMatrix);
+
+        glm::mat4 MVP = app->projection * app->camera.GetViewMatrix() * modelMatrix;
+        PushMat4(app->UBO, MVP);
+
+        entity.localParamSize = app->UBO.head - entity.localParamOffset;
+    }
+    UnmapBuffer(app->UBO);
+}
+
+void CreatePointLight(App* app, glm::vec3 position, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular)
+{
+    Light light = Light(LightType::POINT, position, glm::vec3(0.0f), ambient, diffuse, specular);
+    app->lights.push_back(light);
+}
+
+void CreateDirectionalLight(App* app, glm::vec3 direction, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular)
+{
+    Light light = Light(LightType::DIRECTIONAL, glm::vec3(0.0f), direction, ambient, diffuse, specular);
+    app->lights.push_back(light);
 }

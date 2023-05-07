@@ -7,14 +7,12 @@ void ProcessAssimpMaterial(App* app, aiMaterial* material, Material& myMaterial,
 {
     aiString name;
 
-    aiColor3D ambientColor;
     aiColor3D diffuseColor;
     aiColor3D specularColor;
     aiColor3D emissiveColor;
     ai_real shininess;
 
     material->Get(AI_MATKEY_NAME, name);
-    material->Get(AI_MATKEY_COLOR_AMBIENT, ambientColor);
     material->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor);
     material->Get(AI_MATKEY_COLOR_SPECULAR, specularColor);
     material->Get(AI_MATKEY_COLOR_EMISSIVE, emissiveColor);
