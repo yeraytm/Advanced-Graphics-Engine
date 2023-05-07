@@ -10,6 +10,7 @@
 #include "Texture.h"
 #include "Entity.h"
 #include "Camera.h"
+#include "BufferManagement.h"
 
 enum class RenderMode
 {
@@ -25,6 +26,24 @@ struct OpenGLState
     std::string glslVersion;
     std::vector<std::string> extensions;
     int numExtensions;
+};
+
+enum class LightType
+{
+    DIRECTIONAL,
+    POINT
+};
+
+struct Light
+{
+    LightType type;
+
+    glm::vec3 position;
+    glm::vec3 direction;
+
+    glm::vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
 };
 
 struct App
@@ -44,6 +63,15 @@ struct App
     bool debugInfo;
     bool sceneInfo;
 
+    Camera camera;
+    glm::mat4 projection;
+
+    int uniformBufferOffsetAlignment;
+    Buffer UBO;
+
+    u32 numLights;
+    std::vector<Light> lights;
+
     u32 numEntities;
     std::vector<Entity> entities;
 
@@ -52,39 +80,21 @@ struct App
     std::vector<Material> materials;
     std::vector<ShaderProgram> shaderPrograms;
 
-    // Program indices
-    u32 quadProgramID;
-    u32 meshProgramID;
-    u32 lightProgramID;
-    u32 cubeProgramID;
-
     // Location of the texture uniform in the textured quad shader
-    u32 quadTextureLocation;
-    // Location of the texture uniform in the textured mesh shader
-    u32 meshTextureLocation;
+    //u32 quadTextureLocation;
 
-    u32 cubeTextureLocation;
+    // Location of the textures uniform in the textured mesh shader
+    u32 meshTextureAlbedoLocation;
 
-    glm::vec3 lightPos;
-
-    Camera camera;
-
-    glm::mat4 projection;
-
-    int uniformBufferOffsetAlignment;
-    u32 UBO;
-
-    Entity quad;
+    //u32 quadProgramID;
+    //Entity quad;
 
     // Mode
     RenderMode mode;
 
-    // Texture indices
-    u32 diceTexIdx;
-    u32 whiteTexIdx;
-    u32 blackTexIdx;
-    u32 normalTexIdx;
-    u32 magentaTexIdx;
+    // TEMPORAL
+    u32 cubeTextureAlbedoLocation;
+    u32 cubeTextureSpecularLocation;
 };
 
 void Init(App* app);

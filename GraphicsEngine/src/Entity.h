@@ -38,9 +38,11 @@ struct Material
 {
     std::string name;
 
-    glm::vec3 albedo;
+    glm::vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
     glm::vec3 emissive;
-    float smoothness;
+    float shininess;
 
     u32 albedoTextureID;
     u32 emissiveTextureID;
