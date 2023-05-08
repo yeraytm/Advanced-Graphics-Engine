@@ -66,14 +66,21 @@ void Init(App* app)
     u32 containerSpecularID = LoadTexture2D(app->textures, "Assets/Container/container_specular.png");
 
     // MATERIALS //
-    Material defaultMaterial = {};
-    defaultMaterial.name = "Default Material";
-    defaultMaterial.diffuse = glm::vec3(1.0f, 0.5f, 0.31f);
-    defaultMaterial.specular = glm::vec3(0.5f);
-    defaultMaterial.emissive = glm::vec3(0.0f);
-    defaultMaterial.shininess = 32.0f;
-    defaultMaterial.albedoTextureID = containerAlbedoTexID;
-    defaultMaterial.specularTextureID = containerSpecularID;
+    Material defaultMat = {};
+    defaultMat.name = "Default Material";
+    defaultMat.diffuse = glm::vec3(1.0f, 0.5f, 0.31f);
+    defaultMat.specular = glm::vec3(0.5f);
+    defaultMat.emissive = glm::vec3(0.0f);
+    defaultMat.shininess = 32.0f;
+
+    Material containerMat = {};
+    containerMat.name = "Default Material";
+    containerMat.diffuse = glm::vec3(1.0f, 0.5f, 0.31f);
+    containerMat.specular = glm::vec3(0.5f);
+    containerMat.emissive = glm::vec3(0.0f);
+    containerMat.shininess = 32.0f;
+    containerMat.albedoTextureID = containerAlbedoTexID;
+    containerMat.specularTextureID = containerSpecularID;
 
     Material whiteMaterial = {};
     whiteMaterial.name = "White Material";
@@ -81,17 +88,16 @@ void Init(App* app)
     whiteMaterial.specular = glm::vec3(0.5);
     whiteMaterial.emissive = glm::vec3(0.0f);
     whiteMaterial.shininess = 32.0f;
-    whiteMaterial.albedoTextureID = whiteTexIdx;
 
     // MODELS //
     Model* planeModel = new Model();
     u32 planeModelID = CreatePrimitive(PrimitiveType::PLANE, app, planeModel, whiteMaterial);
 
     Model* cubeModel = new Model();
-    u32 cubeModelID = CreatePrimitive(PrimitiveType::CUBE, app, cubeModel, defaultMaterial);
+    u32 cubeModelID = CreatePrimitive(PrimitiveType::CUBE, app, cubeModel, containerMat);
 
     Model* sphereModel = new Model();
-    u32 sphereModelID = CreatePrimitive(PrimitiveType::SPHERE, app, sphereModel, defaultMaterial);
+    u32 sphereModelID = CreatePrimitive(PrimitiveType::SPHERE, app, sphereModel, defaultMat);
 
     Model* patrickModel = new Model();
     u32 patrickModelID = LoadModel(app, "Assets/Patrick/patrick.obj", patrickModel);
@@ -100,10 +106,10 @@ void Init(App* app)
     Entity planeEntity = Entity(EntityType::MODEL, meshProgramID, glm::vec3(0.0f, -5.0f, 0.0f), planeModel, planeModelID);
     planeEntity.modelMatrix = glm::rotate(planeEntity.modelMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     planeEntity.modelMatrix = glm::scale(planeEntity.modelMatrix, glm::vec3(25.0f));
-    app->entities.push_back(planeEntity);
+    //app->entities.push_back(planeEntity);
 
     Entity sphereEntity = Entity(EntityType::MODEL, meshProgramID, glm::vec3(0.0f, 0.0f, -15.0f), sphereModel, sphereModelID);
-    app->entities.push_back(sphereEntity);
+    //app->entities.push_back(sphereEntity);
 
     glm::vec3 cubePositions[] = {
     glm::vec3(0.0f,  0.0f,  0.0f),
@@ -123,7 +129,7 @@ void Init(App* app)
         Entity cubeEntity = Entity(EntityType::PRIMITIVE, cubeProgramID, cubePositions[i], cubeModel, cubeModelID);
         float angle = 20.0f * i;
         cubeEntity.modelMatrix = glm::rotate(cubeEntity.modelMatrix, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-        app->entities.push_back(cubeEntity);
+        //app->entities.push_back(cubeEntity);
     }
 
     //Entity cubeEntity = Entity(EntityType::PRIMITIVE, cubeProgramID, glm::vec3(0.0f, 0.0f, 0.0f), cubeModel, cubeModelID);
@@ -132,14 +138,14 @@ void Init(App* app)
     Entity patrickEntity = Entity(EntityType::MODEL, meshProgramID, glm::vec3(0.0f, 0.0f, -5.0f), patrickModel, patrickModelID);
     app->entities.push_back(patrickEntity);
 
-    Entity cubeLightEntity = Entity(EntityType::LIGHT, lightProgramID, glm::vec3(0.0f, 0.5f, 5.0f), cubeModel, cubeModelID);
+    Entity cubeLightEntity = Entity(EntityType::LIGHT, lightProgramID, glm::vec3(0.0f, 0.5f, 0.0f), cubeModel, cubeModelID);
     cubeLightEntity.modelMatrix = glm::scale(cubeLightEntity.modelMatrix, glm::vec3(0.2f));
     app->entities.push_back(cubeLightEntity);
 
     // LIGHTS //
-    CreatePointLight(app, cubeLightEntity.position, glm::vec3(0.2f), glm::vec3(0.5f), glm::vec3(1.0f));
+    CreatePointLight(app, cubeLightEntity.position, glm::vec3(0.2f), glm::vec3(0.5f), glm::vec3(0.7f));
 
-    CreateDirectionalLight(app, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.2f), glm::vec3(0.5f), glm::vec3(1.0f)); // -0.2f, -1.0f, -0.3f
+    //CreateDirectionalLight(app, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.2f), glm::vec3(0.5f), glm::vec3(0.7f)); // -0.2f, -1.0f, -0.3f
 
     // ENGINE SETTINGS //
     app->numLights = app->lights.size();
@@ -279,13 +285,14 @@ void Render(App* app)
     {
     case RenderMode::TEXTURE_MESH:
     {
+        glBindBufferRange(GL_UNIFORM_BUFFER, 0, app->UBO.handle, app->globalParamOffset, app->globalParamSize);
+
         for (u32 i = 0; i < app->numEntities; ++i)
         {
             Entity& entity = app->entities[i];
             ShaderProgram& shader = app->shaderPrograms[entity.shaderID];
             Model* model = entity.model;
 
-            glBindBufferRange(GL_UNIFORM_BUFFER, 0, app->UBO.handle, app->globalParamOffset, app->globalParamSize);
             glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->UBO.handle, entity.localParamOffset, entity.localParamSize);
 
             glUseProgram(shader.handle);

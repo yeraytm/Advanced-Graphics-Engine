@@ -1,4 +1,4 @@
-#ifdef TEXTURED_MESH
+#ifdef DEFAULT_MESH
 
 #if defined(VERTEX) ///////////////////////////////////////////////////
 
@@ -73,7 +73,7 @@ layout(binding = 0, std140) uniform GlobalParameters
 
 struct Material
 {
-	sampler2D albedo;
+	vec3 diffuse;
 	vec3 specular;
 	float shininess;
 };
@@ -84,54 +84,44 @@ in vec3 vFragPos;
 in vec3 vNormal;
 in vec3 vViewDir;
 
-struct LightMap
-{
-	vec3 diffuse;
-} lightMap;
-
-vec3 ComputeDirLight(Light light, LightMap lightMap, vec3 normal, vec3 viewDir);
-vec3 ComputePointLight(Light light, LightMap lightMap, vec3 normal, vec3 fragPos, vec3 viewDir);
+vec3 ComputeDirLight(Light light, vec3 normal, vec3 viewDir);
+vec3 ComputePointLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir);
 
 void main()
 {
-	lightMap.diffuse = vec3(texture(material.albedo, vTexCoord));
-
 	vec3 result = vec3(0.0);
 
 	for(int i = 0; i < uNumLights; ++i)
 	{
 		if(uLights[i].type == 0)
-			result += ComputeDirLight(uLights[i], lightMap, vNormal, vViewDir);
+			result += ComputeDirLight(uLights[i], vNormal, vViewDir);
 		else if(uLights[i].type == 1)
-			result += ComputePointLight(uLights[i], lightMap, vNormal, vFragPos, vViewDir);
+			result += ComputePointLight(uLights[i], vNormal, vFragPos, vViewDir);
 	}
 
 	FragColor = vec4(result, 1.0);
 }
 
-vec3 ComputeDirLight(Light light, LightMap lightMap, vec3 normal, vec3 viewDir)
+vec3 ComputeDirLight(Light light, vec3 normal, vec3 viewDir)
 {
 	vec3 lightDir = normalize(-light.direction);
 
 	// Ambient
-	vec3 ambient = light.ambient * lightMap.diffuse;
+	vec3 ambient = light.ambient * material.diffuse;
 
 	// Diffuse
 	float diff = max(dot(normal, lightDir), 0.0);
-	vec3 diffuse = light.diffuse * diff * lightMap.diffuse;
+	vec3 diffuse = light.diffuse * diff * material.diffuse;
 
 	// Specular
 	vec3 reflectDir = reflect(-lightDir, normal);
-
-	float shininess = material.shininess > 0.0 ? material.shininess : 32.0; // Temporary fix because if shininess is 0.0, wrong specularity values appear
-	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
-
+	float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
 	vec3 specular = light.specular * spec * material.specular;
 
 	return (ambient + diffuse + specular);
 }
 
-vec3 ComputePointLight(Light light, LightMap lightMap, vec3 normal, vec3 fragPos, vec3 viewDir)
+vec3 ComputePointLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir)
 {
 	vec3 lightDir = normalize(light.position - fragPos);
 	
@@ -139,20 +129,17 @@ vec3 ComputePointLight(Light light, LightMap lightMap, vec3 normal, vec3 fragPos
 	float attenuation = 1.0 / (1.0 + 0.09 * distance + 0.032 * (distance * distance));
 
 	// Ambient
-	vec3 ambient = light.ambient * lightMap.diffuse;
+	vec3 ambient = light.ambient * material.diffuse;
 	ambient *= attenuation;
 
 	// Diffuse
 	float diff = max(dot(normal, lightDir), 0.0);
-	vec3 diffuse = light.diffuse * diff * lightMap.diffuse;
+	vec3 diffuse = light.diffuse * diff * material.diffuse;
 	diffuse *= attenuation;
 
 	// Specular
 	vec3 reflectDir = reflect(-lightDir, normal);
-
-	float shininess = material.shininess > 0.0 ? material.shininess : 32.0; // Temporary fix because if shininess is 0.0, wrong specularity values appear
-	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
-
+	float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
 	vec3 specular = light.specular * spec * material.specular;
 	specular *= attenuation;
 
