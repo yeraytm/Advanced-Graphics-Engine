@@ -36,8 +36,8 @@ enum class LightType
 
 struct Light
 {
-    Light(LightType type, glm::vec3 position, glm::vec3 direction, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular) 
-        : type(type), position(position), direction(direction), ambient(ambient), diffuse(diffuse), specular(specular)
+    Light(LightType type, glm::vec3 position, glm::vec3 direction, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float constant) 
+        : type(type), position(position), direction(direction), ambient(ambient), diffuse(diffuse), specular(specular), constant(constant)
     {}
 
     LightType type;
@@ -48,6 +48,8 @@ struct Light
     glm::vec3 ambient;
     glm::vec3 diffuse;
     glm::vec3 specular;
+
+    float constant;
 };
 
 struct App
@@ -120,7 +122,7 @@ u32 FindVAO(Model* model, u32 meshIndex, const ShaderProgram& shaderProgram);
 
 void UpdateUniformBuffer(App* app);
 
-Entity* CreateEntity(App* app, EntityType type, u32 shaderID, glm::vec3 position, Model* model, u32 modelID);
+Entity* CreateEntity(App* app, EntityType type, u32 shaderID, glm::vec3 position, Model* model);
 
-void CreatePointLight(App* app, glm::vec3 position, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, Model* model, u32 modelID, float scale);
+void CreatePointLight(App* app, glm::vec3 position, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float constant, Model* model, float scale);
 void CreateDirectionalLight(App* app, glm::vec3 direction, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular);

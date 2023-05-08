@@ -97,13 +97,13 @@ void Init(App* app)
     u32 patrickModelID = LoadModel(app, "Assets/Patrick/patrick.obj", patrickModel);
 
     // ENTITIES //
-    Entity* planeEntity = CreateEntity(app, EntityType::PRIMITIVE, app->defaultProgramID, glm::vec3(0.0f, -5.0f, 0.0f), planeModel, planeModelID);
+    Entity* planeEntity = CreateEntity(app, EntityType::PRIMITIVE, app->defaultProgramID, glm::vec3(0.0f, -5.0f, 0.0f), planeModel);
     planeEntity->modelMatrix = glm::rotate(planeEntity->modelMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     planeEntity->modelMatrix = glm::scale(planeEntity->modelMatrix, glm::vec3(25.0f));
 
-    Entity* sphereEntity = CreateEntity(app, EntityType::PRIMITIVE, app->defaultProgramID, glm::vec3(0.0f, 0.0f, 3.0f), sphereModel, sphereModelID);
+    Entity* sphereEntity = CreateEntity(app, EntityType::PRIMITIVE, app->defaultProgramID, glm::vec3(0.0f, 0.0f, 3.0f), sphereModel);
 
-    Entity* patrickEntity = CreateEntity(app, EntityType::MODEL, modelProgramID, glm::vec3(0.0f, 0.0f, -5.0f), patrickModel, patrickModelID);
+    Entity* patrickEntity = CreateEntity(app, EntityType::MODEL, modelProgramID, glm::vec3(0.0f, 0.0f, -5.0f), patrickModel);
 
     glm::vec3 cubePositions[] = {
     glm::vec3(0.0f,  0.0f,  0.0f),
@@ -120,16 +120,16 @@ void Init(App* app)
 
     for (u32 i = 0; i < 10; ++i)
     {
-        Entity* cubeEntity = CreateEntity(app, EntityType::PRIMITIVE_CUBE, cubeProgramID, cubePositions[i], cubeModel, cubeModelID);
+        Entity* cubeEntity = CreateEntity(app, EntityType::PRIMITIVE_CUBE, cubeProgramID, cubePositions[i], cubeModel);
         float angle = 20.0f * i;
         cubeEntity->modelMatrix = glm::rotate(cubeEntity->modelMatrix, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
     }
 
     // LIGHTS //
-    CreatePointLight(app, glm::vec3(3.0f, 1.0f, -2.0f), glm::vec3(0.2f), glm::vec3(0.5f), glm::vec3(1.0f), sphereModel, sphereModelID, 0.1f);
+    CreatePointLight(app, glm::vec3(3.0f, 1.0f, -2.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 1.0f, sphereModel, 0.1f);
 
-    CreatePointLight(app, glm::vec3(-6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.5f), glm::vec3(1.0f), sphereModel, sphereModelID, 0.1f);
-    CreatePointLight(app, glm::vec3(6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.5f), glm::vec3(1.0f), sphereModel, sphereModelID, 0.1f);
+    CreatePointLight(app, glm::vec3(-6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 0.1f, sphereModel, 0.1f);
+    CreatePointLight(app, glm::vec3(6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 1.0f, sphereModel, 0.1f);
 
     //CreateDirectionalLight(app, glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.2f), glm::vec3(0.5f), glm::vec3(1.0f));
 
@@ -323,14 +323,14 @@ void Render(App* app)
                 case EntityType::PRIMITIVE_CUBE:
                 {
                     // Diffuse Map
-                    glUniform1i(app->cubeTextureAlbedoLocation, 0);
                     glActiveTexture(GL_TEXTURE0);
                     glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
+                    glUniform1i(app->cubeTextureAlbedoLocation, 0);
 
                     // Specular Map
-                    glUniform1i(app->cubeTextureSpecularLocation, 1);
                     glActiveTexture(GL_TEXTURE1);
                     glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.specularTextureID].handle);
+                    glUniform1i(app->cubeTextureSpecularLocation, 1);
 
                     // Material
                     glUniform1f(glGetUniformLocation(shader.handle, "material.shininess"), meshMaterial.shininess);
@@ -460,6 +460,7 @@ void UpdateUniformBuffer(App* app)
         PushVec3(app->UBO, light.ambient);
         PushVec3(app->UBO, light.diffuse);
         PushVec3(app->UBO, light.specular);
+        PushFloat(app->UBO, light.constant);
     }
     app->globalParamSize = app->UBO.head - app->globalParamOffset;
 
@@ -482,26 +483,26 @@ void UpdateUniformBuffer(App* app)
     UnmapBuffer(app->UBO);
 }
 
-Entity* CreateEntity(App* app, EntityType type, u32 shaderID, glm::vec3 position, Model* model, u32 modelID)
+Entity* CreateEntity(App* app, EntityType type, u32 shaderID, glm::vec3 position, Model* model)
 {
-    Entity entity = Entity(type, shaderID, position, model, modelID);
+    Entity entity = Entity(type, shaderID, position, model);
     app->entities.push_back(entity);
 
     return &app->entities[app->entities.size() - 1u];
 }
 
-void CreatePointLight(App* app, glm::vec3 position, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, Model* model, u32 modelID, float scale)
+void CreatePointLight(App* app, glm::vec3 position, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float constant, Model* model, float scale)
 {
-    Entity lightEntity = Entity(EntityType::LIGHT, app->lightProgramID, position, model, modelID);
+    Entity lightEntity = Entity(EntityType::LIGHT, app->lightProgramID, position, model);
     lightEntity.modelMatrix = glm::scale(lightEntity.modelMatrix, glm::vec3(scale));
     app->entities.push_back(lightEntity);
 
-    Light light = Light(LightType::POINT, position, glm::vec3(0.0f), ambient, diffuse, specular);
+    Light light = Light(LightType::POINT, position, glm::vec3(0.0f), ambient, diffuse, specular, constant);
     app->lights.push_back(light);
 }
 
 void CreateDirectionalLight(App* app, glm::vec3 direction, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular)
 {
-    Light light = Light(LightType::DIRECTIONAL, glm::vec3(0.0f), direction, ambient, diffuse, specular);
+    Light light = Light(LightType::DIRECTIONAL, glm::vec3(0.0f), direction, ambient, diffuse, specular, 1.0f);
     app->lights.push_back(light);
 }

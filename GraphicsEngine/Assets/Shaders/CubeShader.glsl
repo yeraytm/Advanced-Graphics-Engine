@@ -16,6 +16,8 @@ struct Light
 	vec3 ambient;
 	vec3 diffuse;
 	vec3 specular;
+
+	float constant;
 };
 
 layout(binding = 0, std140) uniform GlobalParameters
@@ -60,6 +62,8 @@ struct Light
 	vec3 ambient;
 	vec3 diffuse;
 	vec3 specular;
+
+	float constant;
 };
 
 layout(binding = 0, std140) uniform GlobalParameters
@@ -133,7 +137,7 @@ vec3 ComputePointLight(Light light, LightMap lightMap, vec3 normal, vec3 fragPos
 	vec3 lightDir = normalize(light.position - fragPos);
 	
 	float distance = length(light.position - fragPos);
-	float attenuation = 1.0 / (1.0 + 0.09 * distance + 0.032 * (distance * distance));
+	float attenuation = 1.0 / (light.constant + 0.09 * distance + 0.032 * (distance * distance));
 
 	// Ambient
 	vec3 ambient = light.ambient * lightMap.diffuse;

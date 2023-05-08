@@ -64,7 +64,7 @@ struct Entity
 public:
     Entity();
     Entity(EntityType type, u32 shaderID, glm::vec3 newPosition);
-    Entity(EntityType type, u32 shaderID, glm::vec3 newPosition, Model* model, u32 modelID);
+    Entity(EntityType type, u32 shaderID, glm::vec3 newPosition, Model* model);
     ~Entity();
 
 public:
@@ -77,6 +77,5 @@ public:
     u32 localParamSize;
 
     Model* model;
-    u32 modelID;
     u32 shaderID;
 };
