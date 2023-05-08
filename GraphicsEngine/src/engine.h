@@ -84,6 +84,10 @@ struct App
     std::vector<Material> materials;
     std::vector<ShaderProgram> shaderPrograms;
 
+    // Useful common shaders' IDs
+    u32 defaultProgramID;
+    u32 lightProgramID;
+
     // Location of the texture uniform in the textured quad shader
     //u32 quadTextureLocation;
 
@@ -114,5 +118,7 @@ u32 FindVAO(Model* model, u32 meshIndex, const ShaderProgram& shaderProgram);
 
 void UpdateUniformBuffer(App* app);
 
-void CreatePointLight(App* app, glm::vec3 position, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular);
+Entity& CreateEntity(App* app, EntityType type, u32 shaderID, glm::vec3 position, Model* model, u32 modelID);
+
+void CreatePointLight(App* app, glm::vec3 position, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, Model* model, u32 modelID, float scale);
 void CreateDirectionalLight(App* app, glm::vec3 direction, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular);

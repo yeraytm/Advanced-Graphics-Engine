@@ -54,6 +54,7 @@ enum class EntityType
 {
     DEFAULT,
     PRIMITIVE,
+    PRIMITIVE_CUBE,
     MODEL,
     LIGHT
 };

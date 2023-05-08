@@ -149,8 +149,8 @@ u32 CreatePrimitive(PrimitiveType type, App* app, Model* model, Material& materi
     break;
     case PrimitiveType::SPHERE:
     {
-        u32 xNumSegments = 16;
-        u32 yNumSegments = 32;
+        u32 xNumSegments = 64;
+        u32 yNumSegments = 128;
         for (u32 y = 0; y <= yNumSegments; ++y)
         {
             for (u32 x = 0; x <= xNumSegments; ++x)

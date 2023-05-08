@@ -1,4 +1,4 @@
-#ifdef TEXTURED_MESH
+#ifdef MODEL_MESH
 
 #if defined(VERTEX) ///////////////////////////////////////////////////
 
@@ -123,7 +123,8 @@ vec3 ComputeDirLight(Light light, LightMap lightMap, vec3 normal, vec3 viewDir)
 	// Specular
 	vec3 reflectDir = reflect(-lightDir, normal);
 
-	float shininess = material.shininess > 0.0 ? material.shininess : 32.0; // Temporary fix because if shininess is 0.0, wrong specularity values appear
+	// Temporary fix because if shininess is 0 wrong specularity values appear
+	float shininess = material.shininess > 0.0 ? material.shininess : 32.0;
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
 
 	vec3 specular = light.specular * spec * material.specular;

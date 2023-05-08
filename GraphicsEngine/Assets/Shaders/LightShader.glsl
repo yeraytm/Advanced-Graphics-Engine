@@ -1,4 +1,4 @@
-#ifdef LIGHT_SOURCE
+#ifdef LIGHT_CASTER
 
 #if defined(VERTEX) ///////////////////////////////////////////////////
 
