@@ -494,5 +494,7 @@
     <None Include="Assets\Shaders\QuadShader.glsl" />
     <None Include="Assets\Shaders\LightShader.glsl" />
     <None Include="Assets\Shaders\CubeShader.glsl" />
+    <None Include="Assets\Shaders\DefaultShader.glsl" />
+    <None Include="Assets\Shaders\ModelShader.glsl" />
   </ItemGroup>
 </Project>

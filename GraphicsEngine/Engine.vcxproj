@@ -341,8 +341,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Shaders\CubeShader.glsl" />
+    <None Include="Assets\Shaders\DefaultShader.glsl" />
     <None Include="Assets\Shaders\LightShader.glsl" />
     <None Include="Assets\Shaders\MeshShader.glsl" />
+    <None Include="Assets\Shaders\ModelShader.glsl" />
     <None Include="Assets\Shaders\QuadShader.glsl" />
     <None Include="src\vendor\glm\detail\func_common.inl" />
     <None Include="src\vendor\glm\detail\func_common_simd.inl" />

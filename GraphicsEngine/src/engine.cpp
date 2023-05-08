@@ -97,15 +97,13 @@ void Init(App* app)
     u32 patrickModelID = LoadModel(app, "Assets/Patrick/patrick.obj", patrickModel);
 
     // ENTITIES //
-    Entity planeEntity = Entity(EntityType::PRIMITIVE, app->defaultProgramID, glm::vec3(0.0f, -5.0f, 0.0f), planeModel, planeModelID);
-    planeEntity.modelMatrix = glm::rotate(planeEntity.modelMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    planeEntity.modelMatrix = glm::scale(planeEntity.modelMatrix, glm::vec3(25.0f));
-    app->entities.push_back(planeEntity);
+    Entity* planeEntity = CreateEntity(app, EntityType::PRIMITIVE, app->defaultProgramID, glm::vec3(0.0f, -5.0f, 0.0f), planeModel, planeModelID);
+    planeEntity->modelMatrix = glm::rotate(planeEntity->modelMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    planeEntity->modelMatrix = glm::scale(planeEntity->modelMatrix, glm::vec3(25.0f));
 
-    //Entity sphereEntity = Entity(EntityType::PRIMITIVE, app->defaultProgramID, glm::vec3(0.0f, 0.0f, 3.0f), sphereModel, sphereModelID);
-    //app->entities.push_back(sphereEntity);
+    Entity* sphereEntity = CreateEntity(app, EntityType::PRIMITIVE, app->defaultProgramID, glm::vec3(0.0f, 0.0f, 3.0f), sphereModel, sphereModelID);
 
-    Entity& sphereEntity = CreateEntity(app, EntityType::PRIMITIVE, app->defaultProgramID, glm::vec3(0.0f, 0.0f, 3.0f), sphereModel, sphereModelID);
+    Entity* patrickEntity = CreateEntity(app, EntityType::MODEL, modelProgramID, glm::vec3(0.0f, 0.0f, -5.0f), patrickModel, patrickModelID);
 
     glm::vec3 cubePositions[] = {
     glm::vec3(0.0f,  0.0f,  0.0f),
@@ -122,18 +120,16 @@ void Init(App* app)
 
     for (u32 i = 0; i < 10; ++i)
     {
-        Entity cubeEntity = Entity(EntityType::PRIMITIVE_CUBE, cubeProgramID, cubePositions[i], cubeModel, cubeModelID);
+        Entity* cubeEntity = CreateEntity(app, EntityType::PRIMITIVE_CUBE, cubeProgramID, cubePositions[i], cubeModel, cubeModelID);
         float angle = 20.0f * i;
-        cubeEntity.modelMatrix = glm::rotate(cubeEntity.modelMatrix, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-        app->entities.push_back(cubeEntity);
+        cubeEntity->modelMatrix = glm::rotate(cubeEntity->modelMatrix, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
     }
 
-    Entity patrickEntity = Entity(EntityType::MODEL, modelProgramID, glm::vec3(0.0f, 0.0f, -5.0f), patrickModel, patrickModelID);
-    app->entities.push_back(patrickEntity);
-
     // LIGHTS //
-    CreatePointLight(app, glm::vec3(0.0f, -4.5f, 1.0f), glm::vec3(0.2f), glm::vec3(0.5f), glm::vec3(1.0f), sphereModel, sphereModelID, 0.1f);
     CreatePointLight(app, glm::vec3(3.0f, 1.0f, -2.0f), glm::vec3(0.2f), glm::vec3(0.5f), glm::vec3(1.0f), sphereModel, sphereModelID, 0.1f);
+
+    CreatePointLight(app, glm::vec3(-6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.5f), glm::vec3(1.0f), sphereModel, sphereModelID, 0.1f);
+    CreatePointLight(app, glm::vec3(6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.5f), glm::vec3(1.0f), sphereModel, sphereModelID, 0.1f);
 
     //CreateDirectionalLight(app, glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.2f), glm::vec3(0.5f), glm::vec3(1.0f));
 
@@ -486,12 +482,12 @@ void UpdateUniformBuffer(App* app)
     UnmapBuffer(app->UBO);
 }
 
-Entity& CreateEntity(App* app, EntityType type, u32 shaderID, glm::vec3 position, Model* model, u32 modelID)
+Entity* CreateEntity(App* app, EntityType type, u32 shaderID, glm::vec3 position, Model* model, u32 modelID)
 {
     Entity entity = Entity(type, shaderID, position, model, modelID);
     app->entities.push_back(entity);
 
-    return app->entities[app->entities.size() - 1u];
+    return &app->entities[app->entities.size() - 1u];
 }
 
 void CreatePointLight(App* app, glm::vec3 position, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, Model* model, u32 modelID, float scale)
