@@ -30,8 +30,6 @@ struct Model
 
     u32 VBHandle = 0;
     u32 EBHandle = 0;
-
-    bool isIndexed = true;
 };
 
 struct Material

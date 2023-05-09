@@ -339,11 +339,7 @@ void Render(App* app)
                 }
 
                 Mesh& mesh = model->meshes[meshIndex];
-                if (model->isIndexed)
-                    glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.indexOffset);
-                else
-                    // Check for different primitives without indices (only Cube by now)
-                    glDrawArrays(GL_TRIANGLES, 0, 36);
+                glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.indexOffset);
 
                 glBindVertexArray(0);
             }
@@ -401,8 +397,7 @@ u32 FindVAO(Model* model, u32 meshIndex, const ShaderProgram& shaderProgram)
     glBindVertexArray(vaoHandle);
 
     glBindBuffer(GL_ARRAY_BUFFER, model->VBHandle);
-    if (model->isIndexed)
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model->EBHandle);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model->EBHandle);
 
     // We have to link all vertex shader inputs attributes to attributes in the vertex buffer
     for (u32 i = 0; i < shaderProgram.vertexLayout.attributes.size(); ++i)
