@@ -1,9 +1,9 @@
 #include "Primitives.h"
 
-u32 CreateQuad(App* app, Material& material, Model* model)
+Model* CreateQuad(App* app, Material& material)
 {
+    Model* model = new Model();
     app->models.push_back(model);
-    u32 modelID = (u32)app->models.size() - 1u;
 
     model->materialIDs.push_back((u32)app->materials.size());
     app->materials.push_back(material);
@@ -14,13 +14,13 @@ u32 CreateQuad(App* app, Material& material, Model* model)
         -0.5f, -0.5f,  0.0f,
         0.0f,  0.0f,
 
-        0.5f, -0.5f,  0.0f,
+        -0.5f, 0.5f,  0.0f,
         1.0f,  0.0f,
 
         0.5f,  0.5f,  0.0f,
         1.0f,  1.0f,
 
-        -0.5f,  0.5f,  0.0f,
+        0.5f,  -0.5f,  0.0f,
         0.0f,  1.0f
         });
 
@@ -53,19 +53,18 @@ u32 CreateQuad(App* app, Material& material, Model* model)
 
     model->meshes.push_back(mesh);
 
-    return modelID;
+    return model;
 }
 
-u32 CreatePrimitive(PrimitiveType type, App* app, Model* model, Material& material, u32 xNumSegments, u32 yNumSegments)
+Model* CreatePrimitive(App* app, PrimitiveType type, Material& material, u32 xNumSegments, u32 yNumSegments)
 {
+    Model* model = new Model();
     app->models.push_back(model);
-    u32 modelID = (u32)app->models.size() - 1u;
 
     model->materialIDs.push_back((u32)app->materials.size());
     app->materials.push_back(material);
 
     Mesh mesh = {};
-
     switch (type)
     {
     case PrimitiveType::PLANE:
@@ -221,5 +220,5 @@ u32 CreatePrimitive(PrimitiveType type, App* app, Model* model, Material& materi
 
     model->meshes.push_back(mesh);
 
-    return modelID;
+    return model;
 }

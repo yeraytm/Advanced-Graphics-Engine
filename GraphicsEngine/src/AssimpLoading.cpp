@@ -3,7 +3,7 @@
 #include "Layouts.h"
 #include "Texture.h"
 
-void ProcessAssimpMaterial(App* app, aiMaterial* material, Material& myMaterial, String directory)
+void ProcessAssimpMaterial(App* app, aiMaterial* material, Material& myMaterial, String directory, bool flipTextures)
 {
     aiString name;
 
@@ -30,35 +30,35 @@ void ProcessAssimpMaterial(App* app, aiMaterial* material, Material& myMaterial,
         material->GetTexture(aiTextureType_DIFFUSE, 0, &aiFilename);
         String filename = MakeString(aiFilename.C_Str());
         String filepath = MakePath(directory, filename);
-        myMaterial.albedoTextureID = LoadTexture2D(app->textures, filepath.str);
+        myMaterial.albedoTextureID = LoadTexture2D(app->textures, filepath.str, flipTextures);
     }
     if (material->GetTextureCount(aiTextureType_EMISSIVE) > 0)
     {
         material->GetTexture(aiTextureType_EMISSIVE, 0, &aiFilename);
         String filename = MakeString(aiFilename.C_Str());
         String filepath = MakePath(directory, filename);
-        myMaterial.emissiveTextureID = LoadTexture2D(app->textures, filepath.str);
+        myMaterial.emissiveTextureID = LoadTexture2D(app->textures, filepath.str, flipTextures);
     }
     if (material->GetTextureCount(aiTextureType_SPECULAR) > 0)
     {
         material->GetTexture(aiTextureType_SPECULAR, 0, &aiFilename);
         String filename = MakeString(aiFilename.C_Str());
         String filepath = MakePath(directory, filename);
-        myMaterial.specularTextureID = LoadTexture2D(app->textures, filepath.str);
+        myMaterial.specularTextureID = LoadTexture2D(app->textures, filepath.str, flipTextures);
     }
     if (material->GetTextureCount(aiTextureType_NORMALS) > 0)
     {
         material->GetTexture(aiTextureType_NORMALS, 0, &aiFilename);
         String filename = MakeString(aiFilename.C_Str());
         String filepath = MakePath(directory, filename);
-        myMaterial.normalsTextureID = LoadTexture2D(app->textures, filepath.str);
+        myMaterial.normalsTextureID = LoadTexture2D(app->textures, filepath.str, flipTextures);
     }
     if (material->GetTextureCount(aiTextureType_HEIGHT) > 0)
     {
         material->GetTexture(aiTextureType_HEIGHT, 0, &aiFilename);
         String filename = MakeString(aiFilename.C_Str());
         String filepath = MakePath(directory, filename);
-        myMaterial.bumpTextureID = LoadTexture2D(app->textures, filepath.str);
+        myMaterial.bumpTextureID = LoadTexture2D(app->textures, filepath.str, flipTextures);
     }
 
     //myMaterial.createNormalFromBump();
@@ -161,8 +161,11 @@ void ProcessAssimpNode(const aiScene* scene, aiNode* node, Model* myModel, u32 b
     }
 }
 
-u32 LoadModel(App* app, const char* filename, Model* model)
+Model* LoadModel(App* app, const char* filename, bool flipTextures)
 {
+    Model* model = new Model();
+    app->models.push_back(model);
+
     const aiScene* scene = aiImportFile(filename,
         aiProcess_Triangulate |
         aiProcess_GenSmoothNormals |
@@ -176,7 +179,7 @@ u32 LoadModel(App* app, const char* filename, Model* model)
     if (!scene)
     {
         ELOG("Error loading mesh %s: %s\n", filename, aiGetErrorString());
-        return UINT32_MAX;
+        return nullptr;
     }
 
     String directory = GetDirectoryPart(MakeString(filename));
@@ -187,7 +190,7 @@ u32 LoadModel(App* app, const char* filename, Model* model)
     {
         app->materials.push_back(Material{});
         Material& material = app->materials.back();
-        ProcessAssimpMaterial(app, scene->mMaterials[i], material, directory);
+        ProcessAssimpMaterial(app, scene->mMaterials[i], material, directory, flipTextures);
     }
 
     ProcessAssimpNode(scene, scene->mRootNode, model, baseMeshMaterialIndex, model->materialIDs);
@@ -232,8 +235,5 @@ u32 LoadModel(App* app, const char* filename, Model* model)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    app->models.push_back(model);
-    u32 modelID = (u32)app->models.size() - 1u;
-
-    return modelID;
+    return model;
 }

@@ -42,32 +42,32 @@ void APIENTRY OnGLError(GLenum source, GLenum type, GLuint id, GLenum severity, 
 
     switch (source)
     {
-    case GL_DEBUG_SOURCE_API:             ELOG("Source: API\n"); break;
-    case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   ELOG("Source: Window System\n"); break;
-    case GL_DEBUG_SOURCE_SHADER_COMPILER: ELOG("Source: Shader Compiler\n"); break;
-    case GL_DEBUG_SOURCE_THIRD_PARTY:     ELOG("Source: Third Party\n"); break;
-    case GL_DEBUG_SOURCE_APPLICATION:     ELOG("Source: Application\n"); break;
-    case GL_DEBUG_SOURCE_OTHER:           ELOG("Source: Other\n"); break;
+    case GL_DEBUG_SOURCE_API:               ELOG("Source: API\n");                  break;
+    case GL_DEBUG_SOURCE_WINDOW_SYSTEM:     ELOG("Source: Window System\n");        break;
+    case GL_DEBUG_SOURCE_SHADER_COMPILER:   ELOG("Source: Shader Compiler\n");      break;
+    case GL_DEBUG_SOURCE_THIRD_PARTY:       ELOG("Source: Third Party\n");          break;
+    case GL_DEBUG_SOURCE_APPLICATION:       ELOG("Source: Application\n");          break;
+    case GL_DEBUG_SOURCE_OTHER:             ELOG("Source: Other\n");                break;
     }
 
     switch (type)
     {
-    case GL_DEBUG_TYPE_ERROR:               ELOG("Type: Error\n"); break;
-    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: ELOG("Type: Deprecated Behaviour\n"); break;
-    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  ELOG("Type: Undefined Behaviour\n"); break;
-    case GL_DEBUG_TYPE_PORTABILITY:         ELOG("Type: Portability\n"); break;
-    case GL_DEBUG_TYPE_PERFORMANCE:         ELOG("Type: Performance\n"); break;
-    case GL_DEBUG_TYPE_MARKER:              ELOG("Type: Marker\n"); break;
-    case GL_DEBUG_TYPE_PUSH_GROUP:          ELOG("Type: Push Group\n"); break;
-    case GL_DEBUG_TYPE_POP_GROUP:           ELOG("Type: Pop Group\n"); break;
-    case GL_DEBUG_TYPE_OTHER:               ELOG("Type: Other\n"); break;
+    case GL_DEBUG_TYPE_ERROR:               ELOG("Type: Error\n");                  break;
+    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: ELOG("Type: Deprecated Behaviour\n");   break;
+    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  ELOG("Type: Undefined Behaviour\n");    break;
+    case GL_DEBUG_TYPE_PORTABILITY:         ELOG("Type: Portability\n");            break;
+    case GL_DEBUG_TYPE_PERFORMANCE:         ELOG("Type: Performance\n");            break;
+    case GL_DEBUG_TYPE_MARKER:              ELOG("Type: Marker\n");                 break;
+    case GL_DEBUG_TYPE_PUSH_GROUP:          ELOG("Type: Push Group\n");             break;
+    case GL_DEBUG_TYPE_POP_GROUP:           ELOG("Type: Pop Group\n");              break;
+    case GL_DEBUG_TYPE_OTHER:               ELOG("Type: Other\n");                  break;
     }
 
     switch (severity)
     {
-    case GL_DEBUG_SEVERITY_HIGH:         ELOG("Severity: high\n"); break;
-    case GL_DEBUG_SEVERITY_MEDIUM:       ELOG("Severity: medium\n"); break;
-    case GL_DEBUG_SEVERITY_LOW:          ELOG("Severity: low\n"); break;
-    case GL_DEBUG_SEVERITY_NOTIFICATION: ELOG("Severity: notification\n"); break;
+    case GL_DEBUG_SEVERITY_HIGH:            ELOG("Severity: high\n");               break;
+    case GL_DEBUG_SEVERITY_MEDIUM:          ELOG("Severity: medium\n");             break;
+    case GL_DEBUG_SEVERITY_LOW:             ELOG("Severity: low\n");                break;
+    case GL_DEBUG_SEVERITY_NOTIFICATION:    ELOG("Severity: notification\n");       break;
     }
 }

@@ -16,6 +16,7 @@
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\Entity.cpp" />
+    <ClCompile Include="src\Framebuffer.cpp" />
     <ClCompile Include="src\GLDebugger.cpp" />
     <ClCompile Include="src\Platform.cpp" />
     <ClCompile Include="src\Primitives.cpp" />
@@ -38,6 +39,7 @@
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\Entity.h" />
+    <ClInclude Include="src\Framebuffer.h" />
     <ClInclude Include="src\GLDebugger.h" />
     <ClInclude Include="src\Platform.h" />
     <ClInclude Include="src\Layouts.h" />

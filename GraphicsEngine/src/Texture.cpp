@@ -4,10 +4,10 @@
 #include "stb/stb_image.h"
 #include "stb/stb_image_write.h"
 
-Image LoadImage(const char* filename)
+Image LoadImage(const char* filename, bool isFlipped)
 {
     Image img = {};
-    stbi_set_flip_vertically_on_load(true);
+    stbi_set_flip_vertically_on_load(isFlipped);
     img.pixels = stbi_load(filename, &img.size.x, &img.size.y, &img.nchannels, 0);
     if (img.pixels)
     {
@@ -64,13 +64,13 @@ u32 CreateTexture2DFromImage(Image image)
     return texHandle;
 }
 
-u32 LoadTexture2D(std::vector<Texture>& textures, const char* filepath)
+u32 LoadTexture2D(std::vector<Texture>& textures, const char* filepath, bool isFlipped)
 {
     for (u32 texIdx = 0; texIdx < textures.size(); ++texIdx)
         if (textures[texIdx].filepath == filepath)
             return texIdx;
 
-    Image image = LoadImage(filepath);
+    Image image = LoadImage(filepath, isFlipped);
 
     if (image.pixels)
     {

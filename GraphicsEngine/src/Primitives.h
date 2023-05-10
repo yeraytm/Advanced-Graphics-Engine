@@ -9,6 +9,6 @@ enum class PrimitiveType
     SPHERE
 };
 
-u32 CreateQuad(App* app, Material& material, Model* model);
+Model* CreateQuad(App* app, Material& material);
 
-u32 CreatePrimitive(PrimitiveType type, App* app, Model* model, Material& material, u32 xNumSegments = 64, u32 yNumSegments = 128);
+Model* CreatePrimitive(App* app, PrimitiveType type, Material& material, u32 xNumSegments = 64, u32 yNumSegments = 128);

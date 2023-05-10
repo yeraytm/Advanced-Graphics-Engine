@@ -91,23 +91,15 @@ void Init(App* app)
     containerMat.specularTextureID = containerSpecularID;
 
     // MODELS //
-    Model* planeModel = new Model();
-    u32 planeModelID = CreatePrimitive(PrimitiveType::PLANE, app, planeModel, defaultMat);
+    Model* planeModel = CreatePrimitive(app, PrimitiveType::PLANE, defaultMat);
 
-    Model* sphereModel = new Model();
-    u32 sphereModelID = CreatePrimitive(PrimitiveType::SPHERE, app, sphereModel, defaultMat);
+    Model* sphereModel = CreatePrimitive(app, PrimitiveType::SPHERE, defaultMat);
+    Model* sphereLowModel = CreatePrimitive(app, PrimitiveType::SPHERE, defaultMat, 16, 32);
 
-    Model* sphereLowModel = new Model();
-    u32 sphereLowModelID = CreatePrimitive(PrimitiveType::SPHERE, app, sphereLowModel, defaultMat, 16, 32);
+    Model* cubeModel = CreatePrimitive(app, PrimitiveType::CUBE, containerMat);
+    Model* cubeModel2 = CreatePrimitive(app, PrimitiveType::CUBE, defaultMat2);
 
-    Model* cubeModel = new Model();
-    u32 cubeModelID = CreatePrimitive(PrimitiveType::CUBE, app, cubeModel, containerMat);
-
-    Model* cubeModel2 = new Model();
-    u32 cubeModelID2 = CreatePrimitive(PrimitiveType::CUBE, app, cubeModel2, defaultMat2);
-
-    Model* patrickModel = new Model();
-    u32 patrickModelID = LoadModel(app, "Assets/Patrick/patrick.obj", patrickModel);
+    Model* patrickModel = LoadModel(app, "Assets/Patrick/patrick.obj");
 
     // ENTITIES //
     // Primitives
@@ -463,6 +455,7 @@ void UpdateUniformBuffer(App* app)
     // Global Parameters //
     app->globalParamOffset = app->UBO.head;
 
+    // Camera Position
     PushVec3(app->UBO, app->camera.position);
 
     // Lights
