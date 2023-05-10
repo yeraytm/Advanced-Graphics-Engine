@@ -56,7 +56,7 @@ u32 CreateQuad(App* app, Material& material, Model* model)
     return modelID;
 }
 
-u32 CreatePrimitive(PrimitiveType type, App* app, Model* model, Material& material)
+u32 CreatePrimitive(PrimitiveType type, App* app, Model* model, Material& material, u32 xNumSegments, u32 yNumSegments)
 {
     app->models.push_back(model);
     u32 modelID = (u32)app->models.size() - 1u;
@@ -76,7 +76,7 @@ u32 CreatePrimitive(PrimitiveType type, App* app, Model* model, Material& materi
             0.0f,  0.0f,  1.0f,
             0.0f,  0.0f,
 
-            0.5f, -0.5f,  0.0f,
+            -0.5f,  0.5f,  0.0f,
             0.0f,  0.0f,  1.0f,
             1.0f,  0.0f,
 
@@ -84,7 +84,7 @@ u32 CreatePrimitive(PrimitiveType type, App* app, Model* model, Material& materi
             0.0f,  0.0f,  1.0f,
             1.0f,  1.0f,
 
-            -0.5f,  0.5f,  0.0f,
+            0.5f, -0.5f,  0.0f,
             0.0f,  0.0f,  1.0f,
             0.0f,  1.0f
             });
@@ -162,8 +162,6 @@ u32 CreatePrimitive(PrimitiveType type, App* app, Model* model, Material& materi
     break;
     case PrimitiveType::SPHERE:
     {
-        u32 xNumSegments = 64;
-        u32 yNumSegments = 128;
         for (u32 y = 0; y <= yNumSegments; ++y)
         {
             for (u32 x = 0; x <= xNumSegments; ++x)
