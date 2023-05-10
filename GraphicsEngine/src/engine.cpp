@@ -74,6 +74,13 @@ void Init(App* app)
     defaultMat.emissive = glm::vec3(0.0f);
     defaultMat.shininess = 32.0f;
 
+    Material defaultMat2 = {};
+    defaultMat2.name = "Default Material 2";
+    defaultMat2.diffuse = glm::vec3(0.5f, 1.0f, 0.31f);
+    defaultMat2.specular = glm::vec3(0.5f);
+    defaultMat2.emissive = glm::vec3(0.0f);
+    defaultMat2.shininess = 32.0f;
+
     Material containerMat = {};
     containerMat.name = "Default Material";
     containerMat.diffuse = glm::vec3(1.0f, 0.5f, 0.31f);
@@ -93,17 +100,21 @@ void Init(App* app)
     Model* cubeModel = new Model();
     u32 cubeModelID = CreatePrimitive(PrimitiveType::CUBE, app, cubeModel, containerMat);
 
+    Model* cubeModel2 = new Model();
+    u32 cubeModelID2 = CreatePrimitive(PrimitiveType::CUBE, app, cubeModel2, defaultMat2);
+
     Model* patrickModel = new Model();
     u32 patrickModelID = LoadModel(app, "Assets/Patrick/patrick.obj", patrickModel);
 
     // ENTITIES //
+    // Primitives
     Entity* planeEntity = CreateEntity(app, EntityType::PRIMITIVE, app->defaultProgramID, glm::vec3(0.0f, -5.0f, 0.0f), planeModel);
     planeEntity->modelMatrix = glm::rotate(planeEntity->modelMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     planeEntity->modelMatrix = glm::scale(planeEntity->modelMatrix, glm::vec3(25.0f));
 
     Entity* sphereEntity = CreateEntity(app, EntityType::PRIMITIVE, app->defaultProgramID, glm::vec3(0.0f, 0.0f, 3.0f), sphereModel);
 
-    Entity* patrickEntity = CreateEntity(app, EntityType::MODEL, modelProgramID, glm::vec3(0.0f, 0.0f, -5.0f), patrickModel);
+    Entity* cubeEntity = CreateEntity(app, EntityType::PRIMITIVE, app->defaultProgramID, glm::vec3(5.0f, 0.0f, 2.0f), cubeModel2);
 
     glm::vec3 cubePositions[] = {
     glm::vec3(0.0f,  0.0f,  0.0f),
@@ -124,6 +135,9 @@ void Init(App* app)
         float angle = 20.0f * i;
         cubeEntity->modelMatrix = glm::rotate(cubeEntity->modelMatrix, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
     }
+
+    // Models
+    Entity* patrickEntity = CreateEntity(app, EntityType::MODEL, modelProgramID, glm::vec3(0.0f, 0.0f, -5.0f), patrickModel);
 
     // LIGHTS //
     CreatePointLight(app, glm::vec3(3.0f, 1.0f, -2.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 1.0f, sphereModel, 0.1f);
