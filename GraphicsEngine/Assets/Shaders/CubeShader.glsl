@@ -95,6 +95,14 @@ struct LightMap
 vec3 ComputeDirLight(Light light, LightMap lightMap, vec3 normal, vec3 viewDir);
 vec3 ComputePointLight(Light light, LightMap lightMap, vec3 normal, vec3 fragPos, vec3 viewDir);
 
+float near = 0.1;
+float far = 100.0;
+float LinearDepth(float depth)
+{
+	float z = depth * 2.0 - 1.0;
+	return (2.0 * near * far) / (far + near - z * (far - near));
+}
+
 void main()
 {
 	lightMap.diffuse = vec3(texture(material.albedo, vTexCoord));
@@ -111,6 +119,9 @@ void main()
 	}
 
 	FragColor = vec4(result, 1.0);
+	
+	float depth = LinearDepth(gl_FragCoord.z) / far;
+	FragColor = vec4(vec3(depth), 1.0);
 }
 
 vec3 ComputeDirLight(Light light, LightMap lightMap, vec3 normal, vec3 viewDir)
