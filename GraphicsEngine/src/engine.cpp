@@ -50,11 +50,14 @@ void Init(App* app)
     app->lightProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/LightShader.glsl", "LIGHT_CASTER");
 
     u32 modelProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/ModelShader.glsl", "MODEL_MESH");
-    app->meshTextureAlbedoLocation = glGetUniformLocation(app->shaderPrograms[modelProgramID].handle, "material.albedo");
+    app->meshTextureAlbedoLocation = glGetUniformLocation(app->shaderPrograms[modelProgramID].handle, "uMaterial.albedo");
 
     u32 cubeProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/CubeShader.glsl", "CUBE_MESH");
-    app->cubeTextureAlbedoLocation = glGetUniformLocation(app->shaderPrograms[cubeProgramID].handle, "material.albedo");
-    app->cubeTextureSpecularLocation = glGetUniformLocation(app->shaderPrograms[cubeProgramID].handle, "material.specular");
+    app->cubeTextureAlbedoLocation = glGetUniformLocation(app->shaderPrograms[cubeProgramID].handle, "uMaterial.albedo");
+    app->cubeTextureSpecularLocation = glGetUniformLocation(app->shaderPrograms[cubeProgramID].handle, "uMaterial.specular");
+
+    //app->quadProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/QuadShader.glsl", "SCREEN_QUAD");
+    //app->quadTextureLocation = glGetUniformLocation(app->shaderPrograms[app->quadProgramID].handle, "uScreenTexture");
 
     // TEXTURES //
     u32 diceTexIdx = LoadTexture2D(app->textures, "Assets/dice.png");
@@ -318,8 +321,8 @@ void Render(App* app)
                     glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
 
                     // Material
-                    glUniform3fv(glGetUniformLocation(shader.handle, "material.specular"), 1, &meshMaterial.specular[0]);
-                    glUniform1f(glGetUniformLocation(shader.handle, "material.shininess"), meshMaterial.shininess);
+                    glUniform3fv(glGetUniformLocation(shader.handle, "uMaterial.specular"), 1, &meshMaterial.specular[0]);
+                    glUniform1f(glGetUniformLocation(shader.handle, "uMaterial.shininess"), meshMaterial.shininess);
                 }
                 break;
                 case EntityType::PRIMITIVE:
@@ -330,9 +333,9 @@ void Render(App* app)
                     //glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
 
                     // Material
-                    glUniform3fv(glGetUniformLocation(shader.handle, "material.diffuse"), 1, &meshMaterial.diffuse[0]);
-                    glUniform3fv(glGetUniformLocation(shader.handle, "material.specular"), 1, &meshMaterial.specular[0]);
-                    glUniform1f(glGetUniformLocation(shader.handle, "material.shininess"), meshMaterial.shininess);
+                    glUniform3fv(glGetUniformLocation(shader.handle, "uMaterial.diffuse"), 1, &meshMaterial.diffuse[0]);
+                    glUniform3fv(glGetUniformLocation(shader.handle, "uMaterial.specular"), 1, &meshMaterial.specular[0]);
+                    glUniform1f(glGetUniformLocation(shader.handle, "uMaterial.shininess"), meshMaterial.shininess);
                 }
                 break;
                 case EntityType::PRIMITIVE_CUBE:
@@ -348,7 +351,7 @@ void Render(App* app)
                     glUniform1i(app->cubeTextureSpecularLocation, 1);
 
                     // Material
-                    glUniform1f(glGetUniformLocation(shader.handle, "material.shininess"), meshMaterial.shininess);
+                    glUniform1f(glGetUniformLocation(shader.handle, "uMaterial.shininess"), meshMaterial.shininess);
                 }
                 break;
                 }
@@ -362,16 +365,15 @@ void Render(App* app)
         }
     }
     break;
-    /*
+
     case RenderMode::QUAD:
     {
-        ShaderProgram& texturedQuadProgram = app->shaderPrograms[app->quadProgramID];
-
-        glUseProgram(texturedQuadProgram.handle);
-
+        ShaderProgram& screenQuadProgram = app->shaderPrograms[app->quadProgramID];
         Model* model = app->quad.model;
 
-        u32 vao = FindVAO(model, 0, texturedQuadProgram);
+        glUseProgram(screenQuadProgram.handle);
+
+        u32 vao = FindVAO(model, 0, screenQuadProgram);
         glBindVertexArray(vao);
 
         u32 meshMaterialID = model->materialIDs[0];
@@ -389,7 +391,6 @@ void Render(App* app)
         glUseProgram(0);
     }
     break;
-    */
     }
 }
 

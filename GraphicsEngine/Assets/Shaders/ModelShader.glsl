@@ -81,7 +81,7 @@ struct Material
 	vec3 specular;
 	float shininess;
 };
-uniform Material material;
+uniform Material uMaterial;
 
 in vec2 vTexCoord;
 in vec3 vFragPos;
@@ -106,7 +106,7 @@ float LinearDepth(float depth)
 
 void main()
 {
-	lightMap.diffuse = vec3(texture(material.albedo, vTexCoord));
+	lightMap.diffuse = vec3(texture(uMaterial.albedo, vTexCoord));
 
 	vec3 result = vec3(0.0);
 
@@ -139,10 +139,10 @@ vec3 ComputeDirLight(Light light, LightMap lightMap, vec3 normal, vec3 viewDir)
 	vec3 reflectDir = reflect(-lightDir, normal);
 
 	// Temporary fix because if shininess is 0 wrong specularity values appear
-	float shininess = material.shininess > 0.0 ? material.shininess : 32.0;
+	float shininess = uMaterial.shininess > 0.0 ? uMaterial.shininess : 32.0;
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
 
-	vec3 specular = light.specular * spec * material.specular;
+	vec3 specular = light.specular * spec * uMaterial.specular;
 
 	return (ambient + diffuse + specular);
 }
@@ -166,10 +166,10 @@ vec3 ComputePointLight(Light light, LightMap lightMap, vec3 normal, vec3 fragPos
 	// Specular
 	vec3 reflectDir = reflect(-lightDir, normal);
 
-	float shininess = material.shininess > 0.0 ? material.shininess : 32.0; // Temporary fix because if shininess is 0.0, wrong specularity values appear
+	float shininess = uMaterial.shininess > 0.0 ? uMaterial.shininess : 32.0; // Temporary fix because if shininess is 0.0, wrong specularity values appear
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
 
-	vec3 specular = light.specular * spec * material.specular;
+	vec3 specular = light.specular * spec * uMaterial.specular;
 	specular *= attenuation;
 
 	return (ambient + diffuse + specular);

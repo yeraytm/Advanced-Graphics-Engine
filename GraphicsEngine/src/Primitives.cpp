@@ -11,17 +11,17 @@ Model* CreateQuad(App* app, Material& material)
     Mesh mesh = {};
     mesh.vertices.insert(mesh.vertices.end(),
         {
-        -0.5f, -0.5f,  0.0f,
+        -1.0f, -1.0f,
         0.0f,  0.0f,
 
-        -0.5f, 0.5f,  0.0f,
-        1.0f,  0.0f,
+        -1.0f, 1.0f,
+        0.0f,  1.0f,
 
-        0.5f,  0.5f,  0.0f,
+        1.0f,  1.0f,
         1.0f,  1.0f,
 
-        0.5f,  -0.5f,  0.0f,
-        0.0f,  1.0f
+        1.0f,  -1.0f,
+        1.0f,  0.0f
         });
 
     mesh.indices.insert(mesh.indices.end(),
@@ -31,8 +31,8 @@ Model* CreateQuad(App* app, Material& material)
         });
 
     // Create the vertex format
-    mesh.VBLayout.attributes.push_back(VertexBufferAttribute{ 0, 3, 0 });
-    mesh.VBLayout.stride = 3 * sizeof(float);
+    mesh.VBLayout.attributes.push_back(VertexBufferAttribute{ 0, 2, 0 });
+    mesh.VBLayout.stride = 2 * sizeof(float);
 
     mesh.VBLayout.attributes.push_back(VertexBufferAttribute{ 1, 2, mesh.VBLayout.stride });
     mesh.VBLayout.stride += 2 * sizeof(float);
@@ -52,6 +52,39 @@ Model* CreateQuad(App* app, Material& material)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     model->meshes.push_back(mesh);
+
+    //glGenVertexArrays(1, &vaoHandle);
+    //glBindVertexArray(vaoHandle);
+
+    //glBindBuffer(GL_ARRAY_BUFFER, model->VBHandle);
+    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model->EBHandle);
+
+    //// We have to link all vertex shader inputs attributes to attributes in the vertex buffer
+    //for (u32 i = 0; i < shaderProgram.vertexLayout.attributes.size(); ++i)
+    //{
+    //    bool attributeWasLinked = false;
+
+    //    const std::vector<VertexBufferAttribute>& attributes = mesh.VBLayout.attributes;
+    //    for (u32 j = 0; j < attributes.size(); ++j)
+    //    {
+    //        if (shaderProgram.vertexLayout.attributes[i].location == attributes[j].location)
+    //        {
+    //            const u32 index = attributes[j].location;
+    //            const u32 nComp = attributes[j].componentCount;
+    //            const u32 offset = attributes[j].offset + mesh.vertexOffset;
+    //            const u32 stride = mesh.VBLayout.stride;
+
+    //            glVertexAttribPointer(index, nComp, GL_FLOAT, GL_FALSE, stride, (void*)(u64)offset);
+    //            glEnableVertexAttribArray(index);
+
+    //            attributeWasLinked = true;
+    //            break;
+    //        }
+    //    }
+    //    assert(attributeWasLinked); // The mesh should provide an attribute for each vertex inputs
+    //}
+
+    //glBindVertexArray(0);
 
     return model;
 }
@@ -77,7 +110,7 @@ Model* CreatePrimitive(App* app, PrimitiveType type, Material& material, u32 xNu
 
             -0.5f,  0.5f,  0.0f,
             0.0f,  0.0f,  1.0f,
-            1.0f,  0.0f,
+            0.0f,  1.0f,
 
             0.5f,  0.5f,  0.0f,
             0.0f,  0.0f,  1.0f,
@@ -85,7 +118,7 @@ Model* CreatePrimitive(App* app, PrimitiveType type, Material& material, u32 xNu
 
             0.5f, -0.5f,  0.0f,
             0.0f,  0.0f,  1.0f,
-            0.0f,  1.0f
+            1.0f,  0.0f
             });
 
         mesh.indices.insert(mesh.indices.end(),

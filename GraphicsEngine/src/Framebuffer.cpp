@@ -24,24 +24,6 @@ void Framebuffer::Unbind()
 void Framebuffer::Generate()
 {
 	glGenFramebuffers(1, &handle);
-
-	GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-	if (framebufferStatus != GL_FRAMEBUFFER_COMPLETE)
-	{
-		ELOG("Error generating a framebuffer\n");
-		switch (framebufferStatus)
-		{
-		case GL_FRAMEBUFFER_UNDEFINED:						ELOG("GL_FRAMEBUFFER_UNDEFINED\n");						break;
-		case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:			ELOG("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT\n");			break;
-		case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:	ELOG("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT\n"); break;
-		case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:			ELOG("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER\n");		break;
-		case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:			ELOG("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER\n");		break;
-		case GL_FRAMEBUFFER_UNSUPPORTED:					ELOG("GL_FRAMEBUFFER_UNSUPPORTED\n");					break;
-		case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:			ELOG("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE\n");		break;
-		case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:		ELOG("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS\n");		break;
-		default:											ELOG("Unknown framebuffer status error\n");				break;
-		}
-	}
 }
 
 void Framebuffer::Delete()
@@ -70,4 +52,25 @@ void Framebuffer::AttachTexture(GLenum attachmentType, GLenum internalFormat, GL
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glFramebufferTexture(GL_FRAMEBUFFER, attachmentType, attachmentHandle, 0);
+}
+
+void Framebuffer::CheckStatus()
+{
+	GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (framebufferStatus != GL_FRAMEBUFFER_COMPLETE)
+	{
+		ELOG("Error generating a framebuffer\n");
+		switch (framebufferStatus)
+		{
+		case GL_FRAMEBUFFER_UNDEFINED:						ELOG("GL_FRAMEBUFFER_UNDEFINED\n");						break;
+		case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:			ELOG("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT\n");			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:	ELOG("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT\n"); break;
+		case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:			ELOG("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER\n");		break;
+		case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:			ELOG("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER\n");		break;
+		case GL_FRAMEBUFFER_UNSUPPORTED:					ELOG("GL_FRAMEBUFFER_UNSUPPORTED\n");					break;
+		case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:			ELOG("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE\n");		break;
+		case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:		ELOG("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS\n");		break;
+		default:											ELOG("Unknown framebuffer status error\n");				break;
+		}
+	}
 }

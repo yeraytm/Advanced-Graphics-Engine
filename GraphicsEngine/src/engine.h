@@ -54,57 +54,62 @@ struct Light
 
 struct App
 {
-    // Loop
+    // LOOP //
     float deltaTime;
     f64 currentTime;
     bool isRunning;
 
     glm::ivec2 displaySize;
 
-    // Input
+    // INPUT //
     Input input;
 
+    // OPENGL STATE & IMGUI //
     OpenGLState glState;
     bool openGLStatus;
     bool debugInfo;
     bool sceneInfo;
 
+    // CAMERA //
     Camera camera;
     glm::mat4 projection;
 
+    // UNIFORM BUFFER (CONSTANT BUFFER) //
     int uniformBufferOffsetAlignment;
     Buffer UBO;
     u32 globalParamOffset;
     u32 globalParamSize;
-
+    
+    // LIGHTS //
     u32 numLights;
     std::vector<Light> lights;
 
+    // ENTITIES //
     u32 numEntities;
     std::vector<Entity> entities;
-
+    
+    // RESOURCES //
     std::vector<Model*> models;
     std::vector<Texture> textures;
     std::vector<Material> materials;
     std::vector<ShaderProgram> shaderPrograms;
 
-    // Useful common shaders' IDs
+    // COMMON SHADERS IDs //
     u32 defaultProgramID;
     u32 lightProgramID;
-
-    // Location of the texture uniform in the textured quad shader
-    //u32 quadTextureLocation;
-
-    // Location of the textures uniform in the textured mesh shader
+    // Location of the texture's uniform in the textured mesh shader
     u32 meshTextureAlbedoLocation;
 
-    //u32 quadProgramID;
-    //Entity quad;
+    // SCREEN-FILLING QUAD //
+    Entity quad;
+    u32 quadProgramID;
+    // Location of the texture uniform in the textured quad shader
+    u32 quadTextureLocation;
 
-    // Mode
+    // MODE //
     RenderMode mode;
 
-    // TEMPORAL
+    // TEMPORAL //
     u32 cubeTextureAlbedoLocation;
     u32 cubeTextureSpecularLocation;
 };

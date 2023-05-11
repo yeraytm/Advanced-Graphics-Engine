@@ -19,6 +19,7 @@ public:
     void Delete();
 
     void AttachTexture(GLenum attachmentType, GLenum internalFormat, GLenum dataFormat, GLenum dataType, int sizeX, int sizeY);
+    void CheckStatus();
 
 public:
     u32 handle;
