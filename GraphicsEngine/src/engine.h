@@ -28,6 +28,14 @@ struct OpenGLState
     int numExtensions;
 };
 
+struct Quad
+{
+    u32 VAO;
+    u32 textureHandle;
+    u32 shaderHandle;
+    u32 textureUniformLocation;
+};
+
 enum class LightType
 {
     DIRECTIONAL,
@@ -101,10 +109,7 @@ struct App
     u32 meshTextureAlbedoLocation;
 
     // SCREEN-FILLING QUAD //
-    Entity quad;
-    u32 quadProgramID;
-    // Location of the texture uniform in the textured quad shader
-    u32 quadTextureLocation;
+    Quad quad;
 
     // MODE //
     RenderMode mode;

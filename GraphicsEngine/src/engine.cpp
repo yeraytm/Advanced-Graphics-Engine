@@ -56,9 +56,6 @@ void Init(App* app)
     app->cubeTextureAlbedoLocation = glGetUniformLocation(app->shaderPrograms[cubeProgramID].handle, "uMaterial.albedo");
     app->cubeTextureSpecularLocation = glGetUniformLocation(app->shaderPrograms[cubeProgramID].handle, "uMaterial.specular");
 
-    //app->quadProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/QuadShader.glsl", "SCREEN_QUAD");
-    //app->quadTextureLocation = glGetUniformLocation(app->shaderPrograms[app->quadProgramID].handle, "uScreenTexture");
-
     // TEXTURES //
     u32 diceTexIdx = LoadTexture2D(app->textures, "Assets/dice.png");
     u32 whiteTexIdx = LoadTexture2D(app->textures, "Assets/color_white.png");
@@ -68,6 +65,11 @@ void Init(App* app)
 
     u32 containerAlbedoTexID = LoadTexture2D(app->textures, "Assets/Container/container_albedo.png");
     u32 containerSpecularID = LoadTexture2D(app->textures, "Assets/Container/container_specular.png");
+
+    app->quad.VAO = CreateQuad();
+    app->quad.textureHandle = app->textures[diceTexIdx].handle;
+    app->quad.shaderHandle = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/QuadShader.glsl", "SCREEN_QUAD")].handle;
+    app->quad.textureUniformLocation = glGetUniformLocation(app->quad.shaderHandle, "uScreenTexture");
 
     // MATERIALS //
     Material defaultMat = {};
@@ -148,7 +150,7 @@ void Init(App* app)
     // ENGINE SETTINGS //
     app->numLights = app->lights.size();
     app->numEntities = app->entities.size();
-    app->mode = RenderMode::TEXTURE_MESH;
+    app->mode = RenderMode::QUAD;
 
     // OPENGL GLOBAL STATE //
     glEnable(GL_DEPTH_TEST);
@@ -368,26 +370,17 @@ void Render(App* app)
 
     case RenderMode::QUAD:
     {
-        ShaderProgram& screenQuadProgram = app->shaderPrograms[app->quadProgramID];
-        Model* model = app->quad.model;
+        glUseProgram(app->quad.shaderHandle);
 
-        glUseProgram(screenQuadProgram.handle);
-
-        u32 vao = FindVAO(model, 0, screenQuadProgram);
-        glBindVertexArray(vao);
-
-        u32 meshMaterialID = model->materialIDs[0];
-        Material& meshMaterial = app->materials[meshMaterialID];
+        glBindVertexArray(app->quad.VAO);
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
-        glUniform1i(app->quadTextureLocation, 0);
+        glBindTexture(GL_TEXTURE_2D, app->quad.textureHandle);
+        glUniform1i(app->quad.textureUniformLocation, 0);
 
-        Mesh& mesh = model->meshes[0];
-        glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.indexOffset);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
 
         glBindVertexArray(0);
-
         glUseProgram(0);
     }
     break;
