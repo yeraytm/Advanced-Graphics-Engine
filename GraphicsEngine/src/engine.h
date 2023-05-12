@@ -11,6 +11,7 @@
 #include "Entity.h"
 #include "Camera.h"
 #include "BufferManagement.h"
+#include "Framebuffer.h"
 
 enum class RenderMode
 {
@@ -33,7 +34,7 @@ struct Quad
     u32 VAO;
     u32 textureHandle;
     u32 shaderHandle;
-    u32 textureUniformLocation;
+    //u32 textureUniformLocation;
 };
 
 enum class LightType
@@ -78,6 +79,10 @@ struct App
     bool debugInfo;
     bool sceneInfo;
 
+    // SCREEN-FILLING QUAD //
+    Quad screenQuad;
+    Framebuffer framebuffer;
+
     // CAMERA //
     Camera camera;
     glm::mat4 projection;
@@ -102,21 +107,9 @@ struct App
     std::vector<Material> materials;
     std::vector<ShaderProgram> shaderPrograms;
 
-    // COMMON SHADERS IDs //
+    // SHADER IDs //
     u32 defaultProgramID;
     u32 lightProgramID;
-    // Location of the texture's uniform in the textured mesh shader
-    u32 meshTextureAlbedoLocation;
-
-    // SCREEN-FILLING QUAD //
-    Quad quad;
-
-    // MODE //
-    RenderMode mode;
-
-    // TEMPORAL //
-    u32 cubeTextureAlbedoLocation;
-    u32 cubeTextureSpecularLocation;
 };
 
 void Init(App* app);

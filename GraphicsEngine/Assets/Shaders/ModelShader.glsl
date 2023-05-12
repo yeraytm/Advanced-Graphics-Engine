@@ -53,6 +53,7 @@ void main()
 #elif defined(FRAGMENT) ///////////////////////////////////////////////
 
 layout(location = 0) out vec4 FragColor;
+layout(location = 1) out vec4 DepthColor;
 
 struct Light
 {
@@ -121,7 +122,7 @@ void main()
 	FragColor = vec4(result, 1.0);
 
 	float depth = LinearDepth(gl_FragCoord.z) / far;
-	//FragColor = vec4(vec3(depth), 1.0);
+	DepthColor = vec4(vec3(depth), 1.0);
 }
 
 vec3 ComputeDirLight(Light light, LightMap lightMap, vec3 normal, vec3 viewDir)

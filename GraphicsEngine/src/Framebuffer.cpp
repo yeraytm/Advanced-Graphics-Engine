@@ -31,13 +31,13 @@ void Framebuffer::Delete()
 	glDeleteFramebuffers(1, &handle);
 }
 
-void Framebuffer::AttachTexture(GLenum attachmentType, GLenum internalFormat, GLenum dataFormat, GLenum dataType, int sizeX, int sizeY)
+u32 Framebuffer::AttachTexture(GLenum attachmentType, GLint internalFormat, GLenum dataFormat, GLenum dataType, glm::ivec2 size)
 {
 	GLuint attachmentHandle;
 	glGenTextures(1, &attachmentHandle);
 	glBindTexture(GL_TEXTURE_2D, attachmentHandle);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, sizeX, sizeY, 0, dataFormat, dataType, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, size.x, size.y, 0, dataFormat, dataType, NULL);
 	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, sizeX, sizeY, 0, GL_RGBA8, GL_UNSIGNED_BYTE, NULL);
 	//glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, sizeX, sizeY, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 
@@ -52,6 +52,21 @@ void Framebuffer::AttachTexture(GLenum attachmentType, GLenum internalFormat, GL
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glFramebufferTexture(GL_FRAMEBUFFER, attachmentType, attachmentHandle, 0);
+
+	return attachmentHandle;
+}
+
+
+void Framebuffer::AttachColorTexture(GLenum attachmentType, glm::ivec2 size)
+{
+	u32 colorHandle = AttachTexture(attachmentType, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, size);
+	colorAttachmentHandles.push_back(colorHandle);
+}
+
+void Framebuffer::AttachDepthTexture(glm::ivec2 size)
+{
+	u32 depthHandle = AttachTexture(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, size);
+	colorAttachmentHandles.push_back(depthHandle);
 }
 
 void Framebuffer::CheckStatus()
