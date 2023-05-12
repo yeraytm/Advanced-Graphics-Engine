@@ -45,10 +45,6 @@ enum class LightType
 
 struct Light
 {
-    Light(LightType type, glm::vec3 position, glm::vec3 direction, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float constant) 
-        : type(type), position(position), direction(direction), ambient(ambient), diffuse(diffuse), specular(specular), constant(constant)
-    {}
-
     LightType type;
 
     glm::vec3 position;
@@ -119,6 +115,8 @@ void ImGuiRender(App* app);
 void Update(App* app);
 
 void Render(App* app);
+
+void CleanUp(App* app);
 
 // Engine Additional Functions
 u32 FindVAO(Model* model, u32 meshIndex, const ShaderProgram& shaderProgram);

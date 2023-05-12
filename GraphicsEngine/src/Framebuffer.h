@@ -5,26 +5,29 @@
 typedef int GLint;
 typedef unsigned int GLenum;
 
+enum class FBAttachmentType
+{
+    COLOR,
+    DEPTH,
+    NORMAL
+};
+
 class Framebuffer
 {
 public:
-    Framebuffer();
-    ~Framebuffer();
-
-    //void Draw();
-
     void Bind();
     void Unbind();
 
     void Generate();
     void Delete();
 
-    void AttachColorTexture(GLenum attachmentType, glm::ivec2 size);
-    void AttachDepthTexture(glm::ivec2 size);
     void CheckStatus();
 
+    void AttachTexture(FBAttachmentType attachmentType, glm::ivec2& size);
+    void SetBuffers();
+
 private:
-    u32 AttachTexture(GLenum attachmentType, GLint internalFormat, GLenum dataFormat, GLenum dataType, glm::ivec2 size);
+    u32 CreateAttachment(GLenum attachmentType, GLint internalFormat, GLenum dataFormat, GLenum dataType, glm::ivec2& size);
 
 public:
     u32 handle;

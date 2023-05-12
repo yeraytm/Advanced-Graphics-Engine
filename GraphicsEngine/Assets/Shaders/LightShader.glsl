@@ -20,12 +20,11 @@ void main()
 #elif defined(FRAGMENT) ///////////////////////////////////////////////
 
 layout(location = 0) out vec4 FragColor;
-layout(location = 1) out vec4 DepthColor;
 
 void main()
 {
 	FragColor = vec4(1.0);
-	DepthColor = vec4(1.0);
+	//DepthColor = vec4(1.0);
 }
 
 #endif /////////////////////////////////////////////////////////////////

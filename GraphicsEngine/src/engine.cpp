@@ -149,7 +149,7 @@ void Init(App* app)
     // LIGHTS //
     CreatePointLight(app, glm::vec3(3.0f, 1.0f, -2.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 1.0f, sphereLowModel, 0.1f);
 
-    CreatePointLight(app, glm::vec3(-6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 0.1f, sphereLowModel, 0.1f);
+    CreatePointLight(app, glm::vec3(-6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 0.4f, sphereLowModel, 0.1f);
     CreatePointLight(app, glm::vec3(6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 1.0f, sphereLowModel, 0.1f);
 
     //CreateDirectionalLight(app, glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.2f), glm::vec3(0.5f), glm::vec3(1.0f));
@@ -161,20 +161,12 @@ void Init(App* app)
     // OPENGL GLOBAL STATE //
     app->framebuffer.Generate();
     app->framebuffer.Bind();
-    app->framebuffer.AttachColorTexture(GL_COLOR_ATTACHMENT0, app->displaySize);
-    app->framebuffer.AttachDepthTexture(app->displaySize);
+    app->framebuffer.AttachTexture(FBAttachmentType::COLOR, app->displaySize);
+    app->framebuffer.AttachTexture(FBAttachmentType::DEPTH, app->displaySize);
+    app->framebuffer.AttachTexture(FBAttachmentType::NORMAL, app->displaySize);
+    app->framebuffer.SetBuffers();
     app->framebuffer.CheckStatus();
     app->framebuffer.Unbind();
-
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-    glFrontFace(GL_CCW);
 
     glViewport(0, 0, app->displaySize.x, app->displaySize.y);
 }
@@ -297,11 +289,17 @@ void Render(App* app)
 {
     app->framebuffer.Bind();
 
-    GLuint buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-    glDrawBuffers(app->framebuffer.colorAttachmentHandles.size(), buffers);
-    app->framebuffer.CheckStatus();
-
     // SCENE //
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
+
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -375,6 +373,9 @@ void Render(App* app)
     }
 
     app->framebuffer.Unbind();
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
 
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -508,12 +509,12 @@ void CreatePointLight(App* app, glm::vec3 position, glm::vec3 ambient, glm::vec3
     lightEntity.modelMatrix = glm::scale(lightEntity.modelMatrix, glm::vec3(scale));
     app->entities.push_back(lightEntity);
 
-    Light light = Light(LightType::POINT, position, glm::vec3(0.0f), ambient, diffuse, specular, constant);
+    Light light = { LightType::POINT, position, glm::vec3(0.0f), ambient, diffuse, specular, constant };
     app->lights.push_back(light);
 }
 
 void CreateDirectionalLight(App* app, glm::vec3 direction, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular)
 {
-    Light light = Light(LightType::DIRECTIONAL, glm::vec3(0.0f), direction, ambient, diffuse, specular, 1.0f);
+    Light light = { LightType::DIRECTIONAL, glm::vec3(0.0f), direction, ambient, diffuse, specular, 1.0f };
     app->lights.push_back(light);
 }
