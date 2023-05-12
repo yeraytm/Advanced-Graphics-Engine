@@ -163,7 +163,7 @@ void Init(App* app)
     app->framebuffer.Bind();
     app->framebuffer.AttachTexture(FBAttachmentType::COLOR, app->displaySize);
     app->framebuffer.AttachTexture(FBAttachmentType::DEPTH, app->displaySize);
-    app->framebuffer.AttachTexture(FBAttachmentType::NORMAL, app->displaySize);
+    app->framebuffer.AttachTexture(FBAttachmentType::NORMALS, app->displaySize);
     app->framebuffer.SetBuffers();
     app->framebuffer.CheckStatus();
     app->framebuffer.Unbind();

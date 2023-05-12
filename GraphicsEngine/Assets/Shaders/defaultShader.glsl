@@ -52,7 +52,7 @@ void main()
 
 layout(location = 0) out vec4 FragColor;
 layout(location = 1) out vec4 DepthColor;
-layout(location = 2) out vec4 NormalColor;
+layout(location = 2) out vec4 NormalsColor;
 
 struct Light
 {
@@ -115,7 +115,7 @@ void main()
 
 	float depth = LinearDepth(gl_FragCoord.z) / far;
 	DepthColor = vec4(vec3(depth), 1.0);
-	NormalColor = vec4(vNormal, 1.0);
+	NormalsColor = vec4(vNormal, 1.0);
 }
 
 vec3 ComputeDirLight(Light light, vec3 normal, vec3 viewDir)

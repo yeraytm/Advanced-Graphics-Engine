@@ -9,7 +9,7 @@ enum class FBAttachmentType
 {
     COLOR,
     DEPTH,
-    NORMAL
+    NORMALS
 };
 
 class Framebuffer
