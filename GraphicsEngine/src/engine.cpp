@@ -46,20 +46,25 @@ void Init(App* app)
     app->projection = glm::perspective(glm::radians(45.0f), float(app->displaySize.x) / float(app->displaySize.y), 0.1f, 100.0f);
 
     // SHADERS & UNIFORM TEXTURE LOCATIONS //
-    app->defaultProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/DefaultShader.glsl", "DEFAULT_MESH");
-    app->lightProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/LightShader.glsl", "LIGHT_CASTER");
+    app->defaultProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/Default_Shader.glsl", "DEFAULT");
+    app->lightProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/Light_Shader.glsl", "LIGHT_CASTER");
 
-    u32 modelProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/ModelShader.glsl", "MODEL_MESH");
-    u32 modelAlbedoLoc = glGetUniformLocation(app->shaderPrograms[modelProgramID].handle, "uMaterial.albedo");
-    glUseProgram(app->shaderPrograms[modelProgramID].handle);
-    glUniform1i(modelAlbedoLoc, 0);
+    u32 texturedAlbProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/TexturedAlb_Shader.glsl", "TEXTURED_ALBEDO");
+    u32 albedoLoc1 = glGetUniformLocation(app->shaderPrograms[texturedAlbProgramID].handle, "uMaterial.albedo");
+    glUseProgram(app->shaderPrograms[texturedAlbProgramID].handle);
+    glUniform1i(albedoLoc1, 0);
 
-    u32 cubeProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/CubeShader.glsl", "CUBE_MESH");
-    u32 cubeAlbedoLoc = glGetUniformLocation(app->shaderPrograms[cubeProgramID].handle, "uMaterial.albedo");
-    u32 cubeSpecularLoc = glGetUniformLocation(app->shaderPrograms[cubeProgramID].handle, "uMaterial.specular");
-    glUseProgram(app->shaderPrograms[cubeProgramID].handle);
-    glUniform1i(cubeAlbedoLoc, 0);
-    glUniform1i(cubeSpecularLoc, 1);
+    u32 texturedAlbSpecProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/TexturedAlbSpec_Shader.glsl", "TEXTURED_ALBEDO_SPECULAR");
+    u32 albedoLoc2 = glGetUniformLocation(app->shaderPrograms[texturedAlbSpecProgramID].handle, "uMaterial.albedo");
+    u32 specularLoc = glGetUniformLocation(app->shaderPrograms[texturedAlbSpecProgramID].handle, "uMaterial.specular");
+    glUseProgram(app->shaderPrograms[texturedAlbSpecProgramID].handle);
+    glUniform1i(albedoLoc2, 0);
+    glUniform1i(specularLoc, 1);
+
+    u32 geometryTexAlbProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/GeometryTexturedAlb_Shader.glsl", "GEOMETRY_TEXTURED_ALBEDO");
+    u32 geoAlbedoLoc = glGetUniformLocation(app->shaderPrograms[geometryTexAlbProgramID].handle, "uMaterial.albedo");
+    glUseProgram(app->shaderPrograms[geometryTexAlbProgramID].handle);
+    glUniform1i(geoAlbedoLoc, 0);
 
     // TEXTURES //
     u32 diceTexIdx = LoadTexture2D(app->textures, "Assets/dice.png");
@@ -71,36 +76,30 @@ void Init(App* app)
     u32 containerAlbedoTexID = LoadTexture2D(app->textures, "Assets/Container/container_albedo.png");
     u32 containerSpecularID = LoadTexture2D(app->textures, "Assets/Container/container_specular.png");
 
-    app->screenQuad.VAO = CreateQuad();
-    app->screenQuad.textureHandle = app->textures[diceTexIdx].handle;
-    app->screenQuad.shaderHandle = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/QuadShader.glsl", "SCREEN_QUAD")].handle;
-    u32 quadTextureLoc = glGetUniformLocation(app->screenQuad.shaderHandle, "uScreenTexture");
-    glUseProgram(app->screenQuad.shaderHandle);
-    glUniform1i(quadTextureLoc, 0);
-
     // MATERIALS //
     Material defaultMat = {};
+    defaultMat.type = MaterialType::TEXTURED_ALBEDO;
     defaultMat.name = "Default Material";
-    defaultMat.diffuse = glm::vec3(1.0f, 0.5f, 0.31f);
+    //defaultMat.diffuse = glm::vec3(1.0f, 0.5f, 0.31f);
     defaultMat.specular = glm::vec3(0.5f);
-    defaultMat.emissive = glm::vec3(0.0f);
     defaultMat.shininess = 32.0f;
+    defaultMat.albedoTextureID = magentaTexIdx;
 
     Material defaultMat2 = {};
+    defaultMat2.type = MaterialType::TEXTURED_ALBEDO;
     defaultMat2.name = "Default Material 2";
-    defaultMat2.diffuse = glm::vec3(0.5f, 1.0f, 0.31f);
+    //defaultMat2.diffuse = glm::vec3(0.5f, 1.0f, 0.31f);
     defaultMat2.specular = glm::vec3(0.5f);
-    defaultMat2.emissive = glm::vec3(0.0f);
     defaultMat2.shininess = 32.0f;
+    defaultMat2.albedoTextureID = blackTexIdx;
 
     Material containerMat = {};
-    containerMat.name = "Default Material";
-    containerMat.diffuse = glm::vec3(1.0f, 0.5f, 0.31f);
+    containerMat.type = MaterialType::TEXTURED_ALBEDO;
+    containerMat.name = "Container Material";
     containerMat.specular = glm::vec3(0.5f);
-    containerMat.emissive = glm::vec3(0.0f);
     containerMat.shininess = 32.0f;
     containerMat.albedoTextureID = containerAlbedoTexID;
-    containerMat.specularTextureID = containerSpecularID;
+    //containerMat.specularTextureID = containerSpecularID;
 
     // MODELS //
     Model* planeModel = CreatePrimitive(app, PrimitiveType::PLANE, defaultMat);
@@ -115,13 +114,13 @@ void Init(App* app)
 
     // ENTITIES //
     // Primitives
-    Entity* planeEntity = CreateEntity(app, EntityType::PRIMITIVE, app->defaultProgramID, glm::vec3(0.0f, -5.0f, 0.0f), planeModel);
+    Entity* planeEntity = CreateEntity(app, geometryTexAlbProgramID, glm::vec3(0.0f, -5.0f, 0.0f), planeModel);
     planeEntity->modelMatrix = glm::rotate(planeEntity->modelMatrix, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     planeEntity->modelMatrix = glm::scale(planeEntity->modelMatrix, glm::vec3(25.0f));
 
-    Entity* sphereEntity = CreateEntity(app, EntityType::PRIMITIVE, app->defaultProgramID, glm::vec3(0.0f, 0.0f, 3.0f), sphereModel);
+    Entity* sphereEntity = CreateEntity(app, geometryTexAlbProgramID, glm::vec3(0.0f, 0.0f, 3.0f), sphereModel);
 
-    Entity* cubeEntity = CreateEntity(app, EntityType::PRIMITIVE, app->defaultProgramID, glm::vec3(5.0f, 0.0f, 2.0f), cubeModel2);
+    Entity* cubeEntity = CreateEntity(app, geometryTexAlbProgramID, glm::vec3(5.0f, 0.0f, 2.0f), cubeModel2);
 
     glm::vec3 cubePositions[] = {
     glm::vec3(0.0f,  0.0f,  0.0f),
@@ -138,13 +137,15 @@ void Init(App* app)
 
     for (u32 i = 0; i < 10; ++i)
     {
-        Entity* cubeEntity = CreateEntity(app, EntityType::PRIMITIVE_CUBE, cubeProgramID, cubePositions[i], cubeModel);
+        Entity* cubeEntity = CreateEntity(app, geometryTexAlbProgramID, cubePositions[i], cubeModel);
         float angle = 20.0f * i;
         cubeEntity->modelMatrix = glm::rotate(cubeEntity->modelMatrix, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
     }
 
     // Models
-    Entity* patrickEntity = CreateEntity(app, EntityType::MODEL, modelProgramID, glm::vec3(0.0f, 0.0f, -5.0f), patrickModel);
+    Entity* patrickEntity = CreateEntity(app, geometryTexAlbProgramID, glm::vec3(0.0f, 0.0f, -5.0f), patrickModel);
+
+    app->lastEntityID = app->entities.size();
 
     // LIGHTS //
     CreatePointLight(app, glm::vec3(3.0f, 1.0f, -2.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 1.0f, sphereLowModel, 0.1f);
@@ -159,14 +160,30 @@ void Init(App* app)
     app->numEntities = app->entities.size();
 
     // OPENGL GLOBAL STATE //
-    app->framebuffer.Generate();
-    app->framebuffer.Bind();
-    app->framebuffer.AttachTexture(FBAttachmentType::COLOR, app->displaySize);
-    app->framebuffer.AttachTexture(FBAttachmentType::DEPTH, app->displaySize);
-    app->framebuffer.AttachTexture(FBAttachmentType::NORMALS, app->displaySize);
-    app->framebuffer.SetBuffers();
-    app->framebuffer.CheckStatus();
-    app->framebuffer.Unbind();
+    app->screenQuad.VAO = CreateQuad();
+    app->screenQuad.textureHandle = app->textures[diceTexIdx].handle;
+    app->screenQuad.shaderHandle = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/Quad_Shader.glsl", "SCREEN_QUAD")].handle;
+    u32 gPositionLoc = glGetUniformLocation(app->screenQuad.shaderHandle, "uPosition");
+    u32 gNormalLoc = glGetUniformLocation(app->screenQuad.shaderHandle, "uNormal");
+    u32 gAlbedoLoc = glGetUniformLocation(app->screenQuad.shaderHandle, "uAlbedoSpec");
+    glUseProgram(app->screenQuad.shaderHandle);
+    glUniform1i(gPositionLoc, 0);
+    glUniform1i(gNormalLoc, 1);
+    glUniform1i(gAlbedoLoc, 2);
+
+    app->gBuffer.Generate();
+    app->gBuffer.Bind();
+    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize); // Position Color Buffer
+    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize); // Normal Color Buffer
+    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Color + Specular Color Buffer
+    //app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Depth Color Buffer
+    
+    // Depth
+    app->gBuffer.AttachDepthTexture(app->displaySize);
+    
+    app->gBuffer.SetColorBuffers();
+    app->gBuffer.CheckStatus();
+    app->gBuffer.Unbind();
 
     glViewport(0, 0, app->displaySize.x, app->displaySize.y);
 }
@@ -228,18 +245,25 @@ void ImGuiRender(App* app)
 
         ImGui::DragFloat3("Position", &app->camera.position[0]);
         ImGui::DragFloat("Speed", &app->camera.speed);
-        //glm::vec2 yawPitch = glm::vec2(app->camera.yaw, app->camera.pitch);
-        //ImGui::DragFloat2("Yaw / Pitch", &yawPitch[0]);
 
         ImGui::Separator();
-
         ImGui::Text("Entities");
-        //for (int i = 0; i < app->numEntities; ++i)
+        for (int i = 0; i < app->numEntities; ++i)
+            ImGui::DragFloat3(std::to_string(i).c_str(), &app->entities[i].position[0], 0.1f);
+        
+        //ImGui::Separator();
+        //ImGui::Text("Render Target");
+        //const char* targets[] = { "COLOR", "DEPTH", "NORMALS" };
+        //const char* preview = targets[app->framebuffer.currentAttachment];
+        //if (ImGui::BeginCombo("Attachments", preview))
         //{
-        //    if (ImGui::DragFloat3(std::to_string(i).c_str(), &app->entities[i].position[0], 0.1f))
+        //    for (int i = 0; i < app->framebuffer.colorAttachmentHandles.size(); ++i)
         //    {
-        //        // Move to the corresponding position
+        //        const bool isSelected = (app->framebuffer.currentAttachment == i);
+        //        if (ImGui::Selectable(targets[i], isSelected))
+        //            app->framebuffer.currentAttachment = app->framebuffer.colorAttachmentHandles[i];
         //    }
+        //    ImGui::EndCombo();
         //}
         
         ImGui::End();
@@ -287,27 +311,26 @@ void Update(App* app)
 
 void Render(App* app)
 {
-    app->framebuffer.Bind();
-
-    // SCENE //
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-    glFrontFace(GL_CCW);
-
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     UpdateUniformBuffer(app);
 
     glBindBufferRange(GL_UNIFORM_BUFFER, 0, app->UBO.handle, app->globalParamOffset, app->globalParamSize);
 
-    for (u32 i = 0; i < app->numEntities; ++i)
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    app->gBuffer.Bind();
+
+    // SCENE //
+    glEnable(GL_DEPTH_TEST);
+
+    glEnable(GL_CULL_FACE);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    //glEnable(GL_BLEND);
+    //glBlendFunc(GL_ONE, GL_ONE);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    for (u32 i = 0; i < app->lastEntityID; ++i)
     {
         Entity& entity = app->entities[i];
         ShaderProgram& shader = app->shaderPrograms[entity.shaderID];
@@ -327,9 +350,17 @@ void Render(App* app)
             Material& meshMaterial = app->materials[meshMaterialID];
 
             // Uniforms
-            switch (entity.type)
+            switch (meshMaterial.type)
             {
-            case EntityType::MODEL:
+            case MaterialType::DEFAULT:
+            {
+                // Material
+                glUniform3fv(glGetUniformLocation(shader.handle, "uMaterial.diffuse"), 1, &meshMaterial.diffuse[0]);
+                glUniform3fv(glGetUniformLocation(shader.handle, "uMaterial.specular"), 1, &meshMaterial.specular[0]);
+                glUniform1f(glGetUniformLocation(shader.handle, "uMaterial.shininess"), meshMaterial.shininess);
+            }
+            break;
+            case MaterialType::TEXTURED_ALBEDO:
             {
                 // Diffuse Map
                 glActiveTexture(GL_TEXTURE0);
@@ -340,15 +371,7 @@ void Render(App* app)
                 glUniform1f(glGetUniformLocation(shader.handle, "uMaterial.shininess"), meshMaterial.shininess);
             }
             break;
-            case EntityType::PRIMITIVE:
-            {
-                // Material
-                glUniform3fv(glGetUniformLocation(shader.handle, "uMaterial.diffuse"), 1, &meshMaterial.diffuse[0]);
-                glUniform3fv(glGetUniformLocation(shader.handle, "uMaterial.specular"), 1, &meshMaterial.specular[0]);
-                glUniform1f(glGetUniformLocation(shader.handle, "uMaterial.shininess"), meshMaterial.shininess);
-            }
-            break;
-            case EntityType::PRIMITIVE_CUBE:
+            case MaterialType::TEXTURED_ALB_SPEC:
             {
                 // Diffuse Map
                 glActiveTexture(GL_TEXTURE0);
@@ -366,18 +389,17 @@ void Render(App* app)
 
             Mesh& mesh = model->meshes[meshIndex];
             glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.indexOffset);
-
             glBindVertexArray(0);
         }
         glUseProgram(0);
     }
 
-    app->framebuffer.Unbind();
+    app->gBuffer.Unbind();
 
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_BLEND);
+    //glDisable(GL_DEPTH_TEST);
+    //glDisable(GL_BLEND);
 
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    //glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // SCREEN-FILLING QUAD //
@@ -386,11 +408,37 @@ void Render(App* app)
     glBindVertexArray(app->screenQuad.VAO);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, app->framebuffer.colorAttachmentHandles[0]);
+    glBindTexture(GL_TEXTURE_2D, app->gBuffer.colorAttachmentHandles[0]);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, app->gBuffer.colorAttachmentHandles[1]);
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, app->gBuffer.colorAttachmentHandles[2]);
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
-
     glBindVertexArray(0);
+    glUseProgram(0);
+
+    // Render Lights
+    ShaderProgram& lightShader = app->shaderPrograms[app->lightProgramID];
+    glUseProgram(lightShader.handle);
+    for (u32 i = app->lastEntityID; i < app->numEntities; ++i)
+    {
+        Entity& lightEntity = app->entities[i];
+
+        glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->UBO.handle, lightEntity.localParamOffset, lightEntity.localParamSize);
+
+        Model* model = lightEntity.model;
+
+        u32 vao = FindVAO(model, 0, lightShader);
+        glBindVertexArray(vao);
+
+        Mesh& mesh = model->meshes[0];
+        glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.indexOffset);
+
+        glBindVertexArray(0);
+    }
     glUseProgram(0);
 }
 
@@ -495,9 +543,9 @@ void UpdateUniformBuffer(App* app)
     UnmapBuffer(app->UBO);
 }
 
-Entity* CreateEntity(App* app, EntityType type, u32 shaderID, glm::vec3 position, Model* model)
+Entity* CreateEntity(App* app, u32 shaderID, glm::vec3 position, Model* model)
 {
-    Entity entity = Entity(type, shaderID, position, model);
+    Entity entity = Entity(shaderID, position, model);
     app->entities.push_back(entity);
 
     return &app->entities[app->entities.size() - 1u];
@@ -505,7 +553,7 @@ Entity* CreateEntity(App* app, EntityType type, u32 shaderID, glm::vec3 position
 
 void CreatePointLight(App* app, glm::vec3 position, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float constant, Model* model, float scale)
 {
-    Entity lightEntity = Entity(EntityType::LIGHT, app->lightProgramID, position, model);
+    Entity lightEntity = Entity(app->lightProgramID, position, model);
     lightEntity.modelMatrix = glm::scale(lightEntity.modelMatrix, glm::vec3(scale));
     app->entities.push_back(lightEntity);
 

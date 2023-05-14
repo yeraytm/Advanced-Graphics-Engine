@@ -32,8 +32,16 @@ struct Model
     u32 EBHandle = 0;
 };
 
+enum class MaterialType
+{
+    DEFAULT,
+    TEXTURED_ALBEDO,
+    TEXTURED_ALB_SPEC
+};
+
 struct Material
 {
+    MaterialType type;
     std::string name;
 
     glm::vec3 diffuse;
@@ -48,26 +56,15 @@ struct Material
     u32 bumpTextureID;
 };
 
-enum class EntityType
-{
-    DEFAULT,
-    PRIMITIVE,
-    PRIMITIVE_CUBE,
-    MODEL,
-    LIGHT
-};
-
 struct Entity
 {
 public:
     Entity();
-    Entity(EntityType type, u32 shaderID, glm::vec3 newPosition);
-    Entity(EntityType type, u32 shaderID, glm::vec3 newPosition, Model* model);
+    Entity(u32 shaderID, glm::vec3 newPosition);
+    Entity(u32 shaderID, glm::vec3 newPosition, Model* model);
     ~Entity();
 
 public:
-    EntityType type;
-
     glm::vec3 position;
     glm::mat4 modelMatrix;
 

@@ -44,16 +44,29 @@ void Framebuffer::CheckStatus()
 	}
 }
 
-void Framebuffer::AttachTexture(FBAttachmentType attachmentType, glm::ivec2& size)
+void Framebuffer::AttachDepthTexture(glm::ivec2& size)
 {
-	if (attachmentType == FBAttachmentType::DEPTH)
-		u32 depthTextureHandle = CreateAttachment(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, size); // For OpenGL to write the values
+	depthAttachment = CreateAttachment(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, size);
+}
 
-	u32 textureHandle = CreateAttachment(GL_COLOR_ATTACHMENT0 + colorAttachmentHandles.size(), GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, size); // For us to write & read the values
+void Framebuffer::AttachColorTexture(FBAttachmentType attachmentType, glm::ivec2& size)
+{
+	u32 numAttachments = colorAttachmentHandles.size();
+
+	u32 textureHandle = 0;
+	switch (attachmentType)
+	{
+	case FBAttachmentType::COLOR_BYTE:
+		textureHandle = CreateAttachment(GL_COLOR_ATTACHMENT0 + numAttachments, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, size);
+		break;
+	case FBAttachmentType::COLOR_FLOAT:
+		textureHandle = CreateAttachment(GL_COLOR_ATTACHMENT0 + numAttachments, GL_RGBA16F, GL_RGBA, GL_FLOAT, size);
+		break;
+	}
 	colorAttachmentHandles.push_back(textureHandle);
 }
 
-u32 Framebuffer::CreateAttachment(GLenum attachmentType, GLint internalFormat, GLenum dataFormat, GLenum dataType, glm::ivec2& size)
+u32 Framebuffer::CreateAttachment(GLenum target, GLint internalFormat, GLenum dataFormat, GLenum dataType, glm::ivec2& size)
 {
 	GLuint attachmentHandle;
 	glGenTextures(1, &attachmentHandle);
@@ -61,12 +74,8 @@ u32 Framebuffer::CreateAttachment(GLenum attachmentType, GLint internalFormat, G
 
 	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, size.x, size.y, 0, dataFormat, dataType, NULL);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	// FROM SLIDES //
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	// Shouldnt be necessary to set wrapping methods
 	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -75,12 +84,12 @@ u32 Framebuffer::CreateAttachment(GLenum attachmentType, GLint internalFormat, G
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	glFramebufferTexture(GL_FRAMEBUFFER, attachmentType, attachmentHandle, 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, target, attachmentHandle, 0);
 
 	return attachmentHandle;
 }
 
-void Framebuffer::SetBuffers()
+void Framebuffer::SetColorBuffers()
 {
 	std::vector<GLuint> buffers;
 	buffers.reserve(colorAttachmentHandles.size());

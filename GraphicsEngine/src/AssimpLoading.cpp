@@ -31,6 +31,7 @@ void ProcessAssimpMaterial(App* app, aiMaterial* material, Material& myMaterial,
         String filename = MakeString(aiFilename.C_Str());
         String filepath = MakePath(directory, filename);
         myMaterial.albedoTextureID = LoadTexture2D(app->textures, filepath.str, flipTextures);
+        myMaterial.type = MaterialType::TEXTURED_ALBEDO;
     }
     if (material->GetTextureCount(aiTextureType_EMISSIVE) > 0)
     {
@@ -45,6 +46,7 @@ void ProcessAssimpMaterial(App* app, aiMaterial* material, Material& myMaterial,
         String filename = MakeString(aiFilename.C_Str());
         String filepath = MakePath(directory, filename);
         myMaterial.specularTextureID = LoadTexture2D(app->textures, filepath.str, flipTextures);
+        myMaterial.type = MaterialType::TEXTURED_ALB_SPEC;
     }
     if (material->GetTextureCount(aiTextureType_NORMALS) > 0)
     {

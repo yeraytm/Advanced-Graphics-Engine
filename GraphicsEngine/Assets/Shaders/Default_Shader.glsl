@@ -1,4 +1,4 @@
-#ifdef DEFAULT_MESH
+#ifdef DEFAULT
 
 #if defined(VERTEX) ///////////////////////////////////////////////////
 

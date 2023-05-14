@@ -7,9 +7,9 @@ typedef unsigned int GLenum;
 
 enum class FBAttachmentType
 {
-    COLOR,
-    DEPTH,
-    NORMALS
+    COLOR_BYTE,
+    COLOR_FLOAT,
+    DEPTH
 };
 
 class Framebuffer
@@ -23,14 +23,15 @@ public:
 
     void CheckStatus();
 
-    void AttachTexture(FBAttachmentType attachmentType, glm::ivec2& size);
-    void SetBuffers();
+    void AttachDepthTexture(glm::ivec2& size);
+    void AttachColorTexture(FBAttachmentType attachmentType, glm::ivec2& size);
+    void SetColorBuffers();
 
 private:
     u32 CreateAttachment(GLenum attachmentType, GLint internalFormat, GLenum dataFormat, GLenum dataType, glm::ivec2& size);
 
 public:
     u32 handle;
-
+    u32 depthAttachment;
     std::vector<u32> colorAttachmentHandles;
 };

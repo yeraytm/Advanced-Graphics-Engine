@@ -77,7 +77,7 @@ struct App
 
     // SCREEN-FILLING QUAD //
     Quad screenQuad;
-    Framebuffer framebuffer;
+    Framebuffer gBuffer;
 
     // CAMERA //
     Camera camera;
@@ -95,6 +95,7 @@ struct App
 
     // ENTITIES //
     u32 numEntities;
+    u32 lastEntityID;
     std::vector<Entity> entities;
     
     // RESOURCES //
@@ -123,7 +124,7 @@ u32 FindVAO(Model* model, u32 meshIndex, const ShaderProgram& shaderProgram);
 
 void UpdateUniformBuffer(App* app);
 
-Entity* CreateEntity(App* app, EntityType type, u32 shaderID, glm::vec3 position, Model* model);
+Entity* CreateEntity(App* app, u32 shaderID, glm::vec3 position, Model* model);
 
 void CreatePointLight(App* app, glm::vec3 position, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float constant, Model* model, float scale);
 void CreateDirectionalLight(App* app, glm::vec3 direction, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular);
