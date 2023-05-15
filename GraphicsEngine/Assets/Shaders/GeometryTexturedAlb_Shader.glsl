@@ -32,6 +32,8 @@ void main()
 layout(location = 0) out vec3 gPosition;
 layout(location = 1) out vec3 gNormal;
 layout(location = 2) out vec4 gAlbedoSpec;
+layout(location = 3) out vec3 gDepth;
+layout(location = 4) out vec3 gDepthLinear;
 
 struct Material
 {
@@ -45,13 +47,13 @@ in vec2 vTexCoord;
 in vec3 vFragPos;
 in vec3 vNormal;
 
-// float near = 0.1;
-// float far = 100.0;
-// float LinearDepth(float depth)
-// {
-// 	float z = depth * 2.0 - 1.0;
-// 	return (2.0 * near * far) / (far + near - z * (far - near));
-// }
+float near = 0.1;
+float far = 100.0;
+float LinearDepth(float depth)
+{
+	float z = depth * 2.0 - 1.0;
+	return (2.0 * near * far) / (far + near - z * (far - near));
+}
 
 void main()
 {
@@ -62,8 +64,10 @@ void main()
 	gAlbedoSpec.rgb = texture(uMaterial.albedo, vTexCoord).rgb;
 	gAlbedoSpec.a = uMaterial.specular.r;
 
-	//float depth = LinearDepth(gl_FragCoord.z) / far;
-	//gDepth = vec4(vec3(depth), 1.0);
+	gDepth = vec3(gl_FragCoord.z);
+
+	float depth = LinearDepth(gl_FragCoord.z) / far;
+	gDepthLinear = vec3(depth);
 }
 
 #endif /////////////////////////////////////////////////////////////////

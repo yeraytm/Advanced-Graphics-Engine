@@ -90,7 +90,7 @@ in vec3 vViewDir;
 
 struct LightMap
 {
-	vec3 diffuse;
+	vec3 albedo;
 	vec3 specular;
 } lightMap;
 
@@ -107,7 +107,7 @@ float LinearDepth(float depth)
 
 void main()
 {
-	lightMap.diffuse = vec3(texture(uMaterial.albedo, vTexCoord));
+	lightMap.albedo = vec3(texture(uMaterial.albedo, vTexCoord));
 	lightMap.specular = vec3(texture(uMaterial.specular, vTexCoord));
 
 	vec3 result = vec3(0.0);
@@ -132,11 +132,11 @@ vec3 ComputeDirLight(Light light, LightMap lightMap, vec3 normal, vec3 viewDir)
 	vec3 lightDir = normalize(-light.direction);
 
 	// Ambient
-	vec3 ambient = light.ambient * lightMap.diffuse;
+	vec3 ambient = light.ambient * lightMap.albedo;
 
 	// Diffuse
 	float diff = max(dot(normal, lightDir), 0.0);
-	vec3 diffuse = light.diffuse * diff * lightMap.diffuse;
+	vec3 diffuse = light.diffuse * diff * lightMap.albedo;
 
 	// Specular
 	vec3 reflectDir = reflect(-lightDir, normal);
@@ -154,12 +154,12 @@ vec3 ComputePointLight(Light light, LightMap lightMap, vec3 normal, vec3 fragPos
 	float attenuation = 1.0 / (light.constant + 0.09 * distance + 0.032 * (distance * distance));
 
 	// Ambient
-	vec3 ambient = light.ambient * lightMap.diffuse;
+	vec3 ambient = light.ambient * lightMap.albedo;
 	ambient *= attenuation;
 
 	// Diffuse
 	float diff = max(dot(normal, lightDir), 0.0);
-	vec3 diffuse = light.diffuse * diff * lightMap.diffuse;
+	vec3 diffuse = light.diffuse * diff * lightMap.albedo;
 	diffuse *= attenuation;
 
 	// Specular

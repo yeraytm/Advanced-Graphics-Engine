@@ -44,7 +44,7 @@ struct Material
     MaterialType type;
     std::string name;
 
-    glm::vec3 diffuse;
+    glm::vec3 albedo;
     glm::vec3 specular;
     glm::vec3 emissive;
     float shininess;

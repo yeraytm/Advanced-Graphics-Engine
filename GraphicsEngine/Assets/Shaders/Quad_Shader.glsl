@@ -44,6 +44,8 @@ in vec2 TexCoord;
 uniform sampler2D uPosition;
 uniform sampler2D uNormal;
 uniform sampler2D uAlbedoSpec;
+uniform sampler2D uDepth;
+uniform sampler2D uDepthLinear;
 
 vec3 ComputeDirLight(Light light, vec3 albedo, float specularC, vec3 normal, vec3 viewDir);
 vec3 ComputePointLight(Light light, vec3 albedo, float specularC, vec3 normal, vec3 fragPos, vec3 viewDir);
@@ -54,6 +56,9 @@ void main()
 	vec3 normal = texture(uNormal, TexCoord).rgb;
 	vec3 albedo = texture(uAlbedoSpec, TexCoord).rgb;
 	float specularC = texture(uAlbedoSpec, TexCoord).a;
+
+	vec3 depth = texture(uDepth, TexCoord).rgb;
+	vec3 depthLinear = texture(uDepthLinear, TexCoord).rgb;
 
 	vec3 viewDir = normalize(uViewPos - fragPos);
 
@@ -83,9 +88,7 @@ vec3 ComputeDirLight(Light light, vec3 albedo, float specularC, vec3 normal, vec
 
 	// Specular
 	vec3 reflectDir = reflect(-lightDir, normal);
-
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
-
 	vec3 specular = light.specular * spec * specularC;
 
 	return (ambient + diffuse + specular);

@@ -95,7 +95,7 @@ struct App
 
     // ENTITIES //
     u32 numEntities;
-    u32 lastEntityID;
+    u32 firstLightEntityID;
     std::vector<Entity> entities;
     
     // RESOURCES //
