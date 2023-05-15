@@ -92,10 +92,10 @@ struct App
     // LIGHTS //
     u32 numLights;
     std::vector<Light> lights;
+    u32 firstLightEntityID;
 
     // ENTITIES //
     u32 numEntities;
-    u32 firstLightEntityID;
     std::vector<Entity> entities;
     
     // RESOURCES //

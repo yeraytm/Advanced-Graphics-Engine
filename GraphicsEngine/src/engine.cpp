@@ -45,26 +45,18 @@ void Init(App* app)
     app->projection = glm::mat4(1.0f);
     app->projection = glm::perspective(glm::radians(45.0f), float(app->displaySize.x) / float(app->displaySize.y), 0.1f, 100.0f);
 
-    // SHADERS & UNIFORM TEXTURE LOCATIONS //
-    app->defaultProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/Default_Shader.glsl", "DEFAULT");
+    // SHADERS & UNIFORM TEXTURES //
+    app->defaultProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/Default_Shader_D.glsl", "DEFAULT");
     app->lightProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/Light_Shader.glsl", "LIGHT_CASTER");
 
-    u32 texturedAlbProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/TexturedAlb_Shader.glsl", "TEXTURED_ALBEDO");
-    u32 albedoLoc1 = glGetUniformLocation(app->shaderPrograms[texturedAlbProgramID].handle, "uMaterial.albedo");
+    u32 texturedAlbProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/TexturedAlb_Shader_D.glsl", "TEXTURED_ALBEDO");
     glUseProgram(app->shaderPrograms[texturedAlbProgramID].handle);
-    glUniform1i(albedoLoc1, 0);
+    glUniform1i(glGetUniformLocation(app->shaderPrograms[texturedAlbProgramID].handle, "uMaterial.albedo"), 0);
 
-    u32 texturedAlbSpecProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/TexturedAlbSpec_Shader.glsl", "TEXTURED_ALBEDO_SPECULAR");
-    u32 albedoLoc2 = glGetUniformLocation(app->shaderPrograms[texturedAlbSpecProgramID].handle, "uMaterial.albedo");
-    u32 specularLoc = glGetUniformLocation(app->shaderPrograms[texturedAlbSpecProgramID].handle, "uMaterial.specular");
+    u32 texturedAlbSpecProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/TexturedAlbSpec_Shader_D.glsl", "TEXTURED_ALBEDO_SPECULAR");
     glUseProgram(app->shaderPrograms[texturedAlbSpecProgramID].handle);
-    glUniform1i(albedoLoc2, 0);
-    glUniform1i(specularLoc, 1);
-
-    u32 geometryTexAlbProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/GeometryTexturedAlb_Shader.glsl", "GEOMETRY_TEXTURED_ALBEDO");
-    u32 geoAlbedoLoc = glGetUniformLocation(app->shaderPrograms[geometryTexAlbProgramID].handle, "uMaterial.albedo");
-    glUseProgram(app->shaderPrograms[geometryTexAlbProgramID].handle);
-    glUniform1i(geoAlbedoLoc, 0);
+    glUniform1i(glGetUniformLocation(app->shaderPrograms[texturedAlbSpecProgramID].handle, "uMaterial.albedo"), 0);
+    glUniform1i(glGetUniformLocation(app->shaderPrograms[texturedAlbSpecProgramID].handle, "uMaterial.specular"), 1);
 
     // TEXTURES //
     u32 diceTexIdx = LoadTexture2D(app->textures, "Assets/dice.png");
@@ -73,82 +65,82 @@ void Init(App* app)
     u32 normalTexIdx = LoadTexture2D(app->textures, "Assets/color_normal.png");
     u32 magentaTexIdx = LoadTexture2D(app->textures, "Assets/color_magenta.png");
 
-    u32 containerAlbedoTexID = LoadTexture2D(app->textures, "Assets/Container/container_albedo.png");
-    u32 containerSpecularID = LoadTexture2D(app->textures, "Assets/Container/container_specular.png");
+    u32 containerAlbedoTexID = LoadTexture2D(app->textures, "Assets/container_albedo.png");
+    u32 containerSpecularID = LoadTexture2D(app->textures, "Assets/container_specular.png");
 
     // MATERIALS //
     Material defaultMat = {};
-    defaultMat.type = MaterialType::TEXTURED_ALBEDO;
+    defaultMat.type = MaterialType::DEFAULT;
     defaultMat.name = "Default Material";
-    //defaultMat.albedo = glm::vec3(1.0f, 0.5f, 0.31f);
+    defaultMat.albedo = glm::vec3(1.0f, 0.5f, 0.31f);
     defaultMat.specular = glm::vec3(0.5f);
     defaultMat.shininess = 32.0f;
-    defaultMat.albedoTextureID = magentaTexIdx;
 
     Material defaultMat2 = {};
-    defaultMat2.type = MaterialType::TEXTURED_ALBEDO;
+    defaultMat2.type = MaterialType::DEFAULT;
     defaultMat2.name = "Default Material 2";
-    //defaultMat2.albedo = glm::vec3(0.5f, 1.0f, 0.31f);
+    defaultMat2.albedo = glm::vec3(0.0f);
     defaultMat2.specular = glm::vec3(0.5f);
     defaultMat2.shininess = 32.0f;
-    defaultMat2.albedoTextureID = blackTexIdx;
 
     Material containerMat = {};
-    containerMat.type = MaterialType::TEXTURED_ALBEDO;
+    containerMat.type = MaterialType::TEXTURED_ALB_SPEC;
     containerMat.name = "Container Material";
     containerMat.specular = glm::vec3(0.5f);
     containerMat.shininess = 32.0f;
     containerMat.albedoTextureID = containerAlbedoTexID;
-    //containerMat.specularTextureID = containerSpecularID;
+    containerMat.specularTextureID = containerSpecularID;
 
     // MODELS //
     Model* planeModel = CreatePrimitive(app, PrimitiveType::PLANE, defaultMat);
 
     Model* sphereModel = CreatePrimitive(app, PrimitiveType::SPHERE, defaultMat);
-    Model* sphereLowModel = CreatePrimitive(app, PrimitiveType::SPHERE, defaultMat, 8, 16);
+    Model* sphereLowModel = CreatePrimitive(app, PrimitiveType::SPHERE, defaultMat2, 16, 16);
 
     Model* cubeModel = CreatePrimitive(app, PrimitiveType::CUBE, containerMat);
     Model* cubeModel2 = CreatePrimitive(app, PrimitiveType::CUBE, defaultMat2);
 
-    Model* patrickModel = LoadModel(app, "Assets/Patrick/patrick.obj");
+    Model* patrickModel = LoadModel(app, "Assets/Models/Patrick/patrick.obj");
 
     // ENTITIES //
     // Primitives
-    Entity* planeEntity = CreateEntity(app, geometryTexAlbProgramID, glm::vec3(0.0f, -5.0f, 0.0f), planeModel);
+    Entity* planeEntity = CreateEntity(app, app->defaultProgramID, glm::vec3(0.0f, -5.0f, 0.0f), planeModel);
     planeEntity->modelMatrix = glm::rotate(planeEntity->modelMatrix, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     planeEntity->modelMatrix = glm::scale(planeEntity->modelMatrix, glm::vec3(25.0f));
 
-    Entity* sphereEntity = CreateEntity(app, geometryTexAlbProgramID, glm::vec3(0.0f, 0.0f, 3.0f), sphereModel);
+    Entity* sphereEntity = CreateEntity(app, app->defaultProgramID, glm::vec3(0.0f, 0.0f, 3.0f), sphereModel);
 
-    Entity* cubeEntity = CreateEntity(app, geometryTexAlbProgramID, glm::vec3(5.0f, 0.0f, 2.0f), cubeModel2);
+    Entity* cubeEntity = CreateEntity(app, texturedAlbSpecProgramID, glm::vec3(5.0f, 0.0f, 2.0f), cubeModel);
 
-    glm::vec3 cubePositions[] = {
-    glm::vec3(0.0f,  0.0f,  0.0f),
-    glm::vec3(2.0f,  5.0f, -15.0f),
-    glm::vec3(-1.5f, -2.2f, -2.5f),
-    glm::vec3(-3.8f, -2.0f, -12.3f),
-    glm::vec3(2.4f, -0.4f, -3.5f),
-    glm::vec3(-1.7f,  3.0f, -7.5f),
-    glm::vec3(1.3f, -2.0f, -2.5f),
-    glm::vec3(1.5f,  2.0f, -2.5f),
-    glm::vec3(1.5f,  0.2f, -1.5f),
-    glm::vec3(-1.3f,  1.0f, -1.5f)
-    };
+    Entity* cubeEntity2 = CreateEntity(app, app->defaultProgramID, glm::vec3(-5.0f, 0.0f, 2.0f), cubeModel2);
 
-    for (u32 i = 0; i < 10; ++i)
-    {
-        Entity* cubeEntity = CreateEntity(app, geometryTexAlbProgramID, cubePositions[i], cubeModel);
-        float angle = 20.0f * i;
-        cubeEntity->modelMatrix = glm::rotate(cubeEntity->modelMatrix, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-    }
+    //glm::vec3 cubePositions[] = {
+    //glm::vec3(0.0f,  0.0f,  0.0f),
+    //glm::vec3(2.0f,  5.0f, -15.0f),
+    //glm::vec3(-1.5f, -2.2f, -2.5f),
+    //glm::vec3(-3.8f, -2.0f, -12.3f),
+    //glm::vec3(2.4f, -0.4f, -3.5f),
+    //glm::vec3(-1.7f,  3.0f, -7.5f),
+    //glm::vec3(1.3f, -2.0f, -2.5f),
+    //glm::vec3(1.5f,  2.0f, -2.5f),
+    //glm::vec3(1.5f,  0.2f, -1.5f),
+    //glm::vec3(-1.3f,  1.0f, -1.5f)
+    //};
+    //for (u32 i = 0; i < 10; ++i)
+    //{
+    //    Entity* cubeEntity = CreateEntity(app, geometryTexAlbProgramID, cubePositions[i], cubeModel);
+    //    float angle = 20.0f * i;
+    //    cubeEntity->modelMatrix = glm::rotate(cubeEntity->modelMatrix, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+    //}
 
-    // Models
-    Entity* patrickEntity = CreateEntity(app, geometryTexAlbProgramID, glm::vec3(0.0f, 0.0f, -5.0f), patrickModel);
+    // 3D Models
+    Entity* patrickEntity = CreateEntity(app, texturedAlbProgramID, glm::vec3(0.0f, 0.0f, -5.0f), patrickModel);
 
     app->firstLightEntityID = app->entities.size();
 
     // LIGHTS //
     CreatePointLight(app, glm::vec3(3.0f, 1.0f, -2.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 1.0f, sphereLowModel, 0.1f);
+    CreatePointLight(app, glm::vec3(-5.0f, 1.0f, 0.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 1.0f, sphereLowModel, 0.1f);
 
     CreatePointLight(app, glm::vec3(-6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 0.4f, sphereLowModel, 0.1f);
     CreatePointLight(app, glm::vec3(6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 1.0f, sphereLowModel, 0.1f);
@@ -162,24 +154,19 @@ void Init(App* app)
     // OPENGL GLOBAL STATE //
     app->screenQuad.VAO = CreateQuad();
     app->screenQuad.textureHandle = app->textures[diceTexIdx].handle;
-    app->screenQuad.shaderHandle = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/Quad_Shader.glsl", "SCREEN_QUAD")].handle;
-    u32 gPositionLoc = glGetUniformLocation(app->screenQuad.shaderHandle, "uPosition");
-    u32 gNormalLoc = glGetUniformLocation(app->screenQuad.shaderHandle, "uNormal");
-    u32 gAlbedoLoc = glGetUniformLocation(app->screenQuad.shaderHandle, "uAlbedoSpec");
-    u32 gDepthLoc = glGetUniformLocation(app->screenQuad.shaderHandle, "uDepth");
-    u32 gDepthLinearLoc = glGetUniformLocation(app->screenQuad.shaderHandle, "uDepthLinear");
+    app->screenQuad.shaderHandle = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/Quad_Shader_D.glsl", "SCREEN_QUAD")].handle;
     glUseProgram(app->screenQuad.shaderHandle);
-    glUniform1i(gPositionLoc, 0);
-    glUniform1i(gNormalLoc, 1);
-    glUniform1i(gAlbedoLoc, 2);
-    glUniform1i(gDepthLoc, 3);
-    glUniform1i(gDepthLinearLoc, 4);
+    glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "gBufPosition"), 0);
+    glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "gBufNormal"), 1);
+    glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "gBufAlbedoSpec"), 2);
+    glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "gBufDepth"), 3);
+    glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "gBufDepthLinear"), 4);
 
     app->gBuffer.Generate();
     app->gBuffer.Bind();
     app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize); // Position Color Buffer
     app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize); // Normal Color Buffer
-    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Color + Specular Color Buffer
+    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Albedo + Specular Color Buffer
     app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Depth Color Buffer
     app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Depth Linearalized Color Buffer
     
