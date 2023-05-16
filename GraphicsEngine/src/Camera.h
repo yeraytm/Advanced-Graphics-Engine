@@ -2,6 +2,8 @@
 
 #include "Platform.h"
 
+#define CAMERA_DEFAULT_SPEED 3.0f
+
 enum class CameraDirection
 {
     CAMERA_FORWARD,
@@ -15,11 +17,14 @@ enum class CameraDirection
 class Camera
 {
 public:
-	Camera(glm::vec3 cameraPosition = glm::vec3(0.0f));
+    Camera(float speed = CAMERA_DEFAULT_SPEED);
+	Camera(glm::vec3 position, const glm::ivec2& displaySize, float FOV, float nearPlane, float farPlane, float speed = CAMERA_DEFAULT_SPEED);
 	~Camera();
 
-    void ProcessMouse(glm::vec2 mouseDelta);
-    void ProcessKeyboard(CameraDirection direction, float dt);
+    void ProcessInput(const Input& input, float deltaTime);
+
+    void SetProjectionMatrix(const glm::ivec2& displaySize);
+    inline glm::mat4 GetProjectionMatrix() const { return projection; }
     glm::mat4 GetViewMatrix() const;
 
 public:
@@ -27,8 +32,11 @@ public:
 
     // Options
     float speed;
+    float defaultSpeed;
 
 private:
+    void ProcessMouse(glm::vec2 mouseDelta);
+    void ProcessKeyboard(CameraDirection direction, float dt);
     void UpdateVectors();
 
 private:
@@ -40,6 +48,14 @@ private:
     // Euler Angles
     float yaw, pitch;
 
-    // Options
+    // Projection Matrix
+    glm::mat4 projection;
+
+    // Projection Options
+    float FOV;
+    float nearPlane;
+    float farPlane;
+
+    // Camera Options
     float sensitivity;
 };

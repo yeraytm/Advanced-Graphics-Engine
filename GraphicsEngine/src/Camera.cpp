@@ -1,11 +1,25 @@
 #include "Camera.h"
 
-Camera::Camera(glm::vec3 newPosition)
-	: position(newPosition), speed(2.0f),
+Camera::Camera(float speed)
+	: position(glm::vec3(0.0f)), speed(speed), defaultSpeed(speed),
 	front(glm::vec3(0.0f, 0.0f, -1.0f)), up(glm::vec3(0.0f)), right(glm::vec3(0.0f)), worldUp(glm::vec3(0.0f, 1.0f, 0.0f)),
-	yaw(-90.0f), pitch(0.0f), sensitivity(0.1f)
+	yaw(-90.0f), pitch(0.0f), FOV(45.0f), nearPlane(0.1f), farPlane(100.0f), sensitivity(0.1f)
 {
 	UpdateVectors();
+
+	projection = glm::mat4(1.0f);
+	projection = glm::perspective(glm::radians(FOV), 1280.0f / 720.0f, nearPlane, farPlane);
+}
+
+Camera::Camera(glm::vec3 position, const glm::ivec2& displaySize, float FOV, float nearPlane, float farPlane, float speed)
+	: position(position), speed(speed), defaultSpeed(speed),
+	front(glm::vec3(0.0f, 0.0f, -1.0f)), up(glm::vec3(0.0f)), right(glm::vec3(0.0f)), worldUp(glm::vec3(0.0f, 1.0f, 0.0f)),
+	yaw(-90.0f), pitch(0.0f), FOV(FOV), nearPlane(nearPlane), farPlane(farPlane), sensitivity(0.1f)
+{
+	UpdateVectors();
+
+	projection = glm::mat4(1.0f);
+	projection = glm::perspective(glm::radians(FOV), float(displaySize.x) / float(displaySize.y), nearPlane, farPlane);
 }
 
 Camera::~Camera()
@@ -22,6 +36,34 @@ void Camera::UpdateVectors()
 
 	right = glm::normalize(glm::cross(front, worldUp));
 	up = glm::normalize(glm::cross(right, front));
+}
+
+void Camera::ProcessInput(const Input& input, float deltaTime)
+{
+	//ProcessMouse(input.mouseDelta);
+
+	if (input.keys[K_LSHIFT] == BUTTON_PRESS)
+		speed *= 3.0f;
+	if (input.keys[K_LSHIFT] == BUTTON_RELEASE)
+		speed = defaultSpeed;
+
+	if (input.keys[K_W] == BUTTON_PRESSED)
+		ProcessKeyboard(CameraDirection::CAMERA_FORWARD, deltaTime);
+	if (input.keys[K_S] == BUTTON_PRESSED)
+		ProcessKeyboard(CameraDirection::CAMERA_BACKWARD, deltaTime);
+	if (input.keys[K_A] == BUTTON_PRESSED)
+		ProcessKeyboard(CameraDirection::CAMERA_LEFT, deltaTime);
+	if (input.keys[K_D] == BUTTON_PRESSED)
+		ProcessKeyboard(CameraDirection::CAMERA_RIGHT, deltaTime);
+	if (input.keys[K_Q] == BUTTON_PRESSED)
+		ProcessKeyboard(CameraDirection::CAMERA_UP, deltaTime);
+	if (input.keys[K_E] == BUTTON_PRESSED)
+		ProcessKeyboard(CameraDirection::CAMERA_DOWN, deltaTime);
+
+	if (input.mouseButtons[MOUSE_LEFT] == BUTTON_PRESS)
+	{
+		
+	}
 }
 
 void Camera::ProcessMouse(glm::vec2 mouseDelta)
@@ -64,12 +106,17 @@ void Camera::ProcessKeyboard(CameraDirection direction, float dt)
 		position += right * velocity;
 		break;
 	case CameraDirection::CAMERA_UP:
-		position += up * velocity;
+		position += worldUp * velocity;
 		break;
 	case CameraDirection::CAMERA_DOWN:
-		position -= up * velocity;
+		position -= worldUp * velocity;
 		break;
 	}
+}
+
+void Camera::SetProjectionMatrix(const glm::ivec2& displaySize)
+{
+	projection = glm::perspective(glm::radians(FOV), float(displaySize.x) / float(displaySize.y), nearPlane, farPlane);
 }
 
 glm::mat4 Camera::GetViewMatrix() const

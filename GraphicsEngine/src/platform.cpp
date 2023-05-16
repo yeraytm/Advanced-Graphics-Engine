@@ -32,8 +32,6 @@
 u8* GlobalFrameArenaMemory = NULL;
 u32 GlobalFrameArenaHead = 0;
 
-bool firstIt = true;
-
 void OnGlfwError(int errorCode, const char* errorMessage)
 {
     fprintf(stderr, "glfw failed with error %d: %s\n", errorCode, errorMessage);
@@ -43,19 +41,10 @@ void OnGlfwMouseMoveEvent(GLFWwindow* window, double xpos, double ypos)
 {
     App* app = (App*)glfwGetWindowUserPointer(window);
 
-    if (firstIt)
-    {
-        app->input.mousePos.x = float(xpos);
-        app->input.mousePos.y = float(ypos);
-        firstIt = false;
-    }
-
     app->input.mouseDelta.x = float(xpos) - app->input.mousePos.x;
     app->input.mouseDelta.y = float(ypos) - app->input.mousePos.y;
     app->input.mousePos.x = float(xpos);
     app->input.mousePos.y = float(ypos);
-
-    app->camera.ProcessMouse(app->input.mouseDelta);
 }
 
 void OnGlfwMouseEvent(GLFWwindow* window, int button, int event, int modifiers)
@@ -140,6 +129,8 @@ void OnGlfwResizeFramebuffer(GLFWwindow* window, int width, int height)
 {
     App* app = (App*)glfwGetWindowUserPointer(window);
     app->displaySize = glm::vec2(width, height);
+
+    app->camera.SetProjectionMatrix(app->displaySize);
     glViewport(0, 0, app->displaySize.x, app->displaySize.y);
 }
 
@@ -156,8 +147,6 @@ int main()
     app.currentTime = 0.0;
     app.displaySize = glm::ivec2(WINDOW_WIDTH, WINDOW_HEIGHT);
     app.isRunning = true;
-
-    app.input.mousePos = glm::vec2(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT / 2.0f);
 
     glfwSetErrorCallback(OnGlfwError);
 

@@ -44,12 +44,12 @@ void Framebuffer::CheckStatus()
 	}
 }
 
-void Framebuffer::AttachDepthTexture(glm::ivec2& size)
+void Framebuffer::AttachDepthTexture(const glm::ivec2& size)
 {
 	depthAttachment = CreateAttachment(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, size);
 }
 
-void Framebuffer::AttachColorTexture(FBAttachmentType attachmentType, glm::ivec2& size)
+void Framebuffer::AttachColorTexture(FBAttachmentType attachmentType, const glm::ivec2& size)
 {
 	u32 numAttachments = colorAttachmentHandles.size();
 
@@ -66,7 +66,7 @@ void Framebuffer::AttachColorTexture(FBAttachmentType attachmentType, glm::ivec2
 	colorAttachmentHandles.push_back(textureHandle);
 }
 
-u32 Framebuffer::CreateAttachment(GLenum target, GLint internalFormat, GLenum dataFormat, GLenum dataType, glm::ivec2& size)
+u32 Framebuffer::CreateAttachment(GLenum target, GLint internalFormat, GLenum dataFormat, GLenum dataType, const glm::ivec2& size)
 {
 	GLuint attachmentHandle;
 	glGenTextures(1, &attachmentHandle);
@@ -98,4 +98,6 @@ void Framebuffer::SetColorBuffers()
 		buffers.emplace_back(GL_COLOR_ATTACHMENT0 + i);
 
 	glDrawBuffers(colorAttachmentHandles.size(), buffers.data());
+
+	CheckStatus();
 }

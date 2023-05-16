@@ -33,10 +33,7 @@ void Init(App* app)
     app->sceneInfo = false;
 
     // CAMERA & PROJECTION //
-    app->camera = Camera(glm::vec3(0.0f, 3.0f, 10.0f));
-
-    app->projection = glm::mat4(1.0f);
-    app->projection = glm::perspective(glm::radians(45.0f), float(app->displaySize.x) / float(app->displaySize.y), 0.1f, 100.0f);
+    app->camera = Camera(glm::vec3(0.0f, 3.0f, 10.0f), app->displaySize, 45.0f, 0.1f, 100.0f);
 
     // UNIFORM BUFFER (CONSTANT BUFFER) //
     int maxUniformBlockSize;
@@ -55,16 +52,18 @@ void Init(App* app)
     glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "gBufDepth"), 3);
     glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "gBufDepthLinear"), 4);
 
+    // G-Buffer
     app->gBuffer.Generate();
     app->gBuffer.Bind();
+
     app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize); // Position Color Buffer
     app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize); // Normal Color Buffer
     app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Albedo + Specular Color Buffer
     app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Depth Color Buffer
     app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Depth Linearalized Color Buffer
-    app->gBuffer.AttachDepthTexture(app->displaySize); // Depth
+    app->gBuffer.AttachDepthTexture(app->displaySize); // Depth Attachment
+
     app->gBuffer.SetColorBuffers();
-    app->gBuffer.CheckStatus();
     app->gBuffer.Unbind();
 
     //app->targets = { "FINAL", "POSITION", "NORMAL", "ALBEDO", "SPECULAR", "DEPTH", "DEPTH LINEAR" };
@@ -103,7 +102,7 @@ void Init(App* app)
     Material defaultMat2 = {};
     defaultMat2.type = MaterialType::DEFAULT;
     defaultMat2.name = "Default Material 2";
-    defaultMat2.albedo = glm::vec3(0.0f);
+    defaultMat2.albedo = glm::vec3(0.0f, 1.0f, 0.0f);
     defaultMat2.specular = glm::vec3(0.5f);
     defaultMat2.shininess = 32.0f;
 
@@ -265,38 +264,22 @@ void Update(App* app)
     // You can handle app->input keyboard/mouse here
     if (app->input.keys[K_ESCAPE] == BUTTON_PRESS)
         app->isRunning = false;
+    
+    app->camera.ProcessInput(app->input, app->deltaTime);
 
-    if (app->input.keys[K_LSHIFT] == BUTTON_PRESS)
-        app->camera.speed *= 3.0f;
-    else if (app->input.keys[K_LSHIFT] == BUTTON_RELEASE)
-        app->camera.speed = 2.0f;
-
-    if (app->input.keys[K_W] == BUTTON_PRESSED)
-        app->camera.ProcessKeyboard(CameraDirection::CAMERA_FORWARD, app->deltaTime);
-    if (app->input.keys[K_S] == BUTTON_PRESSED)
-        app->camera.ProcessKeyboard(CameraDirection::CAMERA_BACKWARD, app->deltaTime);
-    if (app->input.keys[K_A] == BUTTON_PRESSED)
-        app->camera.ProcessKeyboard(CameraDirection::CAMERA_LEFT, app->deltaTime);
-    if (app->input.keys[K_D] == BUTTON_PRESSED)
-        app->camera.ProcessKeyboard(CameraDirection::CAMERA_RIGHT, app->deltaTime);
-    if (app->input.keys[K_Q] == BUTTON_PRESSED)
-        app->camera.ProcessKeyboard(CameraDirection::CAMERA_UP, app->deltaTime);
-    if (app->input.keys[K_E] == BUTTON_PRESSED)
-        app->camera.ProcessKeyboard(CameraDirection::CAMERA_DOWN, app->deltaTime);
-
-    if (app->input.keys[K_1] == BUTTON_PRESSED)
+    if (app->input.keys[K_1] == BUTTON_PRESS)
         app->screenQuad.targetBuffer = 0;
-    if (app->input.keys[K_2] == BUTTON_PRESSED)
+    if (app->input.keys[K_2] == BUTTON_PRESS)
         app->screenQuad.targetBuffer = 1;
-    if (app->input.keys[K_3] == BUTTON_PRESSED)
+    if (app->input.keys[K_3] == BUTTON_PRESS)
         app->screenQuad.targetBuffer = 2;
-    if (app->input.keys[K_4] == BUTTON_PRESSED)
+    if (app->input.keys[K_4] == BUTTON_PRESS)
         app->screenQuad.targetBuffer = 3;
-    if (app->input.keys[K_5] == BUTTON_PRESSED)
+    if (app->input.keys[K_5] == BUTTON_PRESS)
         app->screenQuad.targetBuffer = 4;
-    if (app->input.keys[K_6] == BUTTON_PRESSED)
+    if (app->input.keys[K_6] == BUTTON_PRESS)
         app->screenQuad.targetBuffer = 5;
-    if (app->input.keys[K_6] == BUTTON_PRESSED)
+    if (app->input.keys[K_7] == BUTTON_PRESS)
         app->screenQuad.targetBuffer = 6;
 
     for (u32 i = 0; i < app->shaderPrograms.size(); ++i)
@@ -534,7 +517,7 @@ void UpdateUniformBuffer(App* app)
         glm::mat4& modelMatrix = entity.modelMatrix;
         PushMat4(app->UBO, modelMatrix);
 
-        glm::mat4 MVP = app->projection * app->camera.GetViewMatrix() * modelMatrix;
+        glm::mat4 MVP = app->camera.GetProjectionMatrix() * app->camera.GetViewMatrix() * modelMatrix;
         PushMat4(app->UBO, MVP);
 
         entity.localParamSize = app->UBO.head - entity.localParamOffset;

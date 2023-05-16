@@ -16,4 +16,4 @@ struct Texture
     std::string filepath;
 };
 
-u32 LoadTexture2D(std::vector<Texture>& textures, const char* filepath, bool isFliped = true);
+u32 LoadTexture2D(std::vector<Texture>& textures, const char* filepath, bool isFlipped = true);

@@ -21,14 +21,13 @@ public:
     void Generate();
     void Delete();
 
-    void CheckStatus();
-
-    void AttachDepthTexture(glm::ivec2& size);
-    void AttachColorTexture(FBAttachmentType attachmentType, glm::ivec2& size);
+    void AttachDepthTexture(const glm::ivec2& size);
+    void AttachColorTexture(FBAttachmentType attachmentType, const glm::ivec2& size);
     void SetColorBuffers();
 
 private:
-    u32 CreateAttachment(GLenum attachmentType, GLint internalFormat, GLenum dataFormat, GLenum dataType, glm::ivec2& size);
+    u32 CreateAttachment(GLenum attachmentType, GLint internalFormat, GLenum dataFormat, GLenum dataType, const glm::ivec2& size);
+    void CheckStatus();
 
 public:
     u32 handle;

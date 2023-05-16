@@ -76,7 +76,6 @@ struct App
 
     // CAMERA & PROJECTION //
     Camera camera;
-    glm::mat4 projection;
 
     // UNIFORM BUFFER (CONSTANT BUFFER) //
     int uniformBufferOffsetAlignment;
