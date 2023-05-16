@@ -41,6 +41,7 @@ layout(binding = 0, std140) uniform GlobalParameters
 
 in vec2 vTexCoord;
 
+uniform unsigned int targetBuffer;
 uniform sampler2D gBufPosition;
 uniform sampler2D gBufNormal;
 uniform sampler2D gBufAlbedoSpec;
@@ -72,7 +73,17 @@ void main()
 			result += ComputePointLight(uLights[i], albedo, specularC, normal, fragPos, viewDir);
 	}
 	
-	FragColor = vec4(result, 1.0);
+	switch(targetBuffer)
+	{
+		case 0: FragColor = vec4(result, 1.0); 			break; // Final Lighting
+		case 1: FragColor = vec4(fragPos, 1.0); 		break; // Position
+		case 2: FragColor = vec4(normal, 1.0); 			break; // Normal
+		case 3: FragColor = vec4(albedo, 1.0); 			break; // Albedo
+		case 4: FragColor = vec4(vec3(specularC), 1.0); break; // Specular
+		case 5: FragColor = vec4(depth, 1.0); 			break; // Depth
+		case 6: FragColor = vec4(depthLinear, 1.0); 	break; // Depth Linear
+		default: FragColor = vec4(vec3(0.0), 1.0);
+	}
 }
 
 vec3 ComputeDirLight(Light light, vec3 albedo, float specularC, vec3 normal, vec3 viewDir)

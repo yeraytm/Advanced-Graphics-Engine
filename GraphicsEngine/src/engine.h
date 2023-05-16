@@ -32,9 +32,8 @@ struct OpenGLState
 struct Quad
 {
     u32 VAO;
-    u32 textureHandle;
     u32 shaderHandle;
-    //u32 textureUniformLocation;
+    u32 targetBuffer;
 };
 
 enum class LightType
@@ -69,17 +68,13 @@ struct App
     // INPUT //
     Input input;
 
-    // OPENGL STATE & IMGUI //
+    // OPENGL DEBUG & IMGUI //
     OpenGLState glState;
     bool openGLStatus;
     bool debugInfo;
     bool sceneInfo;
 
-    // SCREEN-FILLING QUAD //
-    Quad screenQuad;
-    Framebuffer gBuffer;
-
-    // CAMERA //
+    // CAMERA & PROJECTION //
     Camera camera;
     glm::mat4 projection;
 
@@ -88,25 +83,30 @@ struct App
     Buffer UBO;
     u32 globalParamOffset;
     u32 globalParamSize;
-    
-    // LIGHTS //
-    u32 numLights;
-    std::vector<Light> lights;
-    u32 firstLightEntityID;
 
+    // SCREEN-FILLING QUAD //
+    Quad screenQuad;
+    Framebuffer gBuffer;
+    //const char* targets;
+
+    // SHADERS & UNIFORM TEXTURES //
+    u32 defaultProgramID;
+    u32 lightProgramID;
+    
     // ENTITIES //
-    u32 numEntities;
     std::vector<Entity> entities;
+    u32 numEntities;
+
+    // LIGHTS //
+    u32 firstLightEntityID;
+    std::vector<Light> lights;
+    u32 numLights;
     
     // RESOURCES //
     std::vector<Model*> models;
     std::vector<Texture> textures;
     std::vector<Material> materials;
     std::vector<ShaderProgram> shaderPrograms;
-
-    // SHADER IDs //
-    u32 defaultProgramID;
-    u32 lightProgramID;
 };
 
 void Init(App* app);

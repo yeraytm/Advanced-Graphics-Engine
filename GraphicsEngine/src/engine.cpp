@@ -14,11 +14,6 @@
 
 void Init(App* app)
 {
-    // IMGUI WINDOWS //
-    app->debugInfo = false;
-    app->openGLStatus = false;
-    app->sceneInfo = false;
-
     // OPENGL DEBUG //
     app->glState.version = "Version: " + std::string((const char*)glGetString(GL_VERSION));
     app->glState.renderer = "Renderer: " + std::string((const char*)glGetString(GL_RENDERER));
@@ -32,18 +27,47 @@ void Init(App* app)
         app->glState.extensions.emplace_back((const char*)glGetStringi(GL_EXTENSIONS, GLuint(i)));
     }
 
-    // OPENGL UNIFORM BUFFER //
-    int maxUniformBlockSize;
-    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxUniformBlockSize);
-    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBufferOffsetAlignment);
-
-    app->UBO = CreateConstantBuffer(maxUniformBlockSize);
+    // IMGUI WINDOWS //
+    app->openGLStatus = false;
+    app->debugInfo = false;
+    app->sceneInfo = false;
 
     // CAMERA & PROJECTION //
     app->camera = Camera(glm::vec3(0.0f, 3.0f, 10.0f));
 
     app->projection = glm::mat4(1.0f);
     app->projection = glm::perspective(glm::radians(45.0f), float(app->displaySize.x) / float(app->displaySize.y), 0.1f, 100.0f);
+
+    // UNIFORM BUFFER (CONSTANT BUFFER) //
+    int maxUniformBlockSize;
+    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxUniformBlockSize);
+    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBufferOffsetAlignment);
+    app->UBO = CreateConstantBuffer(maxUniformBlockSize);
+
+    // SCREEN-FILLING QUAD //
+    app->screenQuad.VAO = CreateQuad();
+    app->screenQuad.shaderHandle = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/Quad_Shader_D.glsl", "SCREEN_QUAD")].handle;
+    app->screenQuad.targetBuffer = 0;
+    glUseProgram(app->screenQuad.shaderHandle);
+    glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "gBufPosition"), 0);
+    glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "gBufNormal"), 1);
+    glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "gBufAlbedoSpec"), 2);
+    glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "gBufDepth"), 3);
+    glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "gBufDepthLinear"), 4);
+
+    app->gBuffer.Generate();
+    app->gBuffer.Bind();
+    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize); // Position Color Buffer
+    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize); // Normal Color Buffer
+    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Albedo + Specular Color Buffer
+    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Depth Color Buffer
+    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Depth Linearalized Color Buffer
+    app->gBuffer.AttachDepthTexture(app->displaySize); // Depth
+    app->gBuffer.SetColorBuffers();
+    app->gBuffer.CheckStatus();
+    app->gBuffer.Unbind();
+
+    //app->targets = { "FINAL", "POSITION", "NORMAL", "ALBEDO", "SPECULAR", "DEPTH", "DEPTH LINEAR" };
 
     // SHADERS & UNIFORM TEXTURES //
     app->defaultProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/Default_Shader_D.glsl", "DEFAULT");
@@ -148,35 +172,10 @@ void Init(App* app)
     //CreateDirectionalLight(app, glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.2f), glm::vec3(0.5f), glm::vec3(1.0f));
 
     // ENGINE COUNT OF ENTITIES & LIGHTS //
-    app->numLights = app->lights.size();
     app->numEntities = app->entities.size();
+    app->numLights = app->lights.size();
 
     // OPENGL GLOBAL STATE //
-    app->screenQuad.VAO = CreateQuad();
-    app->screenQuad.textureHandle = app->textures[diceTexIdx].handle;
-    app->screenQuad.shaderHandle = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/Quad_Shader_D.glsl", "SCREEN_QUAD")].handle;
-    glUseProgram(app->screenQuad.shaderHandle);
-    glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "gBufPosition"), 0);
-    glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "gBufNormal"), 1);
-    glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "gBufAlbedoSpec"), 2);
-    glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "gBufDepth"), 3);
-    glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "gBufDepthLinear"), 4);
-
-    app->gBuffer.Generate();
-    app->gBuffer.Bind();
-    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize); // Position Color Buffer
-    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize); // Normal Color Buffer
-    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Albedo + Specular Color Buffer
-    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Depth Color Buffer
-    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Depth Linearalized Color Buffer
-    
-    // Depth
-    app->gBuffer.AttachDepthTexture(app->displaySize);
-    
-    app->gBuffer.SetColorBuffers();
-    app->gBuffer.CheckStatus();
-    app->gBuffer.Unbind();
-
     glViewport(0, 0, app->displaySize.x, app->displaySize.y);
 }
 
@@ -245,7 +244,6 @@ void ImGuiRender(App* app)
         
         //ImGui::Separator();
         //ImGui::Text("Render Target");
-        //const char* targets[] = { "COLOR", "DEPTH", "NORMALS" };
         //const char* preview = targets[app->framebuffer.currentAttachment];
         //if (ImGui::BeginCombo("Attachments", preview))
         //{
@@ -284,7 +282,22 @@ void Update(App* app)
     if (app->input.keys[K_Q] == BUTTON_PRESSED)
         app->camera.ProcessKeyboard(CameraDirection::CAMERA_UP, app->deltaTime);
     if (app->input.keys[K_E] == BUTTON_PRESSED)
-        app->camera.ProcessKeyboard(CameraDirection::CAMERA_DOWN, app->deltaTime);    
+        app->camera.ProcessKeyboard(CameraDirection::CAMERA_DOWN, app->deltaTime);
+
+    if (app->input.keys[K_1] == BUTTON_PRESSED)
+        app->screenQuad.targetBuffer = 0;
+    if (app->input.keys[K_2] == BUTTON_PRESSED)
+        app->screenQuad.targetBuffer = 1;
+    if (app->input.keys[K_3] == BUTTON_PRESSED)
+        app->screenQuad.targetBuffer = 2;
+    if (app->input.keys[K_4] == BUTTON_PRESSED)
+        app->screenQuad.targetBuffer = 3;
+    if (app->input.keys[K_5] == BUTTON_PRESSED)
+        app->screenQuad.targetBuffer = 4;
+    if (app->input.keys[K_6] == BUTTON_PRESSED)
+        app->screenQuad.targetBuffer = 5;
+    if (app->input.keys[K_6] == BUTTON_PRESSED)
+        app->screenQuad.targetBuffer = 6;
 
     for (u32 i = 0; i < app->shaderPrograms.size(); ++i)
     {
@@ -309,7 +322,7 @@ void Render(App* app)
 
     app->gBuffer.Bind();
 
-    // SCENE //
+    // OPENGL SCENE STATE //
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -385,11 +398,11 @@ void Render(App* app)
 
     app->gBuffer.Unbind();
 
+    // OPENGL SCREEN-FILLING QUAD STATE //
     glDisable(GL_DEPTH_TEST);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // SCREEN-FILLING QUAD //
     glUseProgram(app->screenQuad.shaderHandle);
 
     glBindVertexArray(app->screenQuad.VAO);
@@ -400,11 +413,13 @@ void Render(App* app)
         glBindTexture(GL_TEXTURE_2D, app->gBuffer.colorAttachmentHandles[i]);
     }
 
+    glUniform1ui(glGetUniformLocation(app->screenQuad.shaderHandle, "targetBuffer"), app->screenQuad.targetBuffer);
+
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
     glBindVertexArray(0);
     glUseProgram(0);
 
-    // Render Lights
+    // LIGHTS RENDERING //
     ShaderProgram& lightShader = app->shaderPrograms[app->lightProgramID];
     glUseProgram(lightShader.handle);
     for (u32 i = app->firstLightEntityID; i < app->numEntities; ++i)
