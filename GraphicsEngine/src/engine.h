@@ -31,7 +31,7 @@ struct OpenGLState
 
 struct Quad
 {
-    Framebuffer quadFBO;
+    Framebuffer FBO;
     u32 VAO;
     u32 shaderHandle;
     u32 renderTarget;

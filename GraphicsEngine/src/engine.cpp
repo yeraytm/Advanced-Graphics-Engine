@@ -68,16 +68,16 @@ void Init(App* app)
     glUniform1i(glGetUniformLocation(app->lightingPassProgram, "gBufDepthLinear"),5);
 
     // Screen-Filling Quad
-    app->screenQuad.quadFBO.Generate();
-    app->screenQuad.quadFBO.Bind();
-    app->screenQuad.quadFBO.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Final Color Buffer
+    app->screenQuad.FBO.Generate();
+    app->screenQuad.FBO.Bind();
+    app->screenQuad.FBO.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Final Color Buffer
     app->gBuffer.AttachDepthTexture(app->displaySize);                                          // Depth Attachment
     app->gBuffer.SetColorBuffers(); // Set color buffers with glDrawBuffers
     app->gBuffer.Unbind();
 
     app->screenQuad.VAO = CreateQuad();
     app->screenQuad.shaderHandle = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/Quad_Shader_D.glsl", "SCREEN_QUAD")].handle;
-    app->screenQuad.renderTarget = app->screenQuad.quadFBO.colorAttachmentHandles[0];
+    app->screenQuad.renderTarget = app->screenQuad.FBO.colorAttachmentHandles[0];
     glUseProgram(app->screenQuad.shaderHandle);
     glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "uRenderTarget"), 0);
 
@@ -281,7 +281,7 @@ void Update(App* app)
     app->camera.ProcessInput(app->input, app->deltaTime);
 
     if (app->input.keys[K_1] == BUTTON_PRESS)
-        app->screenQuad.renderTarget = app->screenQuad.quadFBO.colorAttachmentHandles[0];
+        app->screenQuad.renderTarget = app->screenQuad.FBO.colorAttachmentHandles[0];
     if (app->input.keys[K_2] == BUTTON_PRESS)
         app->screenQuad.renderTarget = app->gBuffer.colorAttachmentHandles[0];
     if (app->input.keys[K_3] == BUTTON_PRESS)
@@ -396,7 +396,7 @@ void Render(App* app)
     app->gBuffer.Unbind();
 
     // DEFERRED SHADING: LIGHTING PASS //
-    app->screenQuad.quadFBO.Bind();
+    app->screenQuad.FBO.Bind();
     glDisable(GL_DEPTH_TEST);
     glUseProgram(app->lightingPassProgram);
 
@@ -414,7 +414,7 @@ void Render(App* app)
     glUseProgram(0);
 
     // SCREEN-FILLING QUAD //
-    app->screenQuad.quadFBO.Unbind();
+    app->screenQuad.FBO.Unbind();
     glDisable(GL_DEPTH_TEST);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
