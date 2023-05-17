@@ -41,43 +41,55 @@ void Init(App* app)
     glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBufferOffsetAlignment);
     app->UBO = CreateConstantBuffer(maxUniformBlockSize);
 
-    // SCREEN-FILLING QUAD //
-    app->screenQuad.VAO = CreateQuad();
-    app->screenQuad.shaderHandle = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/Quad_Shader_D.glsl", "SCREEN_QUAD")].handle;
-    app->screenQuad.targetBuffer = 0;
-    glUseProgram(app->screenQuad.shaderHandle);
-    glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "gBufPosition"), 0);
-    glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "gBufNormal"), 1);
-    glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "gBufAlbedoSpec"), 2);
-    glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "gBufDepth"), 3);
-    glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "gBufDepthLinear"), 4);
-
+    // DEFERRED SHADING //
     // G-Buffer
     app->gBuffer.Generate();
     app->gBuffer.Bind();
 
-    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Final Color Buffer
-    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize); // Position Color Buffer
-    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize); // Normal Color Buffer
-    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Albedo + Specular Color Buffer
-    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Depth Color Buffer
-    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Depth Linearalized Color Buffer
-    app->gBuffer.AttachDepthTexture(app->displaySize); // Depth Attachment
+    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize);   // Position Color Buffer
+    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize);   // Normal Color Buffer
+    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);    // Albedo Color Buffer
+    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);    // Specular Color Buffer
+    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);    // Depth Color Buffer
+    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);    // Depth Linear Color Buffer
+    app->gBuffer.AttachDepthTexture(app->displaySize);                                  // Depth Attachment
 
-    app->gBuffer.SetColorBuffers();
+    app->gBuffer.SetColorBuffers(); // Set color buffers with glDrawBuffers
     app->gBuffer.Unbind();
 
-    //app->targets = { "FINAL", "POSITION", "NORMAL", "ALBEDO", "SPECULAR", "DEPTH", "DEPTH LINEAR" };
+    // Lighting Pass
+    app->lightingPassProgram = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/LightingPass_Shader_D.glsl", "DEFERRED_LIGHTING_PASS")].handle;
+    glUseProgram(app->lightingPassProgram);
+    glUniform1i(glGetUniformLocation(app->lightingPassProgram, "gBufPosition"),   0);
+    glUniform1i(glGetUniformLocation(app->lightingPassProgram, "gBufNormal"),     1);
+    glUniform1i(glGetUniformLocation(app->lightingPassProgram, "gBufAlbedo"),     2);
+    glUniform1i(glGetUniformLocation(app->lightingPassProgram, "gBufSpecular"),   3);
+    glUniform1i(glGetUniformLocation(app->lightingPassProgram, "gBufDepth"),      4);
+    glUniform1i(glGetUniformLocation(app->lightingPassProgram, "gBufDepthLinear"),5);
+
+    // Screen-Filling Quad
+    app->screenQuad.quadFBO.Generate();
+    app->screenQuad.quadFBO.Bind();
+    app->screenQuad.quadFBO.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Final Color Buffer
+    app->gBuffer.AttachDepthTexture(app->displaySize);                                          // Depth Attachment
+    app->gBuffer.SetColorBuffers(); // Set color buffers with glDrawBuffers
+    app->gBuffer.Unbind();
+
+    app->screenQuad.VAO = CreateQuad();
+    app->screenQuad.shaderHandle = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/Quad_Shader_D.glsl", "SCREEN_QUAD")].handle;
+    app->screenQuad.renderTarget = app->screenQuad.quadFBO.colorAttachmentHandles[0];
+    glUseProgram(app->screenQuad.shaderHandle);
+    glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "uRenderTarget"), 0);
 
     // SHADERS & UNIFORM TEXTURES //
-    app->defaultProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/Default_Shader_D.glsl", "DEFAULT");
-    app->lightProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/Light_Shader.glsl", "LIGHT_CASTER");
+    app->defaultProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/Default_Shader_D.glsl", "DEFERRED_GEOMETRY_DEFAULT");
+    app->lightCasterProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/LightCaster_Shader.glsl", "LIGHT_CASTER");
 
-    u32 texturedAlbProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/TexturedAlb_Shader_D.glsl", "TEXTURED_ALBEDO");
+    u32 texturedAlbProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/GeometryPassAlb_Shader_D.glsl", "DEFERRED_GEOMETRY_ALBEDO");
     glUseProgram(app->shaderPrograms[texturedAlbProgramID].handle);
     glUniform1i(glGetUniformLocation(app->shaderPrograms[texturedAlbProgramID].handle, "uMaterial.albedo"), 0);
 
-    u32 texturedAlbSpecProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/TexturedAlbSpec_Shader_D.glsl", "TEXTURED_ALBEDO_SPECULAR");
+    u32 texturedAlbSpecProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/GeometryPassAlbSpec_Shader_D.glsl", "DEFERRED_GEOMETRY_ALBEDO_SPECULAR");
     glUseProgram(app->shaderPrograms[texturedAlbSpecProgramID].handle);
     glUniform1i(glGetUniformLocation(app->shaderPrograms[texturedAlbSpecProgramID].handle, "uMaterial.albedo"), 0);
     glUniform1i(glGetUniformLocation(app->shaderPrograms[texturedAlbSpecProgramID].handle, "uMaterial.specular"), 1);
@@ -269,19 +281,19 @@ void Update(App* app)
     app->camera.ProcessInput(app->input, app->deltaTime);
 
     if (app->input.keys[K_1] == BUTTON_PRESS)
-        app->screenQuad.targetBuffer = 0;
+        app->screenQuad.renderTarget = app->screenQuad.quadFBO.colorAttachmentHandles[0];
     if (app->input.keys[K_2] == BUTTON_PRESS)
-        app->screenQuad.targetBuffer = 1;
+        app->screenQuad.renderTarget = app->gBuffer.colorAttachmentHandles[0];
     if (app->input.keys[K_3] == BUTTON_PRESS)
-        app->screenQuad.targetBuffer = 2;
+        app->screenQuad.renderTarget = app->gBuffer.colorAttachmentHandles[1];
     if (app->input.keys[K_4] == BUTTON_PRESS)
-        app->screenQuad.targetBuffer = 3;
+        app->screenQuad.renderTarget = app->gBuffer.colorAttachmentHandles[2];
     if (app->input.keys[K_5] == BUTTON_PRESS)
-        app->screenQuad.targetBuffer = 4;
+        app->screenQuad.renderTarget = app->gBuffer.colorAttachmentHandles[3];
     if (app->input.keys[K_6] == BUTTON_PRESS)
-        app->screenQuad.targetBuffer = 5;
+        app->screenQuad.renderTarget = app->gBuffer.colorAttachmentHandles[4];
     if (app->input.keys[K_7] == BUTTON_PRESS)
-        app->screenQuad.targetBuffer = 6;
+        app->screenQuad.renderTarget = app->gBuffer.colorAttachmentHandles[5];
 
     for (u32 i = 0; i < app->shaderPrograms.size(); ++i)
     {
@@ -304,9 +316,10 @@ void Render(App* app)
 
     glBindBufferRange(GL_UNIFORM_BUFFER, 0, app->UBO.handle, app->globalParamOffset, app->globalParamSize);
 
+    // DEFERRED SHADING: GEOMETRY PASS //
     app->gBuffer.Bind();
 
-    // OPENGL SCENE STATE //
+    // Scene State
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -382,7 +395,26 @@ void Render(App* app)
 
     app->gBuffer.Unbind();
 
-    // OPENGL SCREEN-FILLING QUAD STATE //
+    // DEFERRED SHADING: LIGHTING PASS //
+    app->screenQuad.quadFBO.Bind();
+    glDisable(GL_DEPTH_TEST);
+    glUseProgram(app->lightingPassProgram);
+
+    glBindVertexArray(app->screenQuad.VAO);
+
+    // Set the uniform textures from the G-Buffer
+    for (u32 i = 0; i < app->gBuffer.colorAttachmentHandles.size(); ++i)
+    {
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, app->gBuffer.colorAttachmentHandles[i]);
+    }
+
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
+    glBindVertexArray(0);
+    glUseProgram(0);
+
+    // SCREEN-FILLING QUAD //
+    app->screenQuad.quadFBO.Unbind();
     glDisable(GL_DEPTH_TEST);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -391,20 +423,15 @@ void Render(App* app)
 
     glBindVertexArray(app->screenQuad.VAO);
 
-    for (u32 i = 0; i < app->gBuffer.colorAttachmentHandles.size(); ++i)
-    {
-        glActiveTexture(GL_TEXTURE0 + i);
-        glBindTexture(GL_TEXTURE_2D, app->gBuffer.colorAttachmentHandles[i]);
-    }
-
-    glUniform1ui(glGetUniformLocation(app->screenQuad.shaderHandle, "targetBuffer"), app->screenQuad.targetBuffer);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, app->screenQuad.renderTarget);
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
     glBindVertexArray(0);
     glUseProgram(0);
 
-    // LIGHTS RENDERING //
-    ShaderProgram& lightShader = app->shaderPrograms[app->lightProgramID];
+    // LIGHTS FORWARD RENDERING //
+    ShaderProgram& lightShader = app->shaderPrograms[app->lightCasterProgramID];
     glUseProgram(lightShader.handle);
     for (u32 i = app->firstLightEntityID; i < app->numEntities; ++i)
     {
@@ -536,7 +563,7 @@ Entity* CreateEntity(App* app, u32 shaderID, glm::vec3 position, Model* model)
 
 void CreatePointLight(App* app, glm::vec3 position, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float constant, Model* model, float scale)
 {
-    Entity lightEntity = Entity(app->lightProgramID, position, model);
+    Entity lightEntity = Entity(app->lightCasterProgramID, position, model);
     lightEntity.modelMatrix = glm::scale(lightEntity.modelMatrix, glm::vec3(scale));
     app->entities.push_back(lightEntity);
 

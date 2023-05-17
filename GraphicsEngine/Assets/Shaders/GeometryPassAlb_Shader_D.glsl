@@ -1,4 +1,4 @@
-#ifdef TEXTURED_ALBEDO
+#ifdef DEFERRED_GEOMETRY_ALBEDO
 
 #if defined(VERTEX) ///////////////////////////////////////////////////
 
@@ -31,9 +31,10 @@ void main()
 
 layout(location = 0) out vec3 gBufPosition;
 layout(location = 1) out vec3 gBufNormal;
-layout(location = 2) out vec4 gBufAlbedoSpec;
-layout(location = 3) out vec3 gBufDepth;
-layout(location = 4) out vec3 gBufDepthLinear;
+layout(location = 2) out vec3 gBufAlbedo;
+layout(location = 3) out vec3 gBufSpecular;
+layout(location = 4) out vec3 gBufDepth;
+layout(location = 5) out vec3 gBufDepthLinear;
 
 struct Material
 {
@@ -61,8 +62,8 @@ void main()
 	
 	gBufNormal = vNormal;
 
-	gBufAlbedoSpec.rgb = texture(uMaterial.albedo, vTexCoord).rgb;
-	gBufAlbedoSpec.a = uMaterial.specular.r;
+	gBufAlbedo = texture(uMaterial.albedo, vTexCoord).rgb;
+	gBufSpecular = uMaterial.specular;
 
 	gBufDepth = vec3(gl_FragCoord.z);
 

@@ -31,9 +31,10 @@ struct OpenGLState
 
 struct Quad
 {
+    Framebuffer quadFBO;
     u32 VAO;
     u32 shaderHandle;
-    u32 targetBuffer;
+    u32 renderTarget;
 };
 
 enum class LightType
@@ -83,14 +84,14 @@ struct App
     u32 globalParamOffset;
     u32 globalParamSize;
 
-    // SCREEN-FILLING QUAD //
-    Quad screenQuad;
-    Framebuffer gBuffer;
-    //const char* targets;
+    // DEFERRED SHADING //
+    Framebuffer gBuffer;        // G-Buffer
+    u32 lightingPassProgram;    // Lighting Pass Handle
+    Quad screenQuad;            // Screen-Filling Quad
 
     // SHADERS & UNIFORM TEXTURES //
     u32 defaultProgramID;
-    u32 lightProgramID;
+    u32 lightCasterProgramID;
     
     // ENTITIES //
     std::vector<Entity> entities;
