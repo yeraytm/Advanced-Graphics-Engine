@@ -56,6 +56,7 @@ void Init(App* app)
     app->gBuffer.Generate();
     app->gBuffer.Bind();
 
+    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Final Color Buffer
     app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize); // Position Color Buffer
     app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize); // Normal Color Buffer
     app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Albedo + Specular Color Buffer

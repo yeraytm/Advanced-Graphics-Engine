@@ -1,5 +1,7 @@
 #include "Camera.h"
 
+static bool firstClick = true;
+
 Camera::Camera(float speed)
 	: position(glm::vec3(0.0f)), speed(speed), defaultSpeed(speed),
 	front(glm::vec3(0.0f, 0.0f, -1.0f)), up(glm::vec3(0.0f)), right(glm::vec3(0.0f)), worldUp(glm::vec3(0.0f, 1.0f, 0.0f)),
@@ -40,7 +42,7 @@ void Camera::UpdateVectors()
 
 void Camera::ProcessInput(const Input& input, float deltaTime)
 {
-	//ProcessMouse(input.mouseDelta);
+	ProcessMouse(input.mouseDelta);
 
 	if (input.keys[K_LSHIFT] == BUTTON_PRESS)
 		speed *= 3.0f;
@@ -62,7 +64,6 @@ void Camera::ProcessInput(const Input& input, float deltaTime)
 
 	if (input.mouseButtons[MOUSE_LEFT] == BUTTON_PRESS)
 	{
-		
 	}
 }
 
