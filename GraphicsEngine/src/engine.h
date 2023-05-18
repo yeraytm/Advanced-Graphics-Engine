@@ -85,7 +85,7 @@ struct App
     u32 globalParamSize;
 
     // DEFERRED SHADING //
-    Framebuffer gBuffer;
+    Framebuffer GBuffer;
     u32 lightPassShaderHandle;
     Quad screenQuad;
 
@@ -120,6 +120,8 @@ void Render(App* app);
 void CleanUp(App* app);
 
 // Engine Additional Functions
+inline void BindDefaultFramebuffer() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
+
 u32 FindVAO(Model* model, u32 meshIndex, const Shader& shaderProgram);
 
 void UpdateUniformBuffer(App* app);

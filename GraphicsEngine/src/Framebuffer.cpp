@@ -18,11 +18,6 @@ void Framebuffer::Bind()
 	glBindFramebuffer(GL_FRAMEBUFFER, handle);
 }
 
-void Framebuffer::Unbind()
-{
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
 void Framebuffer::CheckStatus()
 {
 	GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);

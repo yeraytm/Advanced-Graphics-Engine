@@ -82,18 +82,18 @@ vec3 ComputeDirLight(Light light, vec3 albedo, float specularC, vec3 normal, vec
 	vec3 lightDir = normalize(-light.direction);
 
 	// Ambient
-	vec3 ambient = light.ambient * albedo;
+	vec3 ambient = light.ambient;
 
 	// Diffuse
 	float diff = max(dot(normal, lightDir), 0.0);
-	vec3 diffuse = light.diffuse * diff * albedo;
+	vec3 diffuse = light.diffuse * diff;
 
 	// Specular
 	vec3 reflectDir = reflect(-lightDir, normal);
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
 	vec3 specular = light.specular * spec * specularC;
 
-	return (ambient + diffuse + specular);
+	return (ambient + diffuse + specular) * albedo;
 }
 
 vec3 ComputePointLight(Light light, vec3 albedo, float specularC, vec3 normal, vec3 fragPos, vec3 viewDir)
@@ -104,8 +104,7 @@ vec3 ComputePointLight(Light light, vec3 albedo, float specularC, vec3 normal, v
 	float attenuation = 1.0 / (light.constant + 0.09 * distance + 0.032 * (distance * distance));
 
 	// Ambient
-	vec3 ambient = light.ambient;
-	ambient *= attenuation;
+	vec3 ambient = light.ambient * attenuation;
 
 	// Diffuse
 	float diff = max(dot(normal, lightDir), 0.0);

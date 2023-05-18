@@ -43,19 +43,17 @@ void Init(App* app)
 
     // DEFERRED SHADING //
     // G-Buffer
-    app->gBuffer.Generate();
-    app->gBuffer.Bind();
-
-    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize);   // Position Color Buffer
-    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize);   // Normal Color Buffer
-    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);    // Albedo Color Buffer
-    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);    // Specular Color Buffer
-    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);    // Depth Color Buffer
-    app->gBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);    // Depth Linear Color Buffer
-    app->gBuffer.AttachDepthTexture(app->displaySize);                                  // Depth Attachment
-
-    app->gBuffer.SetColorBuffers(); // Set color buffers with glDrawBuffers
-    app->gBuffer.Unbind();
+    app->GBuffer.Generate();
+    app->GBuffer.Bind();
+    app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize);   // Position Color Buffer
+    app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize);   // Normal Color Buffer
+    app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);    // Albedo Color Buffer
+    app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);    // Specular Color Buffer
+    app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);    // Depth Color Buffer
+    app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);    // Depth Linear Color Buffer
+    app->GBuffer.AttachDepthTexture(app->displaySize);                                  // Depth Attachment
+    app->GBuffer.SetColorBuffers(); // Set color buffers with glDrawBuffers
+    BindDefaultFramebuffer();
 
     // Lighting Pass
     app->lightPassShaderHandle = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/LightingPass_Shader_D.glsl", "DEFERRED_LIGHTING_PASS")].handle;
@@ -71,8 +69,8 @@ void Init(App* app)
     app->screenQuad.FBO.Generate();
     app->screenQuad.FBO.Bind();
     app->screenQuad.FBO.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Final Color Buffer
-    app->gBuffer.SetColorBuffers(); // Set color buffers with glDrawBuffers
-    app->gBuffer.Unbind();
+    app->screenQuad.FBO.SetColorBuffers(); // Set color buffers with glDrawBuffers
+    BindDefaultFramebuffer();
 
     app->screenQuad.VAO = CreateQuad();
     app->screenQuad.shaderHandle = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/Quad_Shader_D.glsl", "SCREEN_QUAD")].handle;
@@ -257,8 +255,10 @@ void ImGuiRender(App* app)
 
         ImGui::Separator();
         ImGui::Text("Entities");
-        for (u32 i = 0; i < app->numEntities; ++i)
-            ImGui::DragFloat3(std::to_string(i).c_str(), &app->entities[i].position[0], 0.1f);
+
+        //ImGui::DragFloat3("Directional Light", &app->lights[4].direction[0], 0.1f, -1.0f, 1.0f);
+        //for (u32 i = 0; i < app->numEntities; ++i)
+        //    ImGui::DragFloat3(std::to_string(i).c_str(), &app->entities[i].position[0], 0.1f);
         
         //ImGui::Separator();
         //ImGui::Text("Render Target");
@@ -289,17 +289,17 @@ void Update(App* app)
     if (app->input.keys[K_1] == BUTTON_PRESS)
         app->screenQuad.renderTarget = app->screenQuad.FBO.colorAttachmentHandles[0];
     if (app->input.keys[K_2] == BUTTON_PRESS)
-        app->screenQuad.renderTarget = app->gBuffer.colorAttachmentHandles[0];
+        app->screenQuad.renderTarget = app->GBuffer.colorAttachmentHandles[0];
     if (app->input.keys[K_3] == BUTTON_PRESS)
-        app->screenQuad.renderTarget = app->gBuffer.colorAttachmentHandles[1];
+        app->screenQuad.renderTarget = app->GBuffer.colorAttachmentHandles[1];
     if (app->input.keys[K_4] == BUTTON_PRESS)
-        app->screenQuad.renderTarget = app->gBuffer.colorAttachmentHandles[2];
+        app->screenQuad.renderTarget = app->GBuffer.colorAttachmentHandles[2];
     if (app->input.keys[K_5] == BUTTON_PRESS)
-        app->screenQuad.renderTarget = app->gBuffer.colorAttachmentHandles[3];
+        app->screenQuad.renderTarget = app->GBuffer.colorAttachmentHandles[3];
     if (app->input.keys[K_6] == BUTTON_PRESS)
-        app->screenQuad.renderTarget = app->gBuffer.colorAttachmentHandles[4];
+        app->screenQuad.renderTarget = app->GBuffer.colorAttachmentHandles[4];
     if (app->input.keys[K_7] == BUTTON_PRESS)
-        app->screenQuad.renderTarget = app->gBuffer.colorAttachmentHandles[5];
+        app->screenQuad.renderTarget = app->GBuffer.colorAttachmentHandles[5];
 
     for (u32 i = 0; i < app->shaderPrograms.size(); ++i)
     {
@@ -323,9 +323,8 @@ void Render(App* app)
     glBindBufferRange(GL_UNIFORM_BUFFER, 0, app->UBO.handle, app->globalParamOffset, app->globalParamSize);
 
     // DEFERRED SHADING: GEOMETRY PASS //
-    app->gBuffer.Bind();
+    app->GBuffer.Bind();
 
-    // Scene State
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -398,21 +397,21 @@ void Render(App* app)
         }
         shader.Unbind();
     }
-
-    app->gBuffer.Unbind();
+    BindDefaultFramebuffer();
 
     // DEFERRED SHADING: LIGHTING PASS //
     app->screenQuad.FBO.Bind();
+
     glDisable(GL_DEPTH_TEST);
     glUseProgram(app->lightPassShaderHandle);
 
     glBindVertexArray(app->screenQuad.VAO);
 
     // Set the uniform textures from the G-Buffer
-    for (u32 i = 0; i < app->gBuffer.colorAttachmentHandles.size(); ++i)
+    for (u32 i = 0; i < app->GBuffer.colorAttachmentHandles.size(); ++i)
     {
         glActiveTexture(GL_TEXTURE0 + i);
-        glBindTexture(GL_TEXTURE_2D, app->gBuffer.colorAttachmentHandles[i]);
+        glBindTexture(GL_TEXTURE_2D, app->GBuffer.colorAttachmentHandles[i]);
     }
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
@@ -420,7 +419,8 @@ void Render(App* app)
     glUseProgram(0);
 
     // SCREEN-FILLING QUAD //
-    app->screenQuad.FBO.Unbind();
+    BindDefaultFramebuffer();
+
     glDisable(GL_DEPTH_TEST);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -436,7 +436,13 @@ void Render(App* app)
     glBindVertexArray(0);
     glUseProgram(0);
 
-    // LIGHTS FORWARD RENDERING //
+    // FORWARD SHADING: LIGHTS //
+    glEnable(GL_DEPTH_TEST);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, app->GBuffer.handle);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBlitFramebuffer(0, 0, app->displaySize.x, app->displaySize.y, 0, 0, app->displaySize.x, app->displaySize.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+    BindDefaultFramebuffer();
+
     Shader& lightShader = app->shaderPrograms[app->lightCasterProgramID];
     lightShader.Bind();
     for (u32 i = app->firstLightEntityID; i < app->numEntities; ++i)

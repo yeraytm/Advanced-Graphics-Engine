@@ -19,7 +19,6 @@ public:
     void Delete();
 
     void Bind();
-    void Unbind();
 
     void AttachDepthTexture(const glm::ivec2& size);
     void AttachColorTexture(FBAttachmentType attachmentType, const glm::ivec2& size);

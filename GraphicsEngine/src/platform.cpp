@@ -24,7 +24,7 @@
 #include "imgui-docking/imgui_impl_glfw.h"
 #include "imgui-docking/imgui_impl_opengl3.h"
 
-#define WINDOW_TITLE  "YerayTM - Advanced Graphics Engine"
+#define WINDOW_TITLE  "Advanced Graphics Engine - Yeray Tarifa"
 #define WINDOW_WIDTH  1920
 #define WINDOW_HEIGHT 1080
 
@@ -135,7 +135,7 @@ void OnGlfwResizeFramebuffer(GLFWwindow* window, int width, int height)
     App* app = (App*)glfwGetWindowUserPointer(window);
     app->displaySize = glm::vec2(width, height);
 
-    glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+    //glViewport(0, 0, app->displaySize.x, app->displaySize.y);
 }
 
 void OnGlfwCloseWindow(GLFWwindow* window)
@@ -186,9 +186,6 @@ int main()
     glfwSetCharCallback(window, OnGlfwCharEvent);
     glfwSetFramebufferSizeCallback(window, OnGlfwResizeFramebuffer);
     glfwSetWindowCloseCallback(window, OnGlfwCloseWindow);
-
-    // GLFW call to capture our mouse
-    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // Load all OpenGL functions using the glfw loader function
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
