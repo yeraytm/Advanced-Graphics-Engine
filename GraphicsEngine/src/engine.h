@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "Platform.h"
+#include "platform.h"
 #include "Layouts.h"
 #include "Shader.h"
 #include "Texture.h"
@@ -85,11 +85,11 @@ struct App
     u32 globalParamSize;
 
     // DEFERRED SHADING //
-    Framebuffer gBuffer;        // G-Buffer
-    u32 lightingPassProgram;    // Lighting Pass Handle
-    Quad screenQuad;            // Screen-Filling Quad
+    Framebuffer gBuffer;
+    u32 lightPassShaderHandle;
+    Quad screenQuad;
 
-    // SHADERS & UNIFORM TEXTURES //
+    // SHADERS //
     u32 defaultProgramID;
     u32 lightCasterProgramID;
     
@@ -106,7 +106,7 @@ struct App
     std::vector<Model*> models;
     std::vector<Texture> textures;
     std::vector<Material> materials;
-    std::vector<ShaderProgram> shaderPrograms;
+    std::vector<Shader> shaderPrograms;
 };
 
 void Init(App* app);
@@ -120,7 +120,7 @@ void Render(App* app);
 void CleanUp(App* app);
 
 // Engine Additional Functions
-u32 FindVAO(Model* model, u32 meshIndex, const ShaderProgram& shaderProgram);
+u32 FindVAO(Model* model, u32 meshIndex, const Shader& shaderProgram);
 
 void UpdateUniformBuffer(App* app);
 

@@ -1,5 +1,5 @@
 #include "GLDebugger.h"
-#include "Platform.h"
+#include "platform.h"
 
 #include <iostream>
 

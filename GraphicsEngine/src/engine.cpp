@@ -5,7 +5,7 @@
 // graphics related GUI options, and so on.
 //
 
-#include "Engine.h"
+#include "engine.h"
 #include "AssimpLoading.h"
 #include "Primitives.h"
 
@@ -33,7 +33,7 @@ void Init(App* app)
     app->sceneInfo = false;
 
     // CAMERA & PROJECTION //
-    app->camera = Camera(glm::vec3(0.0f, 3.0f, 10.0f), app->displaySize, 45.0f, 0.1f, 100.0f);
+    app->camera = Camera(glm::vec3(0.0f, 3.0f, 10.0f), 45.0f, 0.1f, 100.0f);
 
     // UNIFORM BUFFER (CONSTANT BUFFER) //
     int maxUniformBlockSize;
@@ -58,20 +58,19 @@ void Init(App* app)
     app->gBuffer.Unbind();
 
     // Lighting Pass
-    app->lightingPassProgram = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/LightingPass_Shader_D.glsl", "DEFERRED_LIGHTING_PASS")].handle;
-    glUseProgram(app->lightingPassProgram);
-    glUniform1i(glGetUniformLocation(app->lightingPassProgram, "gBufPosition"),   0);
-    glUniform1i(glGetUniformLocation(app->lightingPassProgram, "gBufNormal"),     1);
-    glUniform1i(glGetUniformLocation(app->lightingPassProgram, "gBufAlbedo"),     2);
-    glUniform1i(glGetUniformLocation(app->lightingPassProgram, "gBufSpecular"),   3);
-    glUniform1i(glGetUniformLocation(app->lightingPassProgram, "gBufDepth"),      4);
-    glUniform1i(glGetUniformLocation(app->lightingPassProgram, "gBufDepthLinear"),5);
+    app->lightPassShaderHandle = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/LightingPass_Shader_D.glsl", "DEFERRED_LIGHTING_PASS")].handle;
+    glUseProgram(app->lightPassShaderHandle);
+    glUniform1i(glGetUniformLocation(app->lightPassShaderHandle, "gBufPosition"),   0);
+    glUniform1i(glGetUniformLocation(app->lightPassShaderHandle, "gBufNormal"),     1);
+    glUniform1i(glGetUniformLocation(app->lightPassShaderHandle, "gBufAlbedo"),     2);
+    glUniform1i(glGetUniformLocation(app->lightPassShaderHandle, "gBufSpecular"),   3);
+    glUniform1i(glGetUniformLocation(app->lightPassShaderHandle, "gBufDepth"),      4);
+    glUniform1i(glGetUniformLocation(app->lightPassShaderHandle, "gBufDepthLinear"),5);
 
     // Screen-Filling Quad
     app->screenQuad.FBO.Generate();
     app->screenQuad.FBO.Bind();
     app->screenQuad.FBO.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Final Color Buffer
-    app->gBuffer.AttachDepthTexture(app->displaySize);                                          // Depth Attachment
     app->gBuffer.SetColorBuffers(); // Set color buffers with glDrawBuffers
     app->gBuffer.Unbind();
 
@@ -86,11 +85,11 @@ void Init(App* app)
     app->lightCasterProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/LightCaster_Shader.glsl", "LIGHT_CASTER");
 
     u32 texturedAlbProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/GeometryPassAlb_Shader_D.glsl", "DEFERRED_GEOMETRY_ALBEDO");
-    glUseProgram(app->shaderPrograms[texturedAlbProgramID].handle);
+    app->shaderPrograms[texturedAlbProgramID].Bind();
     glUniform1i(glGetUniformLocation(app->shaderPrograms[texturedAlbProgramID].handle, "uMaterial.albedo"), 0);
 
     u32 texturedAlbSpecProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/GeometryPassAlbSpec_Shader_D.glsl", "DEFERRED_GEOMETRY_ALBEDO_SPECULAR");
-    glUseProgram(app->shaderPrograms[texturedAlbSpecProgramID].handle);
+    app->shaderPrograms[texturedAlbSpecProgramID].Bind();
     glUniform1i(glGetUniformLocation(app->shaderPrograms[texturedAlbSpecProgramID].handle, "uMaterial.albedo"), 0);
     glUniform1i(glGetUniformLocation(app->shaderPrograms[texturedAlbSpecProgramID].handle, "uMaterial.specular"), 1);
 
@@ -105,36 +104,42 @@ void Init(App* app)
     u32 containerSpecularID = LoadTexture2D(app->textures, "Assets/container_specular.png");
 
     // MATERIALS //
-    Material defaultMat = {};
-    defaultMat.type = MaterialType::DEFAULT;
-    defaultMat.name = "Default Material";
-    defaultMat.albedo = glm::vec3(1.0f, 0.5f, 0.31f);
-    defaultMat.specular = glm::vec3(0.5f);
-    defaultMat.shininess = 32.0f;
+    Material greyMaterial = {};
+    greyMaterial.type = MaterialType::DEFAULT;
+    greyMaterial.name = "Grey Material";
+    greyMaterial.albedo = glm::vec3(0.4f, 0.4f, 0.4f);
+    greyMaterial.specular = glm::vec3(0.5f);
+    greyMaterial.shininess = 32.0f;
 
-    Material defaultMat2 = {};
-    defaultMat2.type = MaterialType::DEFAULT;
-    defaultMat2.name = "Default Material 2";
-    defaultMat2.albedo = glm::vec3(0.0f, 1.0f, 0.0f);
-    defaultMat2.specular = glm::vec3(0.5f);
-    defaultMat2.shininess = 32.0f;
+    Material orangeMaterial = {};
+    orangeMaterial.type = MaterialType::DEFAULT;
+    orangeMaterial.name = "Orange Material";
+    orangeMaterial.albedo = glm::vec3(1.0f, 0.5f, 0.31f);
+    orangeMaterial.specular = glm::vec3(0.5f);
+    orangeMaterial.shininess = 32.0f;
+
+    Material blackMaterial = {};
+    blackMaterial.type = MaterialType::DEFAULT;
+    blackMaterial.name = "Black Material";
+    blackMaterial.albedo = glm::vec3(0.1f, 0.1f, 0.1f);
+    blackMaterial.specular = glm::vec3(0.5f);
+    blackMaterial.shininess = 32.0f;
 
     Material containerMat = {};
     containerMat.type = MaterialType::TEXTURED_ALB_SPEC;
     containerMat.name = "Container Material";
-    containerMat.specular = glm::vec3(0.5f);
     containerMat.shininess = 32.0f;
     containerMat.albedoTextureID = containerAlbedoTexID;
     containerMat.specularTextureID = containerSpecularID;
 
     // MODELS //
-    Model* planeModel = CreatePrimitive(app, PrimitiveType::PLANE, defaultMat);
+    Model* planeModel = CreatePrimitive(app, PrimitiveType::PLANE, greyMaterial);
 
-    Model* sphereModel = CreatePrimitive(app, PrimitiveType::SPHERE, defaultMat);
-    Model* sphereLowModel = CreatePrimitive(app, PrimitiveType::SPHERE, defaultMat2, 16, 16);
+    Model* sphereModel = CreatePrimitive(app, PrimitiveType::SPHERE, orangeMaterial);
+    Model* sphereLowModel = CreatePrimitive(app, PrimitiveType::SPHERE, blackMaterial, 16, 16);
 
     Model* cubeModel = CreatePrimitive(app, PrimitiveType::CUBE, containerMat);
-    Model* cubeModel2 = CreatePrimitive(app, PrimitiveType::CUBE, defaultMat2);
+    Model* cubeModel2 = CreatePrimitive(app, PrimitiveType::CUBE, blackMaterial);
 
     Model* patrickModel = LoadModel(app, "Assets/Models/Patrick/patrick.obj");
 
@@ -248,10 +253,11 @@ void ImGuiRender(App* app)
 
         ImGui::DragFloat3("Position", &app->camera.position[0]);
         ImGui::DragFloat("Speed", &app->camera.speed);
+        ImGui::DragFloat("FOV", &app->camera.FOV, 1.0f, 5.0f, 120.0f);
 
         ImGui::Separator();
         ImGui::Text("Entities");
-        for (int i = 0; i < app->numEntities; ++i)
+        for (u32 i = 0; i < app->numEntities; ++i)
             ImGui::DragFloat3(std::to_string(i).c_str(), &app->entities[i].position[0], 0.1f);
         
         //ImGui::Separator();
@@ -278,7 +284,7 @@ void Update(App* app)
     if (app->input.keys[K_ESCAPE] == BUTTON_PRESS)
         app->isRunning = false;
     
-    app->camera.ProcessInput(app->input, app->deltaTime);
+    app->camera.ProcessInput(app->input, app->displaySize, app->deltaTime);
 
     if (app->input.keys[K_1] == BUTTON_PRESS)
         app->screenQuad.renderTarget = app->screenQuad.FBO.colorAttachmentHandles[0];
@@ -297,7 +303,7 @@ void Update(App* app)
 
     for (u32 i = 0; i < app->shaderPrograms.size(); ++i)
     {
-        ShaderProgram& shaderProgram = app->shaderPrograms[i];
+        Shader& shaderProgram = app->shaderPrograms[i];
         u64 currentTimestamp = GetFileLastWriteTimestamp(shaderProgram.filepath.c_str());
         if (currentTimestamp > shaderProgram.lastWriteTimestamp)
         {
@@ -332,12 +338,12 @@ void Render(App* app)
     for (u32 i = 0; i < app->firstLightEntityID; ++i)
     {
         Entity& entity = app->entities[i];
-        ShaderProgram& shader = app->shaderPrograms[entity.shaderID];
+        Shader& shader = app->shaderPrograms[entity.shaderID];
         Model* model = entity.model;
 
         glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->UBO.handle, entity.localParamOffset, entity.localParamSize);
 
-        glUseProgram(shader.handle);
+        shader.Bind();
 
         u32 numMeshes = model->meshes.size();
         for (u32 meshIndex = 0; meshIndex < numMeshes; ++meshIndex)
@@ -390,7 +396,7 @@ void Render(App* app)
             glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.indexOffset);
             glBindVertexArray(0);
         }
-        glUseProgram(0);
+        shader.Unbind();
     }
 
     app->gBuffer.Unbind();
@@ -398,7 +404,7 @@ void Render(App* app)
     // DEFERRED SHADING: LIGHTING PASS //
     app->screenQuad.FBO.Bind();
     glDisable(GL_DEPTH_TEST);
-    glUseProgram(app->lightingPassProgram);
+    glUseProgram(app->lightPassShaderHandle);
 
     glBindVertexArray(app->screenQuad.VAO);
 
@@ -431,8 +437,8 @@ void Render(App* app)
     glUseProgram(0);
 
     // LIGHTS FORWARD RENDERING //
-    ShaderProgram& lightShader = app->shaderPrograms[app->lightCasterProgramID];
-    glUseProgram(lightShader.handle);
+    Shader& lightShader = app->shaderPrograms[app->lightCasterProgramID];
+    lightShader.Bind();
     for (u32 i = app->firstLightEntityID; i < app->numEntities; ++i)
     {
         Entity& lightEntity = app->entities[i];
@@ -449,10 +455,10 @@ void Render(App* app)
 
         glBindVertexArray(0);
     }
-    glUseProgram(0);
+    lightShader.Unbind();
 }
 
-u32 FindVAO(Model* model, u32 meshIndex, const ShaderProgram& shaderProgram)
+u32 FindVAO(Model* model, u32 meshIndex, const Shader& shaderProgram)
 {
     Mesh& mesh = model->meshes[meshIndex];
 
@@ -542,10 +548,10 @@ void UpdateUniformBuffer(App* app)
         Entity& entity = app->entities[i];
         entity.localParamOffset = app->UBO.head;
 
-        glm::mat4& modelMatrix = entity.modelMatrix;
+        const glm::mat4& modelMatrix = entity.modelMatrix;
         PushMat4(app->UBO, modelMatrix);
 
-        glm::mat4 MVP = app->camera.GetProjectionMatrix() * app->camera.GetViewMatrix() * modelMatrix;
+        glm::mat4 MVP = app->camera.GetViewProjectionMatrix(app->displaySize) * modelMatrix;
         PushMat4(app->UBO, MVP);
 
         entity.localParamSize = app->UBO.head - entity.localParamOffset;

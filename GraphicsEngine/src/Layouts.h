@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "Platform.h"
+#include "platform.h"
 
 #include "glad/glad.h"
 

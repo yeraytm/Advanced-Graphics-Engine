@@ -2,6 +2,16 @@
 
 #include "glad/glad.h"
 
+void Framebuffer::Generate()
+{
+	glGenFramebuffers(1, &handle);
+}
+
+void Framebuffer::Delete()
+{
+	glDeleteFramebuffers(1, &handle);
+}
+
 void Framebuffer::Bind()
 {
 	// All following read and write framebuffer operations will affect the currently bound framebuffer
@@ -11,16 +21,6 @@ void Framebuffer::Bind()
 void Framebuffer::Unbind()
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-void Framebuffer::Generate()
-{
-	glGenFramebuffers(1, &handle);
-}
-
-void Framebuffer::Delete()
-{
-	glDeleteFramebuffers(1, &handle);
 }
 
 void Framebuffer::CheckStatus()
@@ -46,7 +46,7 @@ void Framebuffer::CheckStatus()
 
 void Framebuffer::AttachDepthTexture(const glm::ivec2& size)
 {
-	depthAttachment = CreateAttachment(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, size);
+	m_DepthAttachment = CreateAttachment(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, size);
 }
 
 void Framebuffer::AttachColorTexture(FBAttachmentType attachmentType, const glm::ivec2& size)
@@ -66,7 +66,7 @@ void Framebuffer::AttachColorTexture(FBAttachmentType attachmentType, const glm:
 	colorAttachmentHandles.push_back(textureHandle);
 }
 
-u32 Framebuffer::CreateAttachment(GLenum target, GLint internalFormat, GLenum dataFormat, GLenum dataType, const glm::ivec2& size)
+u32 Framebuffer::CreateAttachment(GLenum target, GLint internalFormat, GLenum dataFormat, GLenum dataType, const glm::ivec2& size) const
 {
 	GLuint attachmentHandle;
 	glGenTextures(1, &attachmentHandle);

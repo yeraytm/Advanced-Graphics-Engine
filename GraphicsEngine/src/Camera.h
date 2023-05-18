@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Platform.h"
+#include "platform.h"
 
 #define CAMERA_DEFAULT_SPEED 3.0f
 
@@ -18,44 +18,43 @@ class Camera
 {
 public:
     Camera(float speed = CAMERA_DEFAULT_SPEED);
-	Camera(glm::vec3 position, const glm::ivec2& displaySize, float FOV, float nearPlane, float farPlane, float speed = CAMERA_DEFAULT_SPEED);
-	~Camera();
+	Camera(glm::vec3 position, float FOV, float nearPlane, float farPlane, float speed = CAMERA_DEFAULT_SPEED);
 
-    void ProcessInput(const Input& input, float deltaTime);
+    void ProcessInput(const Input& input, const glm::ivec2& displaySize, float deltaTime);
 
-    void SetProjectionMatrix(const glm::ivec2& displaySize);
-    inline glm::mat4 GetProjectionMatrix() const { return projection; }
-    glm::mat4 GetViewMatrix() const;
+    void Zoom(float scrollY);
+
+    glm::mat4 GetViewProjectionMatrix(const glm::ivec2& displaySize) const;
 
 public:
     glm::vec3 position;
 
-    // Options
+    // Movement Options
     float speed;
     float defaultSpeed;
 
+    // Projection Options
+    float FOV;
+
 private:
-    void ProcessMouse(glm::vec2 mouseDelta);
     void ProcessKeyboard(CameraDirection direction, float dt);
+    void ProcessMouse(const glm::vec2& mouseDelta);
     void UpdateVectors();
 
 private:
-    glm::vec3 front;
-    glm::vec3 up;
-    glm::vec3 right;
-    glm::vec3 worldUp;
-
-    // Euler Angles
-    float yaw, pitch;
-
-    // Projection Matrix
-    glm::mat4 projection;
-
-    // Projection Options
-    float FOV;
-    float nearPlane;
-    float farPlane;
+    glm::vec3 m_Front;
+    glm::vec3 m_Up;
+    glm::vec3 m_Right;
+    glm::vec3 m_WorldUp;
 
     // Camera Options
-    float sensitivity;
+    float m_Sensitivity;
+
+    // Euler Angles
+    float m_Yaw, m_Pitch;
+
+    // Projection Options
+    float m_DefaultFOV;
+    float m_NearPlane;
+    float m_FarPlane;
 };

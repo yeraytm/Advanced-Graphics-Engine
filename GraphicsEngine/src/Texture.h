@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Platform.h"
+#include "platform.h"
 
 struct Image
 {

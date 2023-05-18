@@ -1,10 +1,17 @@
 #pragma once
 
-#include "Platform.h"
+#include "platform.h"
 #include "Layouts.h"
 
-struct ShaderProgram
+class Shader
 {
+public:
+    //Shader();
+    //~Shader();
+
+    void Bind();
+    void Unbind();
+
     u32 handle;
     std::string filepath;
     std::string programName;
@@ -15,6 +22,4 @@ struct ShaderProgram
 
 GLuint CreateShaderProgram(String programSource, const char* shaderName);
 
-u32 LoadShaderProgram(std::vector<ShaderProgram>& shaderPrograms, const char* filepath, const char* programName);
-
-void InputShaderLayout(ShaderProgram& shaderProgram);
+u32 LoadShaderProgram(std::vector<Shader>& shaderPrograms, const char* filepath, const char* programName);

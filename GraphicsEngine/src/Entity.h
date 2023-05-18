@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Platform.h"
+#include "platform.h"
 #include "Layouts.h"
 
-struct ShaderProgram;
+class Shader;
 struct Texture;
 
 struct VAO
@@ -56,7 +56,7 @@ struct Material
     u32 bumpTextureID;
 };
 
-struct Entity
+class Entity
 {
 public:
     Entity();

@@ -1,5 +1,15 @@
 #include "Shader.h"
 
+void Shader::Bind()
+{
+    glUseProgram(handle);
+}
+
+void Shader::Unbind()
+{
+    glUseProgram(0);
+}
+
 GLuint CreateShaderProgram(String programSource, const char* shaderName)
 {
     GLchar infoLogBuffer[1024] = {};
@@ -79,33 +89,16 @@ GLuint CreateShaderProgram(String programSource, const char* shaderName)
     return programHandle;
 }
 
-u32 LoadShaderProgram(std::vector<ShaderProgram>& shaderPrograms, const char* filepath, const char* programName)
-{
-    String programSource = ReadTextFile(filepath);
-
-    ShaderProgram program = {};
-    program.handle = CreateShaderProgram(programSource, programName);
-    program.filepath = filepath;
-    program.programName = programName;
-    program.lastWriteTimestamp = GetFileLastWriteTimestamp(filepath);
-
-    InputShaderLayout(program);
-
-    shaderPrograms.push_back(program);
-
-    return shaderPrograms.size() - 1;
-}
-
-void InputShaderLayout(ShaderProgram& shaderProgram)
+void InputShaderLayout(Shader& shaderProgram)
 {
     char* attributeName;
-    GLint activeAttributes, attributeNameMaxLength;
+    int activeAttributes, attributeNameMaxLength;
     glGetProgramiv(shaderProgram.handle, GL_ACTIVE_ATTRIBUTES, &activeAttributes);
     glGetProgramiv(shaderProgram.handle, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &attributeNameMaxLength);
 
     attributeName = new char[++attributeNameMaxLength];
 
-    for (u32 i = 0; i < activeAttributes; ++i)
+    for (int i = 0; i < activeAttributes; ++i)
     {
         GLint attributeSize;
         GLenum attributeType;
@@ -127,4 +120,21 @@ void InputShaderLayout(ShaderProgram& shaderProgram)
         shaderProgram.vertexLayout.attributes.push_back({ attributeLocation, componentCount });
     }
     delete[] attributeName;
+}
+
+u32 LoadShaderProgram(std::vector<Shader>& shaderPrograms, const char* filepath, const char* programName)
+{
+    String programSource = ReadTextFile(filepath);
+
+    Shader program = {};
+    program.handle = CreateShaderProgram(programSource, programName);
+    program.filepath = filepath;
+    program.programName = programName;
+    program.lastWriteTimestamp = GetFileLastWriteTimestamp(filepath);
+
+    InputShaderLayout(program);
+
+    shaderPrograms.push_back(program);
+
+    return shaderPrograms.size() - 1;
 }

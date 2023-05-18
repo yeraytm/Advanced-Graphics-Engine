@@ -15,7 +15,7 @@
 #include <unistd.h>
 #endif
 
-#include "Engine.h"
+#include "engine.h"
 #include "GLDebugger.h"
 
 #include "GLFW/glfw3.h"
@@ -80,7 +80,12 @@ void OnGlfwMouseEvent(GLFWwindow* window, int button, int event, int modifiers)
 
 void OnGlfwScrollEvent(GLFWwindow* window, double xoffset, double yoffset)
 {
-    // Nothing do yet... maybe zoom in/out in the future?
+    App* app = (App*)glfwGetWindowUserPointer(window);
+
+    app->input.mouseScroll.x = float(xoffset);
+    app->input.mouseScroll.y = float(yoffset);
+
+    app->camera.Zoom(app->input.mouseScroll.y);
 }
 
 void OnGlfwKeyboardEvent(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -130,7 +135,6 @@ void OnGlfwResizeFramebuffer(GLFWwindow* window, int width, int height)
     App* app = (App*)glfwGetWindowUserPointer(window);
     app->displaySize = glm::vec2(width, height);
 
-    app->camera.SetProjectionMatrix(app->displaySize);
     glViewport(0, 0, app->displaySize.x, app->displaySize.y);
 }
 

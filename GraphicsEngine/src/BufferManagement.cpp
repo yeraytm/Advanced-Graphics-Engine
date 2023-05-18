@@ -1,6 +1,6 @@
 #include "BufferManagement.h"
 
-#include "Platform.h"
+#include "platform.h"
 #include "glad/glad.h"
 
 Buffer CreateBuffer(u32 size, GLenum type, GLenum usage)

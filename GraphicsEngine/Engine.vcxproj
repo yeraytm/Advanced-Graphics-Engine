@@ -14,11 +14,11 @@
     <ClCompile Include="src\AssimpLoading.cpp" />
     <ClCompile Include="src\BufferManagement.cpp" />
     <ClCompile Include="src\Camera.cpp" />
-    <ClCompile Include="src\Engine.cpp" />
+    <ClCompile Include="src\engine.cpp" />
     <ClCompile Include="src\Entity.cpp" />
     <ClCompile Include="src\Framebuffer.cpp" />
     <ClCompile Include="src\GLDebugger.cpp" />
-    <ClCompile Include="src\Platform.cpp" />
+    <ClCompile Include="src\platform.cpp" />
     <ClCompile Include="src\Primitives.cpp" />
     <ClCompile Include="src\Shader.cpp" />
     <ClCompile Include="src\Texture.cpp" />
@@ -37,11 +37,11 @@
     <ClInclude Include="src\AssimpLoading.h" />
     <ClInclude Include="src\BufferManagement.h" />
     <ClInclude Include="src\Camera.h" />
-    <ClInclude Include="src\Engine.h" />
+    <ClInclude Include="src\engine.h" />
     <ClInclude Include="src\Entity.h" />
     <ClInclude Include="src\Framebuffer.h" />
     <ClInclude Include="src\GLDebugger.h" />
-    <ClInclude Include="src\Platform.h" />
+    <ClInclude Include="src\platform.h" />
     <ClInclude Include="src\Layouts.h" />
     <ClInclude Include="src\Primitives.h" />
     <ClInclude Include="src\Shader.h" />
