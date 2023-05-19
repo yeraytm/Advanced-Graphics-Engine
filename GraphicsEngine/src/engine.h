@@ -34,7 +34,7 @@ struct Quad
     Framebuffer FBO;
     u32 VAO;
     u32 shaderHandle;
-    u32 renderTarget;
+    u32 currentRenderTarget;
 };
 
 enum class LightType
@@ -85,6 +85,7 @@ struct App
     u32 globalParamSize;
 
     // DEFERRED SHADING //
+    std::vector<const char*> renderTargets;
     Framebuffer GBuffer;
     u32 lightPassShaderHandle;
     Quad screenQuad;

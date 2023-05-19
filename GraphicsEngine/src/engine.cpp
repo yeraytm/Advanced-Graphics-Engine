@@ -74,9 +74,18 @@ void Init(App* app)
 
     app->screenQuad.VAO = CreateQuad();
     app->screenQuad.shaderHandle = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/Quad_Shader_D.glsl", "SCREEN_QUAD")].handle;
-    app->screenQuad.renderTarget = app->screenQuad.FBO.colorAttachmentHandles[0];
     glUseProgram(app->screenQuad.shaderHandle);
     glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "uRenderTarget"), 0);
+
+    // Map for Render Target Selection
+    app->screenQuad.currentRenderTarget =   app->screenQuad.FBO.colorAttachmentHandles[0];
+    app->renderTargets.push_back("FINAL COLOR");
+    app->renderTargets.push_back("POSITION");
+    app->renderTargets.push_back("NORMAL");
+    app->renderTargets.push_back("ALBEDO");
+    app->renderTargets.push_back("SPECULAR");
+    app->renderTargets.push_back("DEPTH");
+    app->renderTargets.push_back("DEPTH LINEAR");
 
     // SHADERS & UNIFORM TEXTURES //
     app->defaultProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/Default_Shader_D.glsl", "DEFERRED_GEOMETRY_DEFAULT");
@@ -154,25 +163,6 @@ void Init(App* app)
     Entity* cubeEntity = CreateEntity(app, texturedAlbSpecProgramID, glm::vec3(5.0f, 0.0f, 2.0f), cubeModel);
 
     Entity* cubeEntity2 = CreateEntity(app, app->defaultProgramID, glm::vec3(-5.0f, 0.0f, 2.0f), cubeModel2);
-
-    //glm::vec3 cubePositions[] = {
-    //glm::vec3(0.0f,  0.0f,  0.0f),
-    //glm::vec3(2.0f,  5.0f, -15.0f),
-    //glm::vec3(-1.5f, -2.2f, -2.5f),
-    //glm::vec3(-3.8f, -2.0f, -12.3f),
-    //glm::vec3(2.4f, -0.4f, -3.5f),
-    //glm::vec3(-1.7f,  3.0f, -7.5f),
-    //glm::vec3(1.3f, -2.0f, -2.5f),
-    //glm::vec3(1.5f,  2.0f, -2.5f),
-    //glm::vec3(1.5f,  0.2f, -1.5f),
-    //glm::vec3(-1.3f,  1.0f, -1.5f)
-    //};
-    //for (u32 i = 0; i < 10; ++i)
-    //{
-    //    Entity* cubeEntity = CreateEntity(app, geometryTexAlbProgramID, cubePositions[i], cubeModel);
-    //    float angle = 20.0f * i;
-    //    cubeEntity->modelMatrix = glm::rotate(cubeEntity->modelMatrix, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-    //}
 
     // 3D Models
     Entity* patrickEntity = CreateEntity(app, texturedAlbProgramID, glm::vec3(0.0f, 0.0f, -5.0f), patrickModel);
@@ -255,53 +245,43 @@ void ImGuiRender(App* app)
         ImGui::DragFloat("Speed", &app->camera.speed);
         ImGui::DragFloat("FOV", &app->camera.FOV, 1.0f, 5.0f, 120.0f);
 
-        ImGui::Separator();
-        ImGui::Text("Entities");
+        //ImGui::Separator();
+        //ImGui::Text("Entities");
 
         //ImGui::DragFloat3("Directional Light", &app->lights[4].direction[0], 0.1f, -1.0f, 1.0f);
         //for (u32 i = 0; i < app->numEntities; ++i)
         //    ImGui::DragFloat3(std::to_string(i).c_str(), &app->entities[i].position[0], 0.1f);
         
-        //ImGui::Separator();
-        //ImGui::Text("Render Target");
-        //const char* preview = targets[app->framebuffer.currentAttachment];
-        //if (ImGui::BeginCombo("Attachments", preview))
-        //{
-        //    for (int i = 0; i < app->framebuffer.colorAttachmentHandles.size(); ++i)
-        //    {
-        //        const bool isSelected = (app->framebuffer.currentAttachment == i);
-        //        if (ImGui::Selectable(targets[i], isSelected))
-        //            app->framebuffer.currentAttachment = app->framebuffer.colorAttachmentHandles[i];
-        //    }
-        //    ImGui::EndCombo();
-        //}
-        
+        ImGui::Separator();
+        ImGui::Text("Render Target");
+        static const char* preview = "FINAL COLOR";
+        if (ImGui::BeginCombo("Attachments", preview))
+        {
+            for (int i = 0; i < app->renderTargets.size(); ++i)
+            {
+                bool isSelected = (preview == app->renderTargets[i]);
+                if (ImGui::Selectable(app->renderTargets[i], isSelected))
+                {
+                    preview = app->renderTargets[i];
+                    if (i == 0)
+                        app->screenQuad.currentRenderTarget = app->screenQuad.FBO.colorAttachmentHandles[0];
+                    else if (i >= 1)
+                        app->screenQuad.currentRenderTarget = app->GBuffer.colorAttachmentHandles[i64(i) - 1];
+                }
+            }
+            ImGui::EndCombo();
+        }
         ImGui::End();
     }
 }
 
 void Update(App* app)
 {
-    // You can handle app->input keyboard/mouse here
+    // You can handle input keyboard/mouse here
     if (app->input.keys[K_ESCAPE] == BUTTON_PRESS)
         app->isRunning = false;
     
     app->camera.ProcessInput(app->input, app->displaySize, app->deltaTime);
-
-    if (app->input.keys[K_1] == BUTTON_PRESS)
-        app->screenQuad.renderTarget = app->screenQuad.FBO.colorAttachmentHandles[0];
-    if (app->input.keys[K_2] == BUTTON_PRESS)
-        app->screenQuad.renderTarget = app->GBuffer.colorAttachmentHandles[0];
-    if (app->input.keys[K_3] == BUTTON_PRESS)
-        app->screenQuad.renderTarget = app->GBuffer.colorAttachmentHandles[1];
-    if (app->input.keys[K_4] == BUTTON_PRESS)
-        app->screenQuad.renderTarget = app->GBuffer.colorAttachmentHandles[2];
-    if (app->input.keys[K_5] == BUTTON_PRESS)
-        app->screenQuad.renderTarget = app->GBuffer.colorAttachmentHandles[3];
-    if (app->input.keys[K_6] == BUTTON_PRESS)
-        app->screenQuad.renderTarget = app->GBuffer.colorAttachmentHandles[4];
-    if (app->input.keys[K_7] == BUTTON_PRESS)
-        app->screenQuad.renderTarget = app->GBuffer.colorAttachmentHandles[5];
 
     for (u32 i = 0; i < app->shaderPrograms.size(); ++i)
     {
@@ -405,6 +385,9 @@ void Render(App* app)
     app->screenQuad.FBO.Bind();
 
     glDisable(GL_DEPTH_TEST);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     glUseProgram(app->lightPassShaderHandle);
 
     glBindVertexArray(app->screenQuad.VAO);
@@ -432,7 +415,7 @@ void Render(App* app)
     glBindVertexArray(app->screenQuad.VAO);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, app->screenQuad.renderTarget);
+    glBindTexture(GL_TEXTURE_2D, app->screenQuad.currentRenderTarget);
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
     glBindVertexArray(0);
@@ -548,6 +531,7 @@ void UpdateUniformBuffer(App* app)
     }
     app->globalParamSize = app->UBO.head - app->globalParamOffset;
 
+    glm::mat4 VPMatrix = app->camera.GetViewProjectionMatrix(app->displaySize);
     // Local Parameters //
     for (u32 i = 0; i < app->numEntities; ++i)
     {
@@ -559,7 +543,7 @@ void UpdateUniformBuffer(App* app)
         const glm::mat4& modelMatrix = entity.modelMatrix;
         PushMat4(app->UBO, modelMatrix);
 
-        glm::mat4 MVP = app->camera.GetViewProjectionMatrix(app->displaySize) * modelMatrix;
+        glm::mat4 MVP = VPMatrix * modelMatrix;
         PushMat4(app->UBO, MVP);
 
         entity.localParamSize = app->UBO.head - entity.localParamOffset;
