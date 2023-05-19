@@ -83,13 +83,15 @@ void Init(App* app)
     app->lightCasterProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/LightCaster_Shader.glsl", "LIGHT_CASTER");
 
     u32 texturedAlbProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/GeometryPassAlb_Shader_D.glsl", "DEFERRED_GEOMETRY_ALBEDO");
-    app->shaderPrograms[texturedAlbProgramID].Bind();
-    glUniform1i(glGetUniformLocation(app->shaderPrograms[texturedAlbProgramID].handle, "uMaterial.albedo"), 0);
+    Shader& texturedAlbProgram = app->shaderPrograms[texturedAlbProgramID];
+    texturedAlbProgram.Bind();
+    texturedAlbProgram.SetUniform1i("uMaterial.albedo", 0);
 
     u32 texturedAlbSpecProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/GeometryPassAlbSpec_Shader_D.glsl", "DEFERRED_GEOMETRY_ALBEDO_SPECULAR");
-    app->shaderPrograms[texturedAlbSpecProgramID].Bind();
-    glUniform1i(glGetUniformLocation(app->shaderPrograms[texturedAlbSpecProgramID].handle, "uMaterial.albedo"), 0);
-    glUniform1i(glGetUniformLocation(app->shaderPrograms[texturedAlbSpecProgramID].handle, "uMaterial.specular"), 1);
+    Shader& texturedAlbSpecProgram = app->shaderPrograms[texturedAlbSpecProgramID];
+    texturedAlbSpecProgram.Bind();
+    texturedAlbSpecProgram.SetUniform1i("uMaterial.albedo", 0);
+    texturedAlbSpecProgram.SetUniform1i("uMaterial.specular", 1);
 
     // TEXTURES //
     u32 diceTexIdx = LoadTexture2D(app->textures, "Assets/dice.png");
@@ -359,9 +361,9 @@ void Render(App* app)
             case MaterialType::DEFAULT:
             {
                 // Material
-                glUniform3fv(glGetUniformLocation(shader.handle, "uMaterial.albedo"), 1, &meshMaterial.albedo[0]);
-                glUniform3fv(glGetUniformLocation(shader.handle, "uMaterial.specular"), 1, &meshMaterial.specular[0]);
-                glUniform1f(glGetUniformLocation(shader.handle, "uMaterial.shininess"), meshMaterial.shininess);
+                shader.SetUniform3f("uMaterial.albedo", meshMaterial.albedo);
+                shader.SetUniform3f("uMaterial.specular", meshMaterial.specular);
+                shader.SetUniform1f("uMaterial.shininess", meshMaterial.shininess);
             }
             break;
             case MaterialType::TEXTURED_ALBEDO:
@@ -371,8 +373,8 @@ void Render(App* app)
                 glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
 
                 // Material
-                glUniform3fv(glGetUniformLocation(shader.handle, "uMaterial.specular"), 1, &meshMaterial.specular[0]);
-                glUniform1f(glGetUniformLocation(shader.handle, "uMaterial.shininess"), meshMaterial.shininess);
+                shader.SetUniform3f("uMaterial.specular", meshMaterial.specular);
+                shader.SetUniform1f("uMaterial.shininess", meshMaterial.shininess);
             }
             break;
             case MaterialType::TEXTURED_ALB_SPEC:
@@ -386,7 +388,7 @@ void Render(App* app)
                 glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.specularTextureID].handle);
 
                 // Material
-                glUniform1f(glGetUniformLocation(shader.handle, "uMaterial.shininess"), meshMaterial.shininess);
+                shader.SetUniform1f("uMaterial.shininess", meshMaterial.shininess);
             }
             break;
             }
