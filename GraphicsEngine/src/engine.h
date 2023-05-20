@@ -72,8 +72,8 @@ struct App
     // OPENGL DEBUG & IMGUI //
     OpenGLState glState;
     bool openGLStatus;
-    bool debugInfo;
-    bool sceneInfo;
+    bool performanceStatus;
+    bool sceneStatus;
 
     // CAMERA & PROJECTION //
     Camera camera;
@@ -118,7 +118,7 @@ void Update(App* app);
 
 void Render(App* app);
 
-void CleanUp(App* app);
+//void CleanUp(App* app);
 
 // Engine Additional Functions
 inline void BindDefaultFramebuffer() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }

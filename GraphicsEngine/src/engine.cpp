@@ -29,8 +29,8 @@ void Init(App* app)
 
     // IMGUI WINDOWS //
     app->openGLStatus = false;
-    app->debugInfo = false;
-    app->sceneInfo = false;
+    app->performanceStatus = false;
+    app->sceneStatus = true;
 
     // CAMERA & PROJECTION //
     app->camera = Camera(glm::vec3(0.0f, 3.0f, 10.0f), 45.0f, 0.1f, 100.0f);
@@ -190,19 +190,11 @@ void ImGuiRender(App* app)
 {
     if (ImGui::BeginMainMenuBar())
     {
-        if (ImGui::BeginMenu("About"))
+        if (ImGui::BeginMenu("Engine"))
         {
-            ImGui::MenuItem("OpenGL", NULL, &app->openGLStatus);
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("Debug"))
-        {
-            ImGui::MenuItem("Debug Info", NULL, &app->debugInfo);
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("Scene"))
-        {
-            ImGui::MenuItem("Scene Info", NULL, &app->sceneInfo);
+            ImGui::MenuItem("OpenGL Status", NULL, &app->openGLStatus);
+            ImGui::MenuItem("Performance", NULL, &app->performanceStatus);
+            ImGui::MenuItem("Scene Info", NULL, &app->sceneStatus);
             ImGui::EndMenu();
         }
         ImGui::EndMainMenuBar();
@@ -218,6 +210,8 @@ void ImGuiRender(App* app)
         ImGui::Text(app->glState.glslVersion.c_str());
 
         ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
 
         ImGui::Text("Extensions Supported:");
         for (int i = 0; i < app->glState.numExtensions; ++i)
@@ -226,36 +220,31 @@ void ImGuiRender(App* app)
         ImGui::End();
     }
 
-    if (app->debugInfo)
+    if (app->performanceStatus)
     {
-        ImGui::Begin("App Info", &app->debugInfo);
+        ImGui::Begin("Performance", &app->performanceStatus);
         ImGui::Text("FPS: %f", 1.0f / app->deltaTime);
         ImGui::Text("Frametime: %f", app->deltaTime);
         ImGui::Text("Time: %f", app->currentTime);
         ImGui::End();
     }
 
-    if (app->sceneInfo)
+    if (app->sceneStatus)
     {
-        ImGui::Begin("Scene Info", &app->sceneInfo);
+        ImGui::Begin("Scene", &app->sceneStatus);
 
         ImGui::Text("Camera");
-
         ImGui::DragFloat3("Position", &app->camera.position[0]);
         ImGui::DragFloat("Speed", &app->camera.speed);
-        ImGui::DragFloat("FOV", &app->camera.FOV, 1.0f, 5.0f, 120.0f);
+        ImGui::DragFloat("FOV", &app->camera.FOV, 1.0f, 5.0f, 45.0f);\
 
-        //ImGui::Separator();
-        //ImGui::Text("Entities");
-
-        //ImGui::DragFloat3("Directional Light", &app->lights[4].direction[0], 0.1f, -1.0f, 1.0f);
-        //for (u32 i = 0; i < app->numEntities; ++i)
-        //    ImGui::DragFloat3(std::to_string(i).c_str(), &app->entities[i].position[0], 0.1f);
-        
+        ImGui::Spacing();
         ImGui::Separator();
+        ImGui::Spacing();
+
         ImGui::Text("Render Target");
         static const char* preview = "FINAL COLOR";
-        if (ImGui::BeginCombo("Attachments", preview))
+        if (ImGui::BeginCombo("", preview))
         {
             for (int i = 0; i < app->renderTargets.size(); ++i)
             {
@@ -271,6 +260,17 @@ void ImGuiRender(App* app)
             }
             ImGui::EndCombo();
         }
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        //ImGui::Text("Entities");
+
+        //ImGui::DragFloat3("Directional Light", &app->lights[4].direction[0], 0.1f, -1.0f, 1.0f);
+        //for (u32 i = 0; i < app->numEntities; ++i)
+        //    ImGui::DragFloat3(std::to_string(i).c_str(), &app->entities[i].position[0], 0.1f);
+
         ImGui::End();
     }
 }
