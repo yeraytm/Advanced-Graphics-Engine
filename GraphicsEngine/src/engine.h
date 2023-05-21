@@ -72,8 +72,8 @@ struct App
     // OPENGL DEBUG & IMGUI //
     OpenGLState glState;
     bool openGLStatus;
-    bool performanceStatus;
     bool sceneStatus;
+    bool performanceStatus;
 
     // CAMERA & PROJECTION //
     Camera camera;

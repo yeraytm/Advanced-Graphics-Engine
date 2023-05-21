@@ -156,27 +156,44 @@ void Init(App* app)
     // Primitives
     Entity* planeEntity = CreateEntity(app, app->defaultProgramID, glm::vec3(0.0f, -5.0f, 0.0f), planeModel);
     planeEntity->modelMatrix = glm::rotate(planeEntity->modelMatrix, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    planeEntity->modelMatrix = glm::scale(planeEntity->modelMatrix, glm::vec3(25.0f));
+    planeEntity->modelMatrix = glm::scale(planeEntity->modelMatrix, glm::vec3(35.0f));
 
-    Entity* sphereEntity = CreateEntity(app, app->defaultProgramID, glm::vec3(0.0f, 0.0f, 3.0f), sphereModel);
+    Entity* sphereEntity = CreateEntity(app, app->defaultProgramID, glm::vec3(0.0f, 0.0f, 7.0f), sphereModel);
 
-    Entity* cubeEntity = CreateEntity(app, texturedAlbSpecProgramID, glm::vec3(5.0f, 0.0f, 2.0f), cubeModel);
+    Entity* cubeEntity = CreateEntity(app, texturedAlbSpecProgramID, glm::vec3(5.0f, 0.0f, 7.0f), cubeModel);
 
-    Entity* cubeEntity2 = CreateEntity(app, app->defaultProgramID, glm::vec3(-5.0f, 0.0f, 2.0f), cubeModel2);
+    Entity* cubeEntity2 = CreateEntity(app, app->defaultProgramID, glm::vec3(-5.0f, 0.0f, 7.0f), cubeModel2);
 
     // 3D Models
-    Entity* patrickEntity = CreateEntity(app, texturedAlbProgramID, glm::vec3(0.0f, 0.0f, -5.0f), patrickModel);
+    CreateEntity(app, texturedAlbProgramID, glm::vec3(-6.0f, 0.0f, 0.0f), patrickModel);
+    CreateEntity(app, texturedAlbProgramID, glm::vec3(0.0f, 0.0f, 0.0f), patrickModel);
+    CreateEntity(app, texturedAlbProgramID, glm::vec3(6.0f, 0.0f, 0.0f), patrickModel);
+
+    CreateEntity(app, texturedAlbProgramID, glm::vec3(-6.0f, 0.0f, -4.0f), patrickModel);
+    CreateEntity(app, texturedAlbProgramID, glm::vec3(0.0f, 0.0f, -4.0f), patrickModel);
+    CreateEntity(app, texturedAlbProgramID, glm::vec3(6.0f, 0.0f, -4.0f), patrickModel);
+
+    CreateEntity(app, texturedAlbProgramID, glm::vec3(-6.0f, 0.0f, -8.0f), patrickModel);
+    CreateEntity(app, texturedAlbProgramID, glm::vec3(0.0f, 0.0f, -8.0f), patrickModel);
+    CreateEntity(app, texturedAlbProgramID, glm::vec3(6.0f, 0.0f, -8.0f), patrickModel);
 
     app->firstLightEntityID = app->entities.size();
 
     // LIGHTS //
-    CreatePointLight(app, glm::vec3(3.0f, 1.0f, -2.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 1.0f, sphereLowModel, 0.1f);
-    CreatePointLight(app, glm::vec3(-5.0f, 1.0f, 0.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 1.0f, sphereLowModel, 0.1f);
+    // Random positions for point lights
+    srand(13);
+    for (unsigned int i = 0; i < 8; i++)
+    {
+        float xPos = static_cast<float>(((rand() % 100) / 70.0f) * 6.0f - 3.0f);
+        float yPos = static_cast<float>(((rand() % 100) / 80.0f) * 6.0f - 4.0f);
+        float zPos = static_cast<float>(((rand() % 100) / 25.0f) * 6.0f - 16.0f);
+        CreatePointLight(app, glm::vec3(xPos, yPos, zPos), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 1.0f, sphereLowModel, 0.1f);
+    }
 
-    CreatePointLight(app, glm::vec3(-6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 0.4f, sphereLowModel, 0.1f);
+    CreatePointLight(app, glm::vec3(-6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 0.5f, sphereLowModel, 0.1f);
     CreatePointLight(app, glm::vec3(6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 1.0f, sphereLowModel, 0.1f);
 
-    //CreateDirectionalLight(app, glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.2f), glm::vec3(0.5f), glm::vec3(1.0f));
+    CreateDirectionalLight(app, glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.1f), glm::vec3(0.3f), glm::vec3(0.5f));
 
     // ENGINE COUNT OF ENTITIES & LIGHTS //
     app->numEntities = app->entities.size();
@@ -192,9 +209,13 @@ void ImGuiRender(App* app)
     {
         if (ImGui::BeginMenu("Engine"))
         {
-            ImGui::MenuItem("OpenGL Status", NULL, &app->openGLStatus);
+            ImGui::MenuItem("OpenGL", NULL, &app->openGLStatus);
+            ImGui::MenuItem("Scene", NULL, &app->sceneStatus);
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Debug"))
+        {
             ImGui::MenuItem("Performance", NULL, &app->performanceStatus);
-            ImGui::MenuItem("Scene Info", NULL, &app->sceneStatus);
             ImGui::EndMenu();
         }
         ImGui::EndMainMenuBar();
@@ -220,15 +241,6 @@ void ImGuiRender(App* app)
         ImGui::End();
     }
 
-    if (app->performanceStatus)
-    {
-        ImGui::Begin("Performance", &app->performanceStatus);
-        ImGui::Text("FPS: %f", 1.0f / app->deltaTime);
-        ImGui::Text("Frametime: %f", app->deltaTime);
-        ImGui::Text("Time: %f", app->currentTime);
-        ImGui::End();
-    }
-
     if (app->sceneStatus)
     {
         ImGui::Begin("Scene", &app->sceneStatus);
@@ -236,7 +248,14 @@ void ImGuiRender(App* app)
         ImGui::Text("Camera");
         ImGui::DragFloat3("Position", &app->camera.position[0]);
         ImGui::DragFloat("Speed", &app->camera.speed);
-        ImGui::DragFloat("FOV", &app->camera.FOV, 1.0f, 5.0f, 45.0f);\
+        ImGui::DragFloat("Zoom", &app->camera.FOV, 1.0f, 5.0f, 45.0f);
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        ImGui::Text("Directional Light");
+        ImGui::DragFloat3("Direction", &app->lights[10].direction[0], 0.1f, -1.0f, 1.0f);
 
         ImGui::Spacing();
         ImGui::Separator();
@@ -260,17 +279,15 @@ void ImGuiRender(App* app)
             }
             ImGui::EndCombo();
         }
+        ImGui::End();
+    }
 
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
-
-        //ImGui::Text("Entities");
-
-        //ImGui::DragFloat3("Directional Light", &app->lights[4].direction[0], 0.1f, -1.0f, 1.0f);
-        //for (u32 i = 0; i < app->numEntities; ++i)
-        //    ImGui::DragFloat3(std::to_string(i).c_str(), &app->entities[i].position[0], 0.1f);
-
+    if (app->performanceStatus)
+    {
+        ImGui::Begin("Performance", &app->performanceStatus);
+        ImGui::Text("FPS: %f", 1.0f / app->deltaTime);
+        ImGui::Text("Frametime: %f", app->deltaTime);
+        ImGui::Text("Time: %f", app->currentTime);
         ImGui::End();
     }
 }
