@@ -1,7 +1,7 @@
 # Advanced Graphics Engine
 
 ## Deferred Renderer
-Features
+Features:
 - Static 3d model loading
 - Embedded Geometry (Primitives): Plane, Sphere & Cube
 - G-Buffer (Framebuffer Object) with different render targets attached: Position, Normals, Albedo, Specular & Depth
