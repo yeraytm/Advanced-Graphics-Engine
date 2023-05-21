@@ -4,7 +4,7 @@
 Features
 - Static 3d model loading
 - Embedded Geometry (Primitives): Plane, Sphere & Cube
-- Framebuffer Object with different render targets attached: Position, Normals, Albedo, Specular & Depth
+- G-Buffer (Framebuffer Object) with different render targets attached: Position, Normals, Albedo, Specular & Depth
 - Render to screen-filling quad
 - Light Casters: Point & Directional Lights
 - Free camera roaming
