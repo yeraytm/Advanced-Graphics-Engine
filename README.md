@@ -14,13 +14,14 @@ Features
 
 | Action | Input |
 | :---: | :---: |
-| **Camera Forwards** | W |
-| **Camera Backwards** | S |
-| **Camera Left** | A |
-| **Camera Right** | D |
-| **Camera Up** | Q |
-| **Camera Down** | E |
-| **Camera Rotation** | LEFT MOUSE |
+| **Forwards** | W |
+| **Backwards** | S |
+| **Left** | A |
+| **Right** | D |
+| **Up** | Q |
+| **Down** | E |
+| **Rotation** | MOUSE LEFT |
+| **Zoom** | MOUSE WHEEL |
 | **Quit** | ESC |
 
 ### Render Targets
