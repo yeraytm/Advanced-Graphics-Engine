@@ -1,5 +1,6 @@
 # Advanced Graphics Engine
 - [GitHub Repository](https://github.com/yeraytm/Advanced-Graphics-Engine)
+- [Latest Release](https://github.com/yeraytm/Advanced-Graphics-Engine/releases)
 
 ## Deferred Renderer
 Features:
