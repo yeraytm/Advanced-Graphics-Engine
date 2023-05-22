@@ -194,13 +194,13 @@ void Init(App* app)
         float bColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.0
         glm::vec3 color = glm::vec3(rColor, gColor, bColor);
 
-        CreatePointLight(app, glm::vec3(xPos, yPos, zPos), color * 0.2f, color/*0.6f*/, glm::vec3(1.0f), sphereLowModel, 1.0f, 0.1f);
+        CreatePointLight(app, glm::vec3(xPos, yPos, zPos), color * 0.2f, color, glm::vec3(1.0f), sphereLowModel, 1.0f, 0.1f);
     }
 
     CreatePointLight(app, glm::vec3(-6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), sphereLowModel, 0.5f, 0.1f);
     CreatePointLight(app, glm::vec3(6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), sphereLowModel, 1.0f, 0.1f);
 
-    CreateDirectionalLight(app, glm::vec3(0.0f, -2.0f, 15.0f), glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.1f), glm::vec3(0.9f), glm::vec3(0.5f), cubeModel2, 0.5f);
+    CreateDirectionalLight(app, glm::vec3(0.0f, -2.0f, 15.0f), glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.1f), glm::vec3(0.4f), glm::vec3(0.3f), cubeModel2, 0.5f);
 
     // ENGINE COUNT OF ENTITIES & LIGHTS //
     app->numEntities = app->entities.size();
