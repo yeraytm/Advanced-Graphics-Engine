@@ -13,6 +13,7 @@
 - G-Buffer (Framebuffer Object) with different render targets attached: Position, Normals, Albedo, Specular & Depth
 - Render to screen-filling quad
 - Geometry & Lighting Pass
+- Light objects are rendered using forward shading
 
 ## Controls
 
