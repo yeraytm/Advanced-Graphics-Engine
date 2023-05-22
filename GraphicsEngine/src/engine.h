@@ -80,6 +80,8 @@ struct App
     // DEFERRED SHADING //
     Framebuffer GBuffer;
     u32 lightingPassShaderID;
+
+    // SCREEN-FILLING QUAD //
     Quad screenQuad;
 
     // SHADERS //

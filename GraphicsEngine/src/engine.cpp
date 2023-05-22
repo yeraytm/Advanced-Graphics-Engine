@@ -68,18 +68,19 @@ void Init(App* app)
     lightingPassShader.SetUniform1i("gBufDepth",        4);
     lightingPassShader.SetUniform1i("gBufDepthLinear",  5);
 
-    // Screen-Filling Quad
-    app->screenQuad.FBO.Generate();
-    app->screenQuad.FBO.Bind();
-    app->screenQuad.FBO.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Final Color Buffer
-    app->screenQuad.FBO.SetColorBuffers(); // Set color buffers with glDrawBuffers
-    BindDefaultFramebuffer();
-
+    // SCREEN-FILLING QUAD //
     app->screenQuad.VAO = CreateQuad();
     app->screenQuad.shaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::SCREEN_QUAD, "Assets/Shaders/Quad_Shader_D.glsl", "SCREEN_QUAD");
     Shader& screenQuadShader = app->shaderPrograms[app->screenQuad.shaderID];
     screenQuadShader.Bind();
     screenQuadShader.SetUniform1i("uRenderTarget", 0);
+
+    // Quad Framebuffer to display a texture
+    app->screenQuad.FBO.Generate();
+    app->screenQuad.FBO.Bind();
+    app->screenQuad.FBO.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Final Color Buffer
+    app->screenQuad.FBO.SetColorBuffers(); // Set color buffers with glDrawBuffers
+    BindDefaultFramebuffer();
 
     // Render Target Selection Combo
     app->screenQuad.currentRenderTarget = app->screenQuad.FBO.colorAttachmentHandles[0];
@@ -422,7 +423,8 @@ void Render(App* app)
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glUseProgram(app->shaderPrograms[app->lightingPassShaderID].handle);
+    Shader& lightingPassShader = app->shaderPrograms[app->lightingPassShaderID];
+    lightingPassShader.Bind();
 
     glBindVertexArray(app->screenQuad.VAO);
 
@@ -435,7 +437,7 @@ void Render(App* app)
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
     glBindVertexArray(0);
-    glUseProgram(0);
+    lightingPassShader.Unbind();
 
     // SCREEN-FILLING QUAD //
     BindDefaultFramebuffer();
@@ -444,7 +446,8 @@ void Render(App* app)
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glUseProgram(app->shaderPrograms[app->screenQuad.shaderID].handle);
+    Shader& screenQuadShader = app->shaderPrograms[app->screenQuad.shaderID];
+    screenQuadShader.Bind();
 
     glBindVertexArray(app->screenQuad.VAO);
 
@@ -453,7 +456,7 @@ void Render(App* app)
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
     glBindVertexArray(0);
-    glUseProgram(0);
+    screenQuadShader.Unbind();
 
     // FORWARD SHADING: LIGHTS //
     glEnable(GL_DEPTH_TEST);
