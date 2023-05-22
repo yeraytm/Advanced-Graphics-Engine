@@ -2,15 +2,18 @@
 - [GitHub Repository](https://github.com/yeraytm/Advanced-Graphics-Engine)
 - [Latest Release](https://github.com/yeraytm/Advanced-Graphics-Engine/releases)
 
-## Deferred Renderer
-Features:
+## Engine Features
 - Static 3d model loading
 - Embedded Geometry (Primitives): Plane, Sphere & Cube
-- G-Buffer (Framebuffer Object) with different render targets attached: Position, Normals, Albedo, Specular & Depth
-- Render to screen-filling quad
 - Light Casters: Point & Directional Lights
 - Free camera roaming
-- ImGui to check engine's performance, change current render target & debugging
+- ImGui
+
+## Deferred Renderer Features
+Features:
+- G-Buffer (Framebuffer Object) with different render targets attached: Position, Normals, Albedo, Specular & Depth
+- Render to screen-filling quad
+- Geometry & Lighting Pass
 
 ## Controls
 
@@ -26,5 +29,16 @@ Features:
 | **Zoom** | MOUSE WHEEL |
 | **Quit** | ESC |
 
-### Render Targets
-The ImGui window showing up at startup allows to change the render target through a combo box.
+## ImGui Windows
+### Renderer
+To select the render target that will be displayed in screen through a combo box. It shows up at startup.
+
+### Scene
+- Camera's parameters of position, speed and zoom.
+- Lights: direction of the directional light and colors of point lights.
+
+### OpenGL
+Information about the current version of OpenGL and GLSL and GPU information. Moreover, a list of all available extension of OpenGL.
+
+### Performance
+Check current framerate (FPS), frametime (dt) and time since startup.
