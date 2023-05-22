@@ -164,7 +164,6 @@ void ProcessAssimpNode(const aiScene* scene, aiNode* node, Model* myModel, u32 b
 Model* LoadModel(App* app, const char* filename, bool flipTextures)
 {
     Model* model = new Model();
-    app->models.push_back(model);
 
     const aiScene* scene = aiImportFile(filename,
         aiProcess_Triangulate |

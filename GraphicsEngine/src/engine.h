@@ -34,7 +34,7 @@ struct Quad
 {
     Framebuffer FBO;
     u32 VAO;
-    u32 shaderHandle;
+    u32 shaderID;
     u32 currentRenderTarget;
 };
 
@@ -53,11 +53,10 @@ struct Light
 
 struct App
 {
-    // LOOP //
+    // ENGINE PARAMETERS //
     float deltaTime;
     f64 currentTime;
     bool isRunning;
-
     glm::ivec2 displaySize;
 
     // INPUT //
@@ -69,7 +68,7 @@ struct App
     bool sceneGui;
     bool performanceGui;
 
-    // CAMERA & PROJECTION //
+    // CAMERA //
     Camera camera;
 
     // UNIFORM BUFFER (CONSTANT BUFFER) //
@@ -80,12 +79,12 @@ struct App
 
     // DEFERRED SHADING //
     Framebuffer GBuffer;
-    u32 lightPassShaderHandle;
+    u32 lightingPassShaderID;
     Quad screenQuad;
 
     // SHADERS //
-    u32 defaultProgramID;
-    u32 lightCasterProgramID;
+    u32 defaultShaderID;
+    u32 lightCasterShaderID;
     
     // ENTITIES //
     std::vector<Entity> entities;
@@ -97,7 +96,6 @@ struct App
     u32 numLights;
     
     // RESOURCES //
-    std::vector<Model*> models;
     std::vector<Texture> textures;
     std::vector<Material> materials;
     std::vector<Shader> shaderPrograms;

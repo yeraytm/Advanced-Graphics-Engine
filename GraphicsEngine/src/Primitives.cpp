@@ -50,7 +50,6 @@ u32 CreateQuad()
 Model* CreatePrimitive(App* app, PrimitiveType type, Material& material, u32 xNumSegments, u32 yNumSegments)
 {
     Model* model = new Model();
-    app->models.push_back(model);
 
     model->materialIDs.push_back((u32)app->materials.size());
     app->materials.push_back(material);

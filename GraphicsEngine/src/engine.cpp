@@ -14,7 +14,14 @@
 
 void Init(App* app)
 {
-    // OPENGL DEBUG //
+    // IMGUI //
+    // ImGui Windows
+    app->openGLGui.open = false;
+    app->rendererGui.open = true;
+    app->sceneGui = false;
+    app->performanceGui = false;
+
+    // OpenGL Info
     app->openGLGui.version = "Version: " + std::string((const char*)glGetString(GL_VERSION));
     app->openGLGui.renderer = "Renderer: " + std::string((const char*)glGetString(GL_RENDERER));
     app->openGLGui.vendor = "Vendor: " + std::string((const char*)glGetString(GL_VENDOR));
@@ -27,13 +34,7 @@ void Init(App* app)
         app->openGLGui.extensions.emplace_back((const char*)glGetStringi(GL_EXTENSIONS, GLuint(i)));
     }
 
-    // IMGUI WINDOWS //
-    app->openGLGui.open = false;
-    app->rendererGui.open = true;
-    app->sceneGui = false;
-    app->performanceGui = false;
-
-    // CAMERA & PROJECTION //
+    // CAMERA //
     app->camera = Camera(glm::vec3(0.0f, 3.0f, 10.0f), 45.0f, 0.1f, 100.0f);
 
     // UNIFORM BUFFER (CONSTANT BUFFER) //
@@ -57,14 +58,15 @@ void Init(App* app)
     BindDefaultFramebuffer();
 
     // Lighting Pass
-    app->lightPassShaderHandle = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, ShaderType::LIGHTING_PASS, "Assets/Shaders/LightingPass_Shader_D.glsl", "DEFERRED_LIGHTING_PASS")].handle;
-    glUseProgram(app->lightPassShaderHandle);
-    glUniform1i(glGetUniformLocation(app->lightPassShaderHandle, "gBufPosition"),   0);
-    glUniform1i(glGetUniformLocation(app->lightPassShaderHandle, "gBufNormal"),     1);
-    glUniform1i(glGetUniformLocation(app->lightPassShaderHandle, "gBufAlbedo"),     2);
-    glUniform1i(glGetUniformLocation(app->lightPassShaderHandle, "gBufSpecular"),   3);
-    glUniform1i(glGetUniformLocation(app->lightPassShaderHandle, "gBufDepth"),      4);
-    glUniform1i(glGetUniformLocation(app->lightPassShaderHandle, "gBufDepthLinear"),5);
+    app->lightingPassShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::LIGHTING_PASS, "Assets/Shaders/LightingPass_Shader_D.glsl", "DEFERRED_LIGHTING_PASS");
+    Shader& lightingPassShader = app->shaderPrograms[app->lightingPassShaderID];
+    lightingPassShader.Bind();
+    lightingPassShader.SetUniform1i("gBufPosition",     0);
+    lightingPassShader.SetUniform1i("gBufNormal",       1);
+    lightingPassShader.SetUniform1i("gBufAlbedo",       2);
+    lightingPassShader.SetUniform1i("gBufSpecular",     3);
+    lightingPassShader.SetUniform1i("gBufDepth",        4);
+    lightingPassShader.SetUniform1i("gBufDepthLinear",  5);
 
     // Screen-Filling Quad
     app->screenQuad.FBO.Generate();
@@ -74,12 +76,13 @@ void Init(App* app)
     BindDefaultFramebuffer();
 
     app->screenQuad.VAO = CreateQuad();
-    app->screenQuad.shaderHandle = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, ShaderType::SCREEN_QUAD, "Assets/Shaders/Quad_Shader_D.glsl", "SCREEN_QUAD")].handle;
-    glUseProgram(app->screenQuad.shaderHandle);
-    glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "uRenderTarget"), 0);
+    app->screenQuad.shaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::SCREEN_QUAD, "Assets/Shaders/Quad_Shader_D.glsl", "SCREEN_QUAD");
+    Shader& screenQuadShader = app->shaderPrograms[app->screenQuad.shaderID];
+    screenQuadShader.Bind();
+    screenQuadShader.SetUniform1i("uRenderTarget", 0);
 
-    // Map for Render Target Selection
-    app->screenQuad.currentRenderTarget =   app->screenQuad.FBO.colorAttachmentHandles[0];
+    // Render Target Selection Combo
+    app->screenQuad.currentRenderTarget = app->screenQuad.FBO.colorAttachmentHandles[0];
     app->rendererGui.renderTargets.push_back("FINAL COLOR");
     app->rendererGui.renderTargets.push_back("POSITION");
     app->rendererGui.renderTargets.push_back("NORMAL");
@@ -89,19 +92,19 @@ void Init(App* app)
     app->rendererGui.renderTargets.push_back("DEPTH LINEAR");
 
     // SHADERS & UNIFORM TEXTURES //
-    app->defaultProgramID = LoadShaderProgram(app->shaderPrograms, ShaderType::DEFAULT, "Assets/Shaders/Default_Shader_D.glsl", "DEFERRED_GEOMETRY_DEFAULT");
-    app->lightCasterProgramID = LoadShaderProgram(app->shaderPrograms, ShaderType::LIGHT_CASTER, "Assets/Shaders/LightCaster_Shader.glsl", "LIGHT_CASTER");
+    app->defaultShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::DEFAULT, "Assets/Shaders/Default_Shader_D.glsl", "DEFERRED_GEOMETRY_DEFAULT");
+    app->lightCasterShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::LIGHT_CASTER, "Assets/Shaders/LightCaster_Shader.glsl", "LIGHT_CASTER");
 
-    u32 texturedAlbProgramID = LoadShaderProgram(app->shaderPrograms, ShaderType::TEXTURED_ALBEDO, "Assets/Shaders/GeometryPassAlb_Shader_D.glsl", "DEFERRED_GEOMETRY_ALBEDO");
-    Shader& texturedAlbProgram = app->shaderPrograms[texturedAlbProgramID];
-    texturedAlbProgram.Bind();
-    texturedAlbProgram.SetUniform1i("uMaterial.albedo", 0);
+    u32 texturedAlbShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::TEXTURED_ALBEDO, "Assets/Shaders/GeometryPassAlb_Shader_D.glsl", "DEFERRED_GEOMETRY_ALBEDO");
+    Shader& texturedAlbShader = app->shaderPrograms[texturedAlbShaderID];
+    texturedAlbShader.Bind();
+    texturedAlbShader.SetUniform1i("uMaterial.albedo", 0);
 
-    u32 texturedAlbSpecProgramID = LoadShaderProgram(app->shaderPrograms, ShaderType::TEXTURED_ALB_SPEC, "Assets/Shaders/GeometryPassAlbSpec_Shader_D.glsl", "DEFERRED_GEOMETRY_ALBEDO_SPECULAR");
-    Shader& texturedAlbSpecProgram = app->shaderPrograms[texturedAlbSpecProgramID];
-    texturedAlbSpecProgram.Bind();
-    texturedAlbSpecProgram.SetUniform1i("uMaterial.albedo", 0);
-    texturedAlbSpecProgram.SetUniform1i("uMaterial.specular", 1);
+    u32 texturedAlbSpecShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::TEXTURED_ALB_SPEC, "Assets/Shaders/GeometryPassAlbSpec_Shader_D.glsl", "DEFERRED_GEOMETRY_ALBEDO_SPECULAR");
+    Shader& texturedAlbSpecShader = app->shaderPrograms[texturedAlbSpecShaderID];
+    texturedAlbSpecShader.Bind();
+    texturedAlbSpecShader.SetUniform1i("uMaterial.albedo", 0);
+    texturedAlbSpecShader.SetUniform1i("uMaterial.specular", 1);
 
     // TEXTURES //
     u32 diceTexIdx = LoadTexture2D(app->textures, "Assets/dice.png");
@@ -151,34 +154,34 @@ void Init(App* app)
 
     // ENTITIES //
     // Primitives
-    Entity* planeEntity = CreateEntity(app, app->defaultProgramID, glm::vec3(0.0f, -5.0f, 0.0f), planeModel);
+    Entity* planeEntity = CreateEntity(app, app->defaultShaderID, glm::vec3(0.0f, -5.0f, 0.0f), planeModel);
     planeEntity->modelMatrix = glm::rotate(planeEntity->modelMatrix, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     planeEntity->modelMatrix = glm::scale(planeEntity->modelMatrix, glm::vec3(35.0f));
 
-    Entity* sphereEntity = CreateEntity(app, app->defaultProgramID, glm::vec3(0.0f, 0.0f, 7.0f), sphereModel);
+    Entity* sphereEntity = CreateEntity(app, app->defaultShaderID, glm::vec3(0.0f, 0.0f, 7.0f), sphereModel);
 
-    Entity* cubeEntity = CreateEntity(app, texturedAlbSpecProgramID, glm::vec3(5.0f, 0.0f, 7.0f), cubeModel);
+    Entity* cubeEntity = CreateEntity(app, texturedAlbSpecShaderID, glm::vec3(5.0f, 0.0f, 7.0f), cubeModel);
 
-    Entity* cubeEntity2 = CreateEntity(app, app->defaultProgramID, glm::vec3(-5.0f, 0.0f, 7.0f), cubeModel2);
+    Entity* cubeEntity2 = CreateEntity(app, app->defaultShaderID, glm::vec3(-5.0f, 0.0f, 7.0f), cubeModel2);
 
     // 3D Models
-    CreateEntity(app, texturedAlbProgramID, glm::vec3(-6.0f, 0.0f, 0.0f), patrickModel);
-    CreateEntity(app, texturedAlbProgramID, glm::vec3(0.0f, 0.0f, 0.0f), patrickModel);
-    CreateEntity(app, texturedAlbProgramID, glm::vec3(6.0f, 0.0f, 0.0f), patrickModel);
+    CreateEntity(app, texturedAlbShaderID, glm::vec3(-6.0f, 0.0f, 0.0f), patrickModel);
+    CreateEntity(app, texturedAlbShaderID, glm::vec3(0.0f, 0.0f, 0.0f), patrickModel);
+    CreateEntity(app, texturedAlbShaderID, glm::vec3(6.0f, 0.0f, 0.0f), patrickModel);
 
-    CreateEntity(app, texturedAlbProgramID, glm::vec3(-6.0f, 0.0f, -4.0f), patrickModel);
-    CreateEntity(app, texturedAlbProgramID, glm::vec3(0.0f, 0.0f, -4.0f), patrickModel);
-    CreateEntity(app, texturedAlbProgramID, glm::vec3(6.0f, 0.0f, -4.0f), patrickModel);
+    CreateEntity(app, texturedAlbShaderID, glm::vec3(-6.0f, 0.0f, -4.0f), patrickModel);
+    CreateEntity(app, texturedAlbShaderID, glm::vec3(0.0f, 0.0f, -4.0f), patrickModel);
+    CreateEntity(app, texturedAlbShaderID, glm::vec3(6.0f, 0.0f, -4.0f), patrickModel);
 
-    CreateEntity(app, texturedAlbProgramID, glm::vec3(-6.0f, 0.0f, -8.0f), patrickModel);
-    CreateEntity(app, texturedAlbProgramID, glm::vec3(0.0f, 0.0f, -8.0f), patrickModel);
-    CreateEntity(app, texturedAlbProgramID, glm::vec3(6.0f, 0.0f, -8.0f), patrickModel);
+    CreateEntity(app, texturedAlbShaderID, glm::vec3(-6.0f, 0.0f, -8.0f), patrickModel);
+    CreateEntity(app, texturedAlbShaderID, glm::vec3(0.0f, 0.0f, -8.0f), patrickModel);
+    CreateEntity(app, texturedAlbShaderID, glm::vec3(6.0f, 0.0f, -8.0f), patrickModel);
 
     app->firstLightEntityID = app->entities.size();
 
     // LIGHTS //
-    srand(13);
-    for (unsigned int i = 0; i < 8; i++)
+    srand(14);
+    for (unsigned int i = 0; i <= 7; i++)
     {
         // Random Position
         float xPos = static_cast<float>(((rand() % 100) / 70.0f) * 6.0f - 3.0f);
@@ -278,7 +281,7 @@ void ImGuiRender(App* app)
 
         ImGui::Text("Camera");
         ImGui::DragFloat3("Position", &app->camera.position[0]);
-        ImGui::DragFloat("Speed", &app->camera.speed);
+        ImGui::DragFloat("Speed", &app->camera.speed, 1.0f, 1.0f, 10.0f);
         ImGui::DragFloat("Zoom", &app->camera.FOV, 1.0f, 5.0f, 45.0f);
 
         ImGui::Spacing();
@@ -287,7 +290,9 @@ void ImGuiRender(App* app)
 
         ImGui::Text("Lights");
         ImGui::DragFloat3("Directional Light", &app->lights[10].lightVector[0], 0.1f, -1.0f, 1.0f);
-
+        ImGui::Spacing();
+        ImGui::Spacing();
+        ImGui::Spacing();
         for (u32 i = 0; i < app->numLights - 1; ++i)
             ImGui::DragFloat3(std::string("Point Light " + std::to_string(i) + " Color").c_str(), &app->lights[i].diffuse[0], 0.05f, 0.0f, 1.0f);
 
@@ -417,7 +422,7 @@ void Render(App* app)
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glUseProgram(app->lightPassShaderHandle);
+    glUseProgram(app->shaderPrograms[app->lightingPassShaderID].handle);
 
     glBindVertexArray(app->screenQuad.VAO);
 
@@ -439,7 +444,7 @@ void Render(App* app)
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glUseProgram(app->screenQuad.shaderHandle);
+    glUseProgram(app->shaderPrograms[app->screenQuad.shaderID].handle);
 
     glBindVertexArray(app->screenQuad.VAO);
 
@@ -457,8 +462,8 @@ void Render(App* app)
     glBlitFramebuffer(0, 0, app->displaySize.x, app->displaySize.y, 0, 0, app->displaySize.x, app->displaySize.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
     BindDefaultFramebuffer();
 
-    Shader& lightShader = app->shaderPrograms[app->lightCasterProgramID];
-    lightShader.Bind();
+    Shader& lightCasterShader = app->shaderPrograms[app->lightCasterShaderID];
+    lightCasterShader.Bind();
     u32 lightID = 0;
     for (u32 i = app->firstLightEntityID; i < app->numEntities; ++i)
     {
@@ -468,10 +473,10 @@ void Render(App* app)
 
         Model* model = lightEntity.model;
 
-        u32 vao = FindVAO(model, 0, lightShader);
+        u32 vao = FindVAO(model, 0, lightCasterShader);
         glBindVertexArray(vao);
 
-        lightShader.SetUniform1ui("lightID", lightID);
+        lightCasterShader.SetUniform1ui("lightID", lightID);
 
         Mesh& mesh = model->meshes[0];
         glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.indexOffset);
@@ -479,7 +484,7 @@ void Render(App* app)
         glBindVertexArray(0);
         lightID++;
     }
-    lightShader.Unbind();
+    lightCasterShader.Unbind();
 }
 
 u32 FindVAO(Model* model, u32 meshIndex, const Shader& shaderProgram)
@@ -592,7 +597,7 @@ Entity* CreateEntity(App* app, u32 shaderID, glm::vec3 position, Model* model)
 
 void CreatePointLight(App* app, glm::vec3 position, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, Model* model, float constant, float scale)
 {
-    Entity lightEntity = Entity(app->lightCasterProgramID, position, model);
+    Entity lightEntity = Entity(app->lightCasterShaderID, position, model);
     lightEntity.modelMatrix = glm::scale(lightEntity.modelMatrix, glm::vec3(scale));
     app->entities.push_back(lightEntity);
 
@@ -602,7 +607,7 @@ void CreatePointLight(App* app, glm::vec3 position, glm::vec3 ambient, glm::vec3
 
 void CreateDirectionalLight(App* app, glm::vec3 entityPosition, glm::vec3 direction, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, Model* model, float scale)
 {
-    Entity lightEntity = Entity(app->lightCasterProgramID, entityPosition, model);
+    Entity lightEntity = Entity(app->lightCasterShaderID, entityPosition, model);
     lightEntity.modelMatrix = glm::scale(lightEntity.modelMatrix, glm::vec3(scale));
     app->entities.push_back(lightEntity);
 
