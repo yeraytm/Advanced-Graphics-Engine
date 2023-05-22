@@ -187,13 +187,13 @@ void Init(App* app)
         float xPos = static_cast<float>(((rand() % 100) / 70.0f) * 6.0f - 3.0f);
         float yPos = static_cast<float>(((rand() % 100) / 80.0f) * 6.0f - 4.0f);
         float zPos = static_cast<float>(((rand() % 100) / 25.0f) * 6.0f - 16.0f);
-        CreatePointLight(app, glm::vec3(xPos, yPos, zPos), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 1.0f, sphereLowModel, 0.1f);
+        CreateLight(app, LightType::POINT, glm::vec3(xPos, yPos, zPos), glm::vec3(0.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 1.0f, sphereLowModel, 0.1f);
     }
 
-    CreatePointLight(app, glm::vec3(-6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 0.5f, sphereLowModel, 0.1f);
-    CreatePointLight(app, glm::vec3(6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 1.0f, sphereLowModel, 0.1f);
+    CreateLight(app, LightType::POINT, glm::vec3(-6.0f, -4.5f, 10.0f), glm::vec3(0.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 0.5f, sphereLowModel, 0.1f);
+    CreateLight(app, LightType::POINT, glm::vec3(6.0f, -4.5f, 10.0f), glm::vec3(0.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 1.0f, sphereLowModel, 0.1f);
 
-    CreateDirectionalLight(app, glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.1f), glm::vec3(0.3f), glm::vec3(0.5f));
+    CreateLight(app, LightType::DIRECTIONAL, glm::vec3(0.0f, -2.0f, 15.0f), glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.1f), glm::vec3(0.3f), glm::vec3(0.5f), 1.0f, cubeModel2, 0.5f);
 
     // ENGINE COUNT OF ENTITIES & LIGHTS //
     app->numEntities = app->entities.size();
@@ -576,18 +576,12 @@ Entity* CreateEntity(App* app, u32 shaderID, glm::vec3 position, Model* model)
     return &app->entities[app->entities.size() - 1u];
 }
 
-void CreatePointLight(App* app, glm::vec3 position, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float constant, Model* model, float scale)
+void CreateLight(App* app, LightType type, glm::vec3 position, glm::vec3 direction, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float constant, Model* model, float scale)
 {
     Entity lightEntity = Entity(app->lightCasterProgramID, position, model);
     lightEntity.modelMatrix = glm::scale(lightEntity.modelMatrix, glm::vec3(scale));
     app->entities.push_back(lightEntity);
 
-    Light light = { LightType::POINT, position, glm::vec3(0.0f), ambient, diffuse, specular, constant };
-    app->lights.push_back(light);
-}
-
-void CreateDirectionalLight(App* app, glm::vec3 direction, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular)
-{
-    Light light = { LightType::DIRECTIONAL, glm::vec3(0.0f), direction, ambient, diffuse, specular, 1.0f };
+    Light light = { type, position, direction, ambient, diffuse, specular, constant };
     app->lights.push_back(light);
 }
