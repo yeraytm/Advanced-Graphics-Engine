@@ -32,16 +32,8 @@ struct Model
     u32 EBHandle = 0;
 };
 
-enum class MaterialType
-{
-    DEFAULT,
-    TEXTURED_ALBEDO,
-    TEXTURED_ALB_SPEC
-};
-
 struct Material
 {
-    MaterialType type;
     std::string name;
 
     glm::vec3 albedo;

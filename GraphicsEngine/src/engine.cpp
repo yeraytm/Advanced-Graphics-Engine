@@ -15,22 +15,23 @@
 void Init(App* app)
 {
     // OPENGL DEBUG //
-    app->glState.version = "Version: " + std::string((const char*)glGetString(GL_VERSION));
-    app->glState.renderer = "Renderer: " + std::string((const char*)glGetString(GL_RENDERER));
-    app->glState.vendor = "Vendor: " + std::string((const char*)glGetString(GL_VENDOR));
-    app->glState.glslVersion = "GLSL Version: " + std::string((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
+    app->openGLGui.version = "Version: " + std::string((const char*)glGetString(GL_VERSION));
+    app->openGLGui.renderer = "Renderer: " + std::string((const char*)glGetString(GL_RENDERER));
+    app->openGLGui.vendor = "Vendor: " + std::string((const char*)glGetString(GL_VENDOR));
+    app->openGLGui.glslVersion = "GLSL Version: " + std::string((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
-    glGetIntegerv(GL_NUM_EXTENSIONS, &app->glState.numExtensions);
-    app->glState.extensions.reserve(app->glState.numExtensions);
-    for (int i = 0; i < app->glState.numExtensions; ++i)
+    glGetIntegerv(GL_NUM_EXTENSIONS, &app->openGLGui.numExtensions);
+    app->openGLGui.extensions.reserve(app->openGLGui.numExtensions);
+    for (int i = 0; i < app->openGLGui.numExtensions; ++i)
     {
-        app->glState.extensions.emplace_back((const char*)glGetStringi(GL_EXTENSIONS, GLuint(i)));
+        app->openGLGui.extensions.emplace_back((const char*)glGetStringi(GL_EXTENSIONS, GLuint(i)));
     }
 
     // IMGUI WINDOWS //
-    app->openGLStatus = false;
-    app->performanceStatus = false;
-    app->sceneStatus = true;
+    app->openGLGui.open = false;
+    app->rendererGui.open = true;
+    app->sceneGui = false;
+    app->performanceGui = false;
 
     // CAMERA & PROJECTION //
     app->camera = Camera(glm::vec3(0.0f, 3.0f, 10.0f), 45.0f, 0.1f, 100.0f);
@@ -56,7 +57,7 @@ void Init(App* app)
     BindDefaultFramebuffer();
 
     // Lighting Pass
-    app->lightPassShaderHandle = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/LightingPass_Shader_D.glsl", "DEFERRED_LIGHTING_PASS")].handle;
+    app->lightPassShaderHandle = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, ShaderType::LIGHTING_PASS, "Assets/Shaders/LightingPass_Shader_D.glsl", "DEFERRED_LIGHTING_PASS")].handle;
     glUseProgram(app->lightPassShaderHandle);
     glUniform1i(glGetUniformLocation(app->lightPassShaderHandle, "gBufPosition"),   0);
     glUniform1i(glGetUniformLocation(app->lightPassShaderHandle, "gBufNormal"),     1);
@@ -73,30 +74,30 @@ void Init(App* app)
     BindDefaultFramebuffer();
 
     app->screenQuad.VAO = CreateQuad();
-    app->screenQuad.shaderHandle = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/Quad_Shader_D.glsl", "SCREEN_QUAD")].handle;
+    app->screenQuad.shaderHandle = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, ShaderType::SCREEN_QUAD, "Assets/Shaders/Quad_Shader_D.glsl", "SCREEN_QUAD")].handle;
     glUseProgram(app->screenQuad.shaderHandle);
     glUniform1i(glGetUniformLocation(app->screenQuad.shaderHandle, "uRenderTarget"), 0);
 
     // Map for Render Target Selection
     app->screenQuad.currentRenderTarget =   app->screenQuad.FBO.colorAttachmentHandles[0];
-    app->renderTargets.push_back("FINAL COLOR");
-    app->renderTargets.push_back("POSITION");
-    app->renderTargets.push_back("NORMAL");
-    app->renderTargets.push_back("ALBEDO");
-    app->renderTargets.push_back("SPECULAR");
-    app->renderTargets.push_back("DEPTH");
-    app->renderTargets.push_back("DEPTH LINEAR");
+    app->rendererGui.renderTargets.push_back("FINAL COLOR");
+    app->rendererGui.renderTargets.push_back("POSITION");
+    app->rendererGui.renderTargets.push_back("NORMAL");
+    app->rendererGui.renderTargets.push_back("ALBEDO");
+    app->rendererGui.renderTargets.push_back("SPECULAR");
+    app->rendererGui.renderTargets.push_back("DEPTH");
+    app->rendererGui.renderTargets.push_back("DEPTH LINEAR");
 
     // SHADERS & UNIFORM TEXTURES //
-    app->defaultProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/Default_Shader_D.glsl", "DEFERRED_GEOMETRY_DEFAULT");
-    app->lightCasterProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/LightCaster_Shader.glsl", "LIGHT_CASTER");
+    app->defaultProgramID = LoadShaderProgram(app->shaderPrograms, ShaderType::DEFAULT, "Assets/Shaders/Default_Shader_D.glsl", "DEFERRED_GEOMETRY_DEFAULT");
+    app->lightCasterProgramID = LoadShaderProgram(app->shaderPrograms, ShaderType::LIGHT_CASTER, "Assets/Shaders/LightCaster_Shader.glsl", "LIGHT_CASTER");
 
-    u32 texturedAlbProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/GeometryPassAlb_Shader_D.glsl", "DEFERRED_GEOMETRY_ALBEDO");
+    u32 texturedAlbProgramID = LoadShaderProgram(app->shaderPrograms, ShaderType::TEXTURED_ALBEDO, "Assets/Shaders/GeometryPassAlb_Shader_D.glsl", "DEFERRED_GEOMETRY_ALBEDO");
     Shader& texturedAlbProgram = app->shaderPrograms[texturedAlbProgramID];
     texturedAlbProgram.Bind();
     texturedAlbProgram.SetUniform1i("uMaterial.albedo", 0);
 
-    u32 texturedAlbSpecProgramID = LoadShaderProgram(app->shaderPrograms, "Assets/Shaders/GeometryPassAlbSpec_Shader_D.glsl", "DEFERRED_GEOMETRY_ALBEDO_SPECULAR");
+    u32 texturedAlbSpecProgramID = LoadShaderProgram(app->shaderPrograms, ShaderType::TEXTURED_ALB_SPEC, "Assets/Shaders/GeometryPassAlbSpec_Shader_D.glsl", "DEFERRED_GEOMETRY_ALBEDO_SPECULAR");
     Shader& texturedAlbSpecProgram = app->shaderPrograms[texturedAlbSpecProgramID];
     texturedAlbSpecProgram.Bind();
     texturedAlbSpecProgram.SetUniform1i("uMaterial.albedo", 0);
@@ -114,28 +115,24 @@ void Init(App* app)
 
     // MATERIALS //
     Material greyMaterial = {};
-    greyMaterial.type = MaterialType::DEFAULT;
     greyMaterial.name = "Grey Material";
     greyMaterial.albedo = glm::vec3(0.4f, 0.4f, 0.4f);
     greyMaterial.specular = glm::vec3(0.5f);
     greyMaterial.shininess = 32.0f;
 
     Material orangeMaterial = {};
-    orangeMaterial.type = MaterialType::DEFAULT;
     orangeMaterial.name = "Orange Material";
     orangeMaterial.albedo = glm::vec3(1.0f, 0.5f, 0.31f);
     orangeMaterial.specular = glm::vec3(0.5f);
     orangeMaterial.shininess = 32.0f;
 
     Material blackMaterial = {};
-    blackMaterial.type = MaterialType::DEFAULT;
     blackMaterial.name = "Black Material";
     blackMaterial.albedo = glm::vec3(0.1f, 0.1f, 0.1f);
     blackMaterial.specular = glm::vec3(0.5f);
     blackMaterial.shininess = 32.0f;
 
     Material containerMat = {};
-    containerMat.type = MaterialType::TEXTURED_ALB_SPEC;
     containerMat.name = "Container Material";
     containerMat.shininess = 32.0f;
     containerMat.albedoTextureID = containerAlbedoTexID;
@@ -180,20 +177,27 @@ void Init(App* app)
     app->firstLightEntityID = app->entities.size();
 
     // LIGHTS //
-    // Random positions for point lights
     srand(13);
     for (unsigned int i = 0; i < 8; i++)
     {
+        // Random Position
         float xPos = static_cast<float>(((rand() % 100) / 70.0f) * 6.0f - 3.0f);
         float yPos = static_cast<float>(((rand() % 100) / 80.0f) * 6.0f - 4.0f);
         float zPos = static_cast<float>(((rand() % 100) / 25.0f) * 6.0f - 16.0f);
-        CreateLight(app, LightType::POINT, glm::vec3(xPos, yPos, zPos), glm::vec3(0.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 1.0f, sphereLowModel, 0.1f);
+
+        // Random Color
+        float rColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.0
+        float gColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.0
+        float bColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.0
+        glm::vec3 color = glm::vec3(rColor, gColor, bColor);
+
+        CreatePointLight(app, glm::vec3(xPos, yPos, zPos), color * 0.2f, color/*0.6f*/, glm::vec3(1.0f), sphereLowModel, 1.0f, 0.1f);
     }
 
-    CreateLight(app, LightType::POINT, glm::vec3(-6.0f, -4.5f, 10.0f), glm::vec3(0.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 0.5f, sphereLowModel, 0.1f);
-    CreateLight(app, LightType::POINT, glm::vec3(6.0f, -4.5f, 10.0f), glm::vec3(0.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), 1.0f, sphereLowModel, 0.1f);
+    CreatePointLight(app, glm::vec3(-6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), sphereLowModel, 0.5f, 0.1f);
+    CreatePointLight(app, glm::vec3(6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), sphereLowModel, 1.0f, 0.1f);
 
-    CreateLight(app, LightType::DIRECTIONAL, glm::vec3(0.0f, -2.0f, 15.0f), glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.1f), glm::vec3(0.3f), glm::vec3(0.5f), 1.0f, cubeModel2, 0.5f);
+    CreateDirectionalLight(app, glm::vec3(0.0f, -2.0f, 15.0f), glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.1f), glm::vec3(0.9f), glm::vec3(0.5f), cubeModel2, 0.5f);
 
     // ENGINE COUNT OF ENTITIES & LIGHTS //
     app->numEntities = app->entities.size();
@@ -209,41 +213,68 @@ void ImGuiRender(App* app)
     {
         if (ImGui::BeginMenu("Engine"))
         {
-            ImGui::MenuItem("OpenGL", NULL, &app->openGLStatus);
-            ImGui::MenuItem("Scene", NULL, &app->sceneStatus);
+            ImGui::MenuItem("OpenGL", NULL, &app->openGLGui.open);
+            ImGui::MenuItem("Renderer", NULL, &app->rendererGui.open);
+            ImGui::MenuItem("Scene", NULL, &app->sceneGui);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Debug"))
         {
-            ImGui::MenuItem("Performance", NULL, &app->performanceStatus);
+            ImGui::MenuItem("Performance", NULL, &app->performanceGui);
             ImGui::EndMenu();
         }
         ImGui::EndMainMenuBar();
     }
 
-    if (app->openGLStatus)
+    if (app->openGLGui.open)
     {
-        ImGui::Begin("OpenGL", &app->openGLStatus);
+        ImGui::Begin("OpenGL", &app->openGLGui.open);
 
-        ImGui::Text(app->glState.version.c_str());
-        ImGui::Text(app->glState.renderer.c_str());
-        ImGui::Text(app->glState.vendor.c_str());
-        ImGui::Text(app->glState.glslVersion.c_str());
+        ImGui::Text(app->openGLGui.version.c_str());
+        ImGui::Text(app->openGLGui.renderer.c_str());
+        ImGui::Text(app->openGLGui.vendor.c_str());
+        ImGui::Text(app->openGLGui.glslVersion.c_str());
 
         ImGui::Spacing();
         ImGui::Separator();
         ImGui::Spacing();
 
         ImGui::Text("Extensions Supported:");
-        for (int i = 0; i < app->glState.numExtensions; ++i)
-            ImGui::Text(app->glState.extensions[i].c_str());
+        for (int i = 0; i < app->openGLGui.numExtensions; ++i)
+            ImGui::Text(app->openGLGui.extensions[i].c_str());
 
         ImGui::End();
     }
 
-    if (app->sceneStatus)
+    if (app->rendererGui.open)
     {
-        ImGui::Begin("Scene", &app->sceneStatus);
+        ImGui::Begin("Renderer", &app->rendererGui.open);
+
+        ImGui::Text("Render Target");
+        static const char* preview = "FINAL COLOR";
+        if (ImGui::BeginCombo("", preview))
+        {
+            for (int i = 0; i < app->rendererGui.renderTargets.size(); ++i)
+            {
+                bool isSelected = (preview == app->rendererGui.renderTargets[i]);
+                if (ImGui::Selectable(app->rendererGui.renderTargets[i], isSelected))
+                {
+                    preview = app->rendererGui.renderTargets[i];
+                    if (i == 0)
+                        app->screenQuad.currentRenderTarget = app->screenQuad.FBO.colorAttachmentHandles[0];
+                    else if (i >= 1)
+                        app->screenQuad.currentRenderTarget = app->GBuffer.colorAttachmentHandles[i64(i) - 1];
+                }
+            }
+            ImGui::EndCombo();
+        }
+
+        ImGui::End();
+    }
+
+    if (app->sceneGui)
+    {
+        ImGui::Begin("Scene", &app->sceneGui);
 
         ImGui::Text("Camera");
         ImGui::DragFloat3("Position", &app->camera.position[0]);
@@ -254,37 +285,18 @@ void ImGuiRender(App* app)
         ImGui::Separator();
         ImGui::Spacing();
 
-        ImGui::Text("Directional Light");
-        ImGui::DragFloat3("Direction", &app->lights[10].direction[0], 0.1f, -1.0f, 1.0f);
+        ImGui::Text("Lights");
+        ImGui::DragFloat3("Directional Light", &app->lights[10].lightVector[0], 0.1f, -1.0f, 1.0f);
 
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
+        for (u32 i = 0; i < app->numLights - 1; ++i)
+            ImGui::DragFloat3(std::string("Point Light " + std::to_string(i) + " Color").c_str(), &app->lights[i].diffuse[0], 0.05f, 0.0f, 1.0f);
 
-        ImGui::Text("Render Target");
-        static const char* preview = "FINAL COLOR";
-        if (ImGui::BeginCombo("", preview))
-        {
-            for (int i = 0; i < app->renderTargets.size(); ++i)
-            {
-                bool isSelected = (preview == app->renderTargets[i]);
-                if (ImGui::Selectable(app->renderTargets[i], isSelected))
-                {
-                    preview = app->renderTargets[i];
-                    if (i == 0)
-                        app->screenQuad.currentRenderTarget = app->screenQuad.FBO.colorAttachmentHandles[0];
-                    else if (i >= 1)
-                        app->screenQuad.currentRenderTarget = app->GBuffer.colorAttachmentHandles[i64(i) - 1];
-                }
-            }
-            ImGui::EndCombo();
-        }
         ImGui::End();
     }
 
-    if (app->performanceStatus)
+    if (app->performanceGui)
     {
-        ImGui::Begin("Performance", &app->performanceStatus);
+        ImGui::Begin("Performance", &app->performanceGui);
         ImGui::Text("FPS: %f", 1.0f / app->deltaTime);
         ImGui::Text("Frametime: %f", app->deltaTime);
         ImGui::Text("Time: %f", app->currentTime);
@@ -353,9 +365,9 @@ void Render(App* app)
             Material& meshMaterial = app->materials[meshMaterialID];
 
             // Uniforms
-            switch (meshMaterial.type)
+            switch (shader.type)
             {
-            case MaterialType::DEFAULT:
+            case ShaderType::DEFAULT:
             {
                 // Material
                 shader.SetUniform3f("uMaterial.albedo", meshMaterial.albedo);
@@ -363,7 +375,7 @@ void Render(App* app)
                 shader.SetUniform1f("uMaterial.shininess", meshMaterial.shininess);
             }
             break;
-            case MaterialType::TEXTURED_ALBEDO:
+            case ShaderType::TEXTURED_ALBEDO:
             {
                 // Albedo Map
                 glActiveTexture(GL_TEXTURE0);
@@ -374,7 +386,7 @@ void Render(App* app)
                 shader.SetUniform1f("uMaterial.shininess", meshMaterial.shininess);
             }
             break;
-            case MaterialType::TEXTURED_ALB_SPEC:
+            case ShaderType::TEXTURED_ALB_SPEC:
             {
                 // Albedo Map
                 glActiveTexture(GL_TEXTURE0);
@@ -447,6 +459,7 @@ void Render(App* app)
 
     Shader& lightShader = app->shaderPrograms[app->lightCasterProgramID];
     lightShader.Bind();
+    u32 lightID = 0;
     for (u32 i = app->firstLightEntityID; i < app->numEntities; ++i)
     {
         Entity& lightEntity = app->entities[i];
@@ -458,10 +471,13 @@ void Render(App* app)
         u32 vao = FindVAO(model, 0, lightShader);
         glBindVertexArray(vao);
 
+        lightShader.SetUniform1ui("lightID", lightID);
+
         Mesh& mesh = model->meshes[0];
         glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.indexOffset);
 
         glBindVertexArray(0);
+        lightID++;
     }
     lightShader.Unbind();
 }
@@ -538,9 +554,7 @@ void UpdateUniformBuffer(App* app)
         AlignHead(app->UBO, sizeof(glm::vec4));
 
         Light& light = app->lights[i];
-        PushUInt(app->UBO, (u32)light.type);
-        PushVec3(app->UBO, light.position);
-        PushVec3(app->UBO, light.direction);
+        PushVec4(app->UBO, light.lightVector);
         PushVec3(app->UBO, light.ambient);
         PushVec3(app->UBO, light.diffuse);
         PushVec3(app->UBO, light.specular);
@@ -576,12 +590,22 @@ Entity* CreateEntity(App* app, u32 shaderID, glm::vec3 position, Model* model)
     return &app->entities[app->entities.size() - 1u];
 }
 
-void CreateLight(App* app, LightType type, glm::vec3 position, glm::vec3 direction, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float constant, Model* model, float scale)
+void CreatePointLight(App* app, glm::vec3 position, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, Model* model, float constant, float scale)
 {
     Entity lightEntity = Entity(app->lightCasterProgramID, position, model);
     lightEntity.modelMatrix = glm::scale(lightEntity.modelMatrix, glm::vec3(scale));
     app->entities.push_back(lightEntity);
 
-    Light light = { type, position, direction, ambient, diffuse, specular, constant };
+    Light light = { glm::vec4(position, 1.0f), ambient, diffuse, specular, constant };
+    app->lights.push_back(light);
+}
+
+void CreateDirectionalLight(App* app, glm::vec3 entityPosition, glm::vec3 direction, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, Model* model, float scale)
+{
+    Entity lightEntity = Entity(app->lightCasterProgramID, entityPosition, model);
+    lightEntity.modelMatrix = glm::scale(lightEntity.modelMatrix, glm::vec3(scale));
+    app->entities.push_back(lightEntity);
+
+    Light light = { glm::vec4(direction, 0.0f), ambient, diffuse, specular, 1.0f };
     app->lights.push_back(light);
 }

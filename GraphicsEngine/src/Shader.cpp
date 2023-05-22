@@ -177,7 +177,7 @@ void InputShaderLayout(Shader& shaderProgram)
     delete[] attributeName;
 }
 
-u32 LoadShaderProgram(std::vector<Shader>& shaderPrograms, const char* filepath, const char* programName)
+u32 LoadShaderProgram(std::vector<Shader>& shaderPrograms, ShaderType type, const char* filepath, const char* programName)
 {
     String programSource = ReadTextFile(filepath);
 
@@ -186,6 +186,7 @@ u32 LoadShaderProgram(std::vector<Shader>& shaderPrograms, const char* filepath,
     program.filepath = filepath;
     program.programName = programName;
     program.lastWriteTimestamp = GetFileLastWriteTimestamp(filepath);
+    program.type = type;
 
     InputShaderLayout(program);
 

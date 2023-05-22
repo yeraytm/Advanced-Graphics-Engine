@@ -13,20 +13,21 @@
 #include "BufferManagement.h"
 #include "Framebuffer.h"
 
-enum class RenderMode
+struct OpenGLGUI
 {
-    QUAD,
-    TEXTURE_MESH
-};
-
-struct OpenGLState
-{
+    bool open;
     std::string version;
     std::string vendor;
     std::string renderer;
     std::string glslVersion;
     std::vector<std::string> extensions;
     int numExtensions;
+};
+
+struct RendererGUI
+{
+    bool open;
+    std::vector<const char*> renderTargets;
 };
 
 struct Quad
@@ -37,18 +38,11 @@ struct Quad
     u32 currentRenderTarget;
 };
 
-enum class LightType
-{
-    DIRECTIONAL,
-    POINT
-};
-
 struct Light
 {
-    LightType type;
-
-    glm::vec3 position;
-    glm::vec3 direction;
+    // 3 components for position/direction and last for the type of the light
+    // 0.0 is Directional light and 1.0 is Point light
+    glm::vec4 lightVector;
 
     glm::vec3 ambient;
     glm::vec3 diffuse;
@@ -69,11 +63,11 @@ struct App
     // INPUT //
     Input input;
 
-    // OPENGL DEBUG & IMGUI //
-    OpenGLState glState;
-    bool openGLStatus;
-    bool sceneStatus;
-    bool performanceStatus;
+    // IMGUI //
+    OpenGLGUI openGLGui;
+    RendererGUI rendererGui;
+    bool sceneGui;
+    bool performanceGui;
 
     // CAMERA & PROJECTION //
     Camera camera;
@@ -85,7 +79,6 @@ struct App
     u32 globalParamSize;
 
     // DEFERRED SHADING //
-    std::vector<const char*> renderTargets;
     Framebuffer GBuffer;
     u32 lightPassShaderHandle;
     Quad screenQuad;
@@ -129,4 +122,5 @@ void UpdateUniformBuffer(App* app);
 
 Entity* CreateEntity(App* app, u32 shaderID, glm::vec3 position, Model* model);
 
-void CreateLight(App* app, LightType type, glm::vec3 position, glm::vec3 direction, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float constant, Model* model, float scale);
+void CreatePointLight(App* app, glm::vec3 position, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, Model* model, float constant = 1.0f, float scale = 1.0f);
+void CreateDirectionalLight(App* app, glm::vec3 entityPosition, glm::vec3 direction, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, Model* model, float scale = 1.0f);

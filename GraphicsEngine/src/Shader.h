@@ -5,6 +5,16 @@
 
 #include <unordered_map>
 
+enum class ShaderType
+{
+    DEFAULT,
+    TEXTURED_ALBEDO,
+    TEXTURED_ALB_SPEC,
+    SCREEN_QUAD,
+    LIGHTING_PASS,
+    LIGHT_CASTER
+};
+
 class Shader
 {
 public:
@@ -31,6 +41,8 @@ public:
 
     VertexShaderLayout vertexLayout;
 
+    ShaderType type;
+
 private:
     int GetUniformLocation(const std::string& name) const;
 
@@ -41,4 +53,4 @@ private:
 
 GLuint CreateShaderProgram(String programSource, const char* shaderName);
 
-u32 LoadShaderProgram(std::vector<Shader>& shaderPrograms, const char* filepath, const char* programName);
+u32 LoadShaderProgram(std::vector<Shader>& shaderPrograms, ShaderType type, const char* filepath, const char* programName);

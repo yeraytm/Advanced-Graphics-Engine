@@ -20,10 +20,8 @@ layout(location = 0) out vec4 FinalColor;
 
 struct Light
 {
-	unsigned int type;
-
-	vec3 position;
-	vec3 direction;
+	// XYZ for position/direction and W for type
+	vec4 lightVector;
 
 	vec3 ambient;
 	vec3 diffuse;
@@ -67,9 +65,9 @@ void main()
 
 	for(int i = 0; i < uNumLights; ++i)
 	{
-		if(uLights[i].type == 0)
+		if(uLights[i].lightVector.w == 0.0)
 			result += ComputeDirLight(uLights[i], albedo, specularC, normal, viewDir);
-		else if(uLights[i].type == 1)
+		else if(uLights[i].lightVector.w == 1.0)
 			result += ComputePointLight(uLights[i], albedo, specularC, normal, fragPos, viewDir);
 	}
 	
@@ -79,7 +77,7 @@ void main()
 
 vec3 ComputeDirLight(Light light, vec3 albedo, float specularC, vec3 normal, vec3 viewDir)
 {
-	vec3 lightDir = normalize(-light.direction);
+	vec3 lightDir = normalize(-light.lightVector.xyz);
 
 	// Ambient
 	vec3 ambient = light.ambient;
@@ -98,9 +96,10 @@ vec3 ComputeDirLight(Light light, vec3 albedo, float specularC, vec3 normal, vec
 
 vec3 ComputePointLight(Light light, vec3 albedo, float specularC, vec3 normal, vec3 fragPos, vec3 viewDir)
 {
-	vec3 lightDir = normalize(light.position - fragPos);
+	vec3 lightPosition = light.lightVector.xyz;
+	vec3 lightDir = normalize(lightPosition - fragPos);
 	
-	float distance = length(light.position - fragPos);
+	float distance = length(lightPosition - fragPos);
 	float attenuation = 1.0 / (light.constant + 0.09 * distance + 0.032 * (distance * distance));
 
 	// Ambient
