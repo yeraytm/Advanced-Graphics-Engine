@@ -14,15 +14,18 @@ layout(binding = 1, std140) uniform LocalParameters
 	mat4 uMVP;
 };
 
-out vec2 vTexCoord;
-out vec3 vFragPos;
-out vec3 vNormal;
+out VS_OUT
+{
+	vec2 TexCoord;
+	vec3 FragPos;
+	vec3 Normal;
+} vs_out;
 
 void main()
 {
-	vTexCoord = aTexCoord;
-	vFragPos = vec3(uModel * vec4(aPosition, 1.0));
-	vNormal = normalize(vec3(uModel * vec4(aNormal, 0.0))); // As we will not perform non-uniform scale, we don't need a normal matrix for now
+	vs_out.TexCoord = aTexCoord;
+	vs_out.FragPos = vec3(uModel * vec4(aPosition, 1.0));
+	vs_out.Normal = normalize(vec3(uModel * vec4(aNormal, 0.0))); // As we will not perform non-uniform scale, we don't need a normal matrix for now
 
 	gl_Position = uMVP * vec4(aPosition, 1.0);
 }
@@ -44,9 +47,12 @@ struct Material
 };
 uniform Material uMaterial;
 
-in vec2 vTexCoord;
-in vec3 vFragPos;
-in vec3 vNormal;
+in VS_OUT
+{
+	vec2 TexCoord;
+	vec3 FragPos;
+	vec3 Normal;
+} fs_in;
 
 float near = 0.1;
 float far = 100.0;
@@ -58,11 +64,11 @@ float LinearDepth(float depth)
 
 void main()
 {
-	gBufPosition = vFragPos;
+	gBufPosition = fs_in.FragPos;
 	
-	gBufNormal = vNormal;
+	gBufNormal = fs_in.Normal;
 
-	gBufAlbedo = texture(uMaterial.albedo, vTexCoord).rgb;
+	gBufAlbedo = texture(uMaterial.albedo, fs_in.TexCoord).rgb;
 	gBufSpecular = uMaterial.specular;
 
 	gBufDepth = vec3(gl_FragCoord.z);
