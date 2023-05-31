@@ -87,12 +87,8 @@ vec3 ComputeDirLight(Light light, vec3 albedo, float specularC, vec3 normal, vec
 	vec3 diffuse = light.diffuse * diff;
 
 	// Specular
-	//vec3 reflectDir = reflect(-lightDir, normal);
 	vec3 halfwayDir = normalize(lightDir + viewDir);
-
-	//float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
 	float spec = pow(max(dot(normal, halfwayDir), 0.0), 32.0);
-
 	vec3 specular = light.specular * spec * specularC;
 
 	return (ambient + diffuse + specular) * albedo;
@@ -115,12 +111,8 @@ vec3 ComputePointLight(Light light, vec3 albedo, float specularC, vec3 normal, v
 	diffuse *= attenuation;
 
 	// Specular
-	//vec3 reflectDir = reflect(-lightDir, normal);
 	vec3 halfwayDir = normalize(lightDir + viewDir);
-
-	//float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
 	float spec = pow(max(dot(normal, halfwayDir), 0.0), 32.0);
-
 	vec3 specular = light.specular * spec * specularC;
 	specular *= attenuation;
 
