@@ -44,7 +44,7 @@ uniform unsigned int lightID;
 
 void main()
 {
-	FragColor = vec4(uLights[lightID].diffuse ,1.0);
+	FragColor = vec4(uLights[lightID].diffuse, 1.0);
 }
 
 #endif /////////////////////////////////////////////////////////////////
