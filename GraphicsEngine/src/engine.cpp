@@ -226,7 +226,6 @@ void Init(App* app)
     };
     app->cubemapTextureID = LoadCubemap(cubemapFaces);
     */
-    glViewport(0, 0, app->displaySize.x, app->displaySize.y);
     app->cubemapTextureID = LoadCubemap(app->textures, "Assets/Skybox/little_paris_eiffel_tower_4k.hdr", equirectToCubemapShader, app->skyboxVAO);
 
     // ENGINE COUNT OF ENTITIES & LIGHTS //
@@ -235,7 +234,7 @@ void Init(App* app)
 
     // OPENGL GLOBAL STATE //
     glViewport(0, 0, app->displaySize.x, app->displaySize.y);
-    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+    //glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 }
 
 void ImGuiRender(App* app)

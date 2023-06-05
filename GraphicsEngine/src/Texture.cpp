@@ -104,23 +104,6 @@ u32 LoadTexture2D(std::vector<Texture>& textures, const char* filepath, bool isF
 
 u32 LoadCubemap(std::vector<Texture>& textures, const char* filepath, Shader& equirectToCubemapShader, u32 skyboxVAO)
 {
-    Texture& hdrTexture = textures[LoadTexture2D(textures, filepath, true)];
-
-    u32 cubemapTexID;
-    glGenTextures(1, &cubemapTexID);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexID);
-
-    for (unsigned int i = 0; i < 6; i++)
-    {
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, nullptr);
-    }
-
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
     u32 cubemapFBO, cubemapRBO;
     glGenFramebuffers(1, &cubemapFBO);
     glGenRenderbuffers(1, &cubemapRBO);
@@ -130,11 +113,27 @@ u32 LoadCubemap(std::vector<Texture>& textures, const char* filepath, Shader& eq
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, cubemapRBO);
 
+    Texture& hdrTexture = textures[LoadTexture2D(textures, filepath, true)];
+
+    u32 cubemapTexID;
+    glGenTextures(1, &cubemapTexID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexID);
+
+    for (u32 i = 0; i < 6; i++)
+    {
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, nullptr);
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
     glm::mat4 captureProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
     glm::mat4 captureViews[] =
     {
         glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
         glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
         glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
         glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
@@ -151,7 +150,7 @@ u32 LoadCubemap(std::vector<Texture>& textures, const char* filepath, Shader& eq
     // Configure viewport to the dimensions of each face we want to capture
     glViewport(0, 0, 512, 512);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, cubemapRBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, cubemapFBO);
 
     for (u32 i = 0; i < 6; ++i)
     {
