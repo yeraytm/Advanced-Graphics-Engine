@@ -213,10 +213,9 @@ Model* CreatePrimitive(App* app, PrimitiveType type, Material& material, u32 xNu
     return model;
 }
 
-u32 CreateSkybox()
+u32 CreateSkyboxCube()
 {
     float skyboxVertices[] = {
-        // positions
         -1.0f,  1.0f, -1.0f,
         -1.0f, -1.0f, -1.0f,
          1.0f, -1.0f, -1.0f,

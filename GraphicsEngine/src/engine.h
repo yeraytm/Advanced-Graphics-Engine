@@ -84,11 +84,6 @@ struct App
     // SCREEN-FILLING QUAD //
     Quad screenQuad;
 
-    // SKYBOX //
-    u32 skyboxShaderID;
-    u32 cubemapTextureID;
-    u32 skyboxVAO;
-
     // SHADERS //
     u32 defaultShaderID;
     u32 lightCasterShaderID;
@@ -101,6 +96,11 @@ struct App
     u32 firstLightEntityID;
     std::vector<Light> lights;
     u32 numLights;
+
+    // SKYBOX //
+    u32 skyboxShaderID;
+    u32 cubemapTextureID;
+    u32 skyboxVAO;
     
     // RESOURCES //
     std::vector<Texture> textures;

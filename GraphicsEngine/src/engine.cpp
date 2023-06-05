@@ -93,23 +93,6 @@ void Init(App* app)
     app->rendererGui.renderTargets.push_back("DEPTH");
     app->rendererGui.renderTargets.push_back("DEPTH LINEAR");
 
-    // SKYBOX //
-    std::vector<std::string> cubemapFaces
-    {
-        "Assets/right.jpg",
-        "Assets/left.jpg",
-        "Assets/top.jpg",
-        "Assets/bottom.jpg",
-        "Assets/front.jpg",
-        "Assets/back.jpg"
-    };
-    app->cubemapTextureID = LoadCubemap(cubemapFaces);
-    app->skyboxShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::SKYBOX, "Assets/Shaders/Skybox_Shader.glsl", "SKYBOX");
-    app->skyboxVAO = CreateSkybox();
-    Shader& skyboxShader = app->shaderPrograms[app->skyboxShaderID];
-    skyboxShader.Bind();
-    skyboxShader.SetUniform1i("skybox", 0);
-
     // SHADERS & UNIFORM TEXTURES //
     app->defaultShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::DEFAULT, "Assets/Shaders/Default_Shader_D.glsl", "DEFERRED_GEOMETRY_DEFAULT");
     app->lightCasterShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::LIGHT_CASTER, "Assets/Shaders/LightCaster_Shader.glsl", "LIGHT_CASTER");
@@ -220,6 +203,31 @@ void Init(App* app)
 
     CreatePointLight(app, glm::vec3(-6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), sphereLowModel, 0.5f, 0.1f);
     CreatePointLight(app, glm::vec3(6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), sphereLowModel, 1.0f, 0.1f);
+
+    // SKYBOX //
+    app->skyboxShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::SKYBOX, "Assets/Shaders/Skybox_Shader.glsl", "SKYBOX");
+    Shader& skyboxShader = app->shaderPrograms[app->skyboxShaderID];
+    skyboxShader.Bind();
+    skyboxShader.SetUniform1i("skybox", 0);
+
+    app->skyboxVAO = CreateSkyboxCube();
+
+    Shader& equirectToCubemapShader = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, ShaderType::SKYBOX, "Assets/Shaders/EquirectToCubemap_Shader.glsl", "EQUIRECT_TO_CUBEMAP")];
+
+    /*
+    std::vector<std::string> cubemapFaces
+    {
+        "Assets/Skybox/right.jpg",
+        "Assets/Skybox/left.jpg",
+        "Assets/Skybox/top.jpg",
+        "Assets/Skybox/bottom.jpg",
+        "Assets/Skybox/front.jpg",
+        "Assets/Skybox/back.jpg"
+    };
+    app->cubemapTextureID = LoadCubemap(cubemapFaces);
+    */
+    glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+    app->cubemapTextureID = LoadCubemap(app->textures, "Assets/Skybox/little_paris_eiffel_tower_4k.hdr", equirectToCubemapShader, app->skyboxVAO);
 
     // ENGINE COUNT OF ENTITIES & LIGHTS //
     app->numEntities = app->entities.size();
@@ -512,7 +520,6 @@ void Render(App* app)
     lightCasterShader.Unbind();
 
     // SKYBOX //
-    glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content
     Shader& skyboxShader = app->shaderPrograms[app->skyboxShaderID];
     skyboxShader.Bind();

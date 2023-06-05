@@ -14,4 +14,4 @@ u32 CreateQuad();
 
 Model* CreatePrimitive(App* app, PrimitiveType type, Material& material, u32 xNumSegments = 64, u32 yNumSegments = 64);
 
-u32 CreateSkybox();
+u32 CreateSkyboxCube();
