@@ -18,4 +18,4 @@ struct Texture
 
 u32 LoadTexture2D(std::vector<Texture>& textures, const char* filepath, bool isFlipped = true);
 
-u32 LoadCubemap(std::vector<std::string> faces);
+u32 LoadCubemap(std::vector<std::string>& faces);

@@ -19,12 +19,14 @@ void main()
 #elif defined(FRAGMENT) ///////////////////////////////////////////////
 
 out vec4 FragColor;
-in vec3 textureDir;
+
+in vec3 TexCoords;
+
 uniform samplerCube skybox;
 
 void main()
 {
-	FragColor = texture(skybox,textureDir);
+	FragColor = texture(skybox, TexCoords);
 }
 
 #endif /////////////////////////////////////////////////////////////////

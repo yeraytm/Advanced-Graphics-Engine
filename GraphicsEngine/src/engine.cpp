@@ -226,6 +226,7 @@ void Init(App* app)
 
     // OPENGL GLOBAL STATE //
     glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 }
 
 void ImGuiRender(App* app)
@@ -508,13 +509,14 @@ void Render(App* app)
 
     // SKYBOX //
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
+    glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content
     Shader& skyboxShader = app->shaderPrograms[app->skyboxShaderID];
     skyboxShader.Bind();
     glm::mat4 view = glm::mat4(glm::mat3(app->camera.GetViewMatrix(app->displaySize))); // remove translation from the view matrix
     skyboxShader.SetUniformMat4("view", view);
     skyboxShader.SetUniformMat4("projection", app->camera.GetProjectionMatrix(app->displaySize));
-    // skybox cube
+
+    // Skybox Cube
     glBindVertexArray(app->skyboxVAO);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, app->cubemapTextureID);

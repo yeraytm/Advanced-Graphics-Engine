@@ -81,13 +81,13 @@ struct App
     Framebuffer GBuffer;
     u32 lightingPassShaderID;
 
+    // SCREEN-FILLING QUAD //
+    Quad screenQuad;
+
     // SKYBOX //
     u32 skyboxShaderID;
     u32 cubemapTextureID;
     u32 skyboxVAO;
-
-    // SCREEN-FILLING QUAD //
-    Quad screenQuad;
 
     // SHADERS //
     u32 defaultShaderID;
