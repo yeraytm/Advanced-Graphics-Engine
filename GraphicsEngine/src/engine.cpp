@@ -67,6 +67,7 @@ void Init(App* app)
     lightingPassShader.SetUniform1i("gBufSpecular",     3);
     lightingPassShader.SetUniform1i("gBufDepth",        4);
     lightingPassShader.SetUniform1i("gBufDepthLinear",  5);
+    lightingPassShader.SetUniform1i("skybox",  6);
 
     // SCREEN-FILLING QUAD //
     app->screenQuad.VAO = CreateQuad();
@@ -198,6 +199,8 @@ void Init(App* app)
     app->firstLightEntityID = app->entities.size();
 
     // LIGHTS //
+    //CreateDirectionalLight(app, glm::vec3(0.0f, -2.0f, 15.0f), glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.1f), glm::vec3(0.4f), glm::vec3(0.3f), cubeModel2, 0.5f);
+
     srand(14);
     for (unsigned int i = 0; i <= 7; i++)
     {
@@ -217,8 +220,6 @@ void Init(App* app)
 
     CreatePointLight(app, glm::vec3(-6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), sphereLowModel, 0.5f, 0.1f);
     CreatePointLight(app, glm::vec3(6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), sphereLowModel, 1.0f, 0.1f);
-
-    CreateDirectionalLight(app, glm::vec3(0.0f, -2.0f, 15.0f), glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.1f), glm::vec3(0.4f), glm::vec3(0.3f), cubeModel2, 0.5f);
 
     // ENGINE COUNT OF ENTITIES & LIGHTS //
     app->numEntities = app->entities.size();
@@ -308,11 +309,11 @@ void ImGuiRender(App* app)
         ImGui::Spacing();
 
         ImGui::Text("Lights");
-        ImGui::DragFloat3("Directional Light", &app->lights[10].lightVector[0], 0.1f, -1.0f, 1.0f);
-        ImGui::Spacing();
-        ImGui::Spacing();
-        ImGui::Spacing();
-        for (u32 i = 0; i < app->numLights - 1; ++i)
+        //ImGui::DragFloat3("Directional Light", &app->lights[0].lightVector[0], 0.1f, -1.0f, 1.0f);
+        //ImGui::Spacing();
+        //ImGui::Spacing();
+        //ImGui::Spacing();
+        for (u32 i = 1; i < app->numLights - 1; ++i)
             ImGui::DragFloat3(std::string("Point Light " + std::to_string(i) + " Color").c_str(), &app->lights[i].diffuse[0], 0.05f, 0.0f, 1.0f);
 
         ImGui::End();
@@ -452,6 +453,9 @@ void Render(App* app)
         glActiveTexture(GL_TEXTURE0 + i);
         glBindTexture(GL_TEXTURE_2D, app->GBuffer.colorAttachmentHandles[i]);
     }
+
+    glActiveTexture(GL_TEXTURE0 + app->GBuffer.colorAttachmentHandles.size());
+    glBindTexture(GL_TEXTURE_CUBE_MAP, app->cubemapTextureID);
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
     glBindVertexArray(0);

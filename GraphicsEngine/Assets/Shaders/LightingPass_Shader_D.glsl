@@ -46,6 +46,8 @@ uniform sampler2D gBufSpecular;
 uniform sampler2D gBufDepth;
 uniform sampler2D gBufDepthLinear;
 
+uniform samplerCube skybox;
+
 vec3 ComputeDirLight(Light light, vec3 albedo, float specularC, vec3 normal, vec3 viewDir);
 vec3 ComputePointLight(Light light, vec3 albedo, float specularC, vec3 normal, vec3 fragPos, vec3 viewDir);
 
@@ -70,6 +72,11 @@ void main()
 		else if(uLights[i].lightVector.w == 1.0)
 			result += ComputePointLight(uLights[i], albedo, specularC, normal, fragPos, viewDir);
 	}
+
+	vec3 specularReflection = reflect(-viewDir, normalize(normal));
+	//vec3 refr = refract(-viewDir, normalize(normal), 1.00/1.52);
+
+	result += texture(skybox, specularReflection).rgb;
 	
 	// Final Lighting Color write to G-Buffer
 	FinalColor = vec4(result, 1.0);
