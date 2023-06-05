@@ -234,7 +234,7 @@ void Init(App* app)
 
     // OPENGL GLOBAL STATE //
     glViewport(0, 0, app->displaySize.x, app->displaySize.y);
-    //glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 }
 
 void ImGuiRender(App* app)
