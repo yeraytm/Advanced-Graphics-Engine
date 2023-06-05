@@ -25,6 +25,8 @@ public:
     void Zoom(float scrollY);
 
     glm::mat4 GetViewProjectionMatrix(const glm::ivec2& displaySize) const;
+    glm::mat4 GetViewMatrix(const glm::ivec2& displaySize) const;
+    glm::mat4 GetProjectionMatrix(const glm::ivec2& displaySize) const;
 
 public:
     glm::vec3 position;

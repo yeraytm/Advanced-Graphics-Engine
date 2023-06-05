@@ -87,3 +87,34 @@ u32 LoadTexture2D(std::vector<Texture>& textures, const char* filepath, bool isF
     else
         return UINT32_MAX;
 }
+
+u32 LoadCubemap(std::vector<std::string> faces)
+{
+    u32 textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    int nrChannels;
+    for (unsigned int i = 0; i < faces.size(); i++)
+    {
+        Image image = LoadImage(faces[i].c_str(), true);
+        if (image.pixels)
+        {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, image.size.x, image.size.y, 0, GL_RGB, GL_UNSIGNED_BYTE, image.pixels);
+            FreeImage(image);
+        }
+        else
+        {
+            std::string log = "Cubemap texture failed to load at path: " + faces[i];
+            ELOG(log.c_str());
+            FreeImage(image);
+        }
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    return textureID;
+}

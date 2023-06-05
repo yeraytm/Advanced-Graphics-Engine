@@ -12,7 +12,8 @@ enum class ShaderType
     TEXTURED_ALB_SPEC,
     SCREEN_QUAD,
     LIGHTING_PASS,
-    LIGHT_CASTER
+    LIGHT_CASTER,
+    SKYBOX
 };
 
 class Shader

@@ -92,6 +92,23 @@ void Init(App* app)
     app->rendererGui.renderTargets.push_back("DEPTH");
     app->rendererGui.renderTargets.push_back("DEPTH LINEAR");
 
+    // SKYBOX //
+    std::vector<std::string> cubemapFaces
+    {
+        "Assets/right.jpg",
+        "Assets/left.jpg",
+        "Assets/top.jpg",
+        "Assets/bottom.jpg",
+        "Assets/front.jpg",
+        "Assets/back.jpg"
+    };
+    app->cubemapTextureID = LoadCubemap(cubemapFaces);
+    app->skyboxShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::SKYBOX, "Assets/Shaders/Skybox_Shader.glsl", "SKYBOX");
+    app->skyboxVAO = CreateSkybox();
+    Shader& skyboxShader = app->shaderPrograms[app->skyboxShaderID];
+    skyboxShader.Bind();
+    skyboxShader.SetUniform1i("skybox", 0);
+
     // SHADERS & UNIFORM TEXTURES //
     app->defaultShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::DEFAULT, "Assets/Shaders/Default_Shader_D.glsl", "DEFERRED_GEOMETRY_DEFAULT");
     app->lightCasterShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::LIGHT_CASTER, "Assets/Shaders/LightCaster_Shader.glsl", "LIGHT_CASTER");
@@ -488,6 +505,22 @@ void Render(App* app)
         lightID++;
     }
     lightCasterShader.Unbind();
+
+    // SKYBOX //
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
+    Shader& skyboxShader = app->shaderPrograms[app->skyboxShaderID];
+    skyboxShader.Bind();
+    glm::mat4 view = glm::mat4(glm::mat3(app->camera.GetViewMatrix(app->displaySize))); // remove translation from the view matrix
+    skyboxShader.SetUniformMat4("view", view);
+    skyboxShader.SetUniformMat4("projection", app->camera.GetProjectionMatrix(app->displaySize));
+    // skybox cube
+    glBindVertexArray(app->skyboxVAO);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, app->cubemapTextureID);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+    glDepthFunc(GL_LESS);
 }
 
 u32 FindVAO(Model* model, u32 meshIndex, const Shader& shaderProgram)

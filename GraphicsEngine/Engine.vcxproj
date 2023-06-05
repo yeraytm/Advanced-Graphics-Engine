@@ -348,6 +348,7 @@
     <None Include="Assets\Shaders\MeshShader.glsl" />
     <None Include="Assets\Shaders\ModelShader.glsl" />
     <None Include="Assets\Shaders\QuadShader.glsl" />
+    <None Include="Assets\Shaders\Skybox_Shader.glsl" />
     <None Include="src\vendor\glm\detail\func_common.inl" />
     <None Include="src\vendor\glm\detail\func_common_simd.inl" />
     <None Include="src\vendor\glm\detail\func_exponential.inl" />

@@ -117,6 +117,16 @@ glm::mat4 Camera::GetViewProjectionMatrix(const glm::ivec2& displaySize) const
 	return projection * view;
 }
 
+glm::mat4 Camera::GetViewMatrix(const glm::ivec2& displaySize) const
+{
+	return glm::lookAt(position, position + m_Front, m_Up);
+}
+
+glm::mat4 Camera::GetProjectionMatrix(const glm::ivec2& displaySize) const
+{
+	return glm::perspective(glm::radians(FOV), float(displaySize.x) / float(displaySize.y), m_NearPlane, m_FarPlane);
+}
+
 // Rotate Camera around target
 //const float radius = 10.0f;
 //position.x = sin(app->currentTime) * radius;
