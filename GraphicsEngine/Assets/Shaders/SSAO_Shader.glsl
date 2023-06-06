@@ -7,7 +7,8 @@ layout(location = 1) in vec2 aTexCoord;
 
 out vec2 vTexCoord;
 
-void main() {
+void main()
+{
     vTexCoord = aTexCoord;
 
     gl_Position = vec4(aPosition, 0.0, 1.0);
@@ -29,7 +30,7 @@ uniform vec2 displaySize;
 
 in vec2 vTexCoord;
 
-// parameters (you'd probably want to use them as uniforms to more easily tweak the effect)
+// parameters (probably want to use them as uniforms to more easily tweak the effect)
 int kernelSize = 64;
 float radius = 0.5;
 float bias = 0.025;
@@ -58,7 +59,8 @@ void main()
 
     // Iterate over each sample
     float occlusion = 0.0;
-    for(int i = 0; i < kernelSize; ++i) {
+    for(int i = 0; i < kernelSize; ++i)
+    {
         vec3 offsetView = TBN * samples[i];
         vec3 samplePosView = fragPosView.xyz + offsetView * radius;
 

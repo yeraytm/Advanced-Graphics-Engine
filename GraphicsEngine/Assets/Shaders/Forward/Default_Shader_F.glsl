@@ -56,7 +56,6 @@ void main()
 layout(location = 0) out vec3 gBufResult;
 layout(location = 1) out vec3 gBufPosition;
 layout(location = 2) out vec3 gBufNormal;
-layout(location = 3) out vec3 gBufDepthLinear;
 
 struct Light
 {
@@ -95,14 +94,6 @@ in vec3 vViewDir;
 vec3 ComputeDirLight(Light light, vec3 normal, vec3 viewDir);
 vec3 ComputePointLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir);
 
-float near = 0.1;
-float far = 100.0;
-float LinearDepth(float depth)
-{
-	float z = depth * 2.0 - 1.0;
-	return (2.0 * near * far) / (far + near - z * (far - near));
-}
-
 void main()
 {
 	vec3 result = vec3(0.0);
@@ -120,9 +111,6 @@ void main()
 	gBufPosition = vFragPos;
 
 	gBufNormal = vNormal;
-
-	float depth = LinearDepth(gl_FragCoord.z) / far;
-	gBufDepthLinear = vec3(depth);
 }
 
 vec3 ComputeDirLight(Light light, vec3 normal, vec3 viewDir)
