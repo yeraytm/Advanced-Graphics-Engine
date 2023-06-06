@@ -22,11 +22,11 @@ public:
     void Bind();
 
     void AttachDepthTexture(const glm::ivec2& size);
-    void AttachColorTexture(FBAttachmentType attachmentType, const glm::ivec2& size);
+    void AttachColorTexture(FBAttachmentType attachmentType, const glm::ivec2& size, bool clamp = false);
     void SetColorBuffers();
 
 private:
-    u32 CreateAttachment(GLenum attachmentType, GLint internalFormat, GLenum dataFormat, GLenum dataType, const glm::ivec2& size) const;
+    u32 CreateAttachment(GLenum attachmentType, GLint internalFormat, GLenum dataFormat, GLenum dataType, const glm::ivec2& size, bool clamp) const;
     void CheckStatus();
 
 public:

@@ -48,13 +48,13 @@ void Init(App* app)
     // G-Buffer
     app->GBuffer.Generate();
     app->GBuffer.Bind();
-    app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize);   // Position Color Buffer
-    app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize);   // Normal Color Buffer
-    app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);    // Albedo Color Buffer
-    app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);    // Specular Color Buffer
-    app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);    // Depth Color Buffer
-    app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);    // Depth Linear Color Buffer
-    app->GBuffer.AttachDepthTexture(app->displaySize);                                  // Depth Attachment
+    app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize, true); // Position Color Buffer
+    app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize);       // Normal Color Buffer
+    app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);        // Albedo Color Buffer
+    app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);        // Specular Color Buffer
+    app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);        // Depth Color Buffer
+    app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);        // Depth Linear Color Buffer
+    app->GBuffer.AttachDepthTexture(app->displaySize);                                      // Depth Attachment
     app->GBuffer.SetColorBuffers(); // Set color buffers with glDrawBuffers
     BindDefaultFramebuffer();
 

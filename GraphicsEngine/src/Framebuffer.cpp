@@ -41,10 +41,10 @@ void Framebuffer::CheckStatus()
 
 void Framebuffer::AttachDepthTexture(const glm::ivec2& size)
 {
-	m_DepthAttachment = CreateAttachment(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, size);
+	m_DepthAttachment = CreateAttachment(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, size, false);
 }
 
-void Framebuffer::AttachColorTexture(FBAttachmentType attachmentType, const glm::ivec2& size)
+void Framebuffer::AttachColorTexture(FBAttachmentType attachmentType, const glm::ivec2& size, bool clamp)
 {
 	u32 numAttachments = colorAttachmentHandles.size();
 
@@ -52,19 +52,19 @@ void Framebuffer::AttachColorTexture(FBAttachmentType attachmentType, const glm:
 	switch (attachmentType)
 	{
 	case FBAttachmentType::COLOR_BYTE:
-		textureHandle = CreateAttachment(GL_COLOR_ATTACHMENT0 + numAttachments, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, size);
+		textureHandle = CreateAttachment(GL_COLOR_ATTACHMENT0 + numAttachments, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, size, clamp);
 		break;
 	case FBAttachmentType::COLOR_FLOAT:
-		textureHandle = CreateAttachment(GL_COLOR_ATTACHMENT0 + numAttachments, GL_RGBA16F, GL_RGBA, GL_FLOAT, size);
+		textureHandle = CreateAttachment(GL_COLOR_ATTACHMENT0 + numAttachments, GL_RGBA16F, GL_RGBA, GL_FLOAT, size, clamp);
 		break;
 	case FBAttachmentType::COLOR_R:
-		textureHandle = CreateAttachment(GL_COLOR_ATTACHMENT0 + numAttachments, GL_RED, GL_RED, GL_FLOAT, size);
+		textureHandle = CreateAttachment(GL_COLOR_ATTACHMENT0 + numAttachments, GL_RED, GL_RED, GL_FLOAT, size, clamp);
 		break;
 	}
 	colorAttachmentHandles.push_back(textureHandle);
 }
 
-u32 Framebuffer::CreateAttachment(GLenum target, GLint internalFormat, GLenum dataFormat, GLenum dataType, const glm::ivec2& size) const
+u32 Framebuffer::CreateAttachment(GLenum target, GLint internalFormat, GLenum dataFormat, GLenum dataType, const glm::ivec2& size, bool clamp) const
 {
 	GLuint attachmentHandle;
 	glGenTextures(1, &attachmentHandle);
@@ -74,9 +74,12 @@ u32 Framebuffer::CreateAttachment(GLenum target, GLint internalFormat, GLenum da
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	if (clamp)
+	{
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	}
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
