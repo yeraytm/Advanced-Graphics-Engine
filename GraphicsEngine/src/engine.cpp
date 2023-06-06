@@ -228,7 +228,7 @@ void Init(App* app)
     // SSAO //
     app->ssaoBuffer.Generate();
     app->ssaoBuffer.Bind();
-    app->ssaoBuffer.AttachColorTexture(FBAttachmentType::COLOR_R, app->displaySize);
+    app->ssaoBuffer.AttachColorTexture(FBAttachmentType::COLOR_R, app->displaySize, true);
     app->ssaoBuffer.SetColorBuffers();
     BindDefaultFramebuffer();
 
@@ -261,7 +261,7 @@ void Init(App* app)
             randomFloats(generator) * 2.0 - 1.0,
             0.0f
         );
-        ssaoNoise.emplace_back(noise);
+        ssaoNoise.emplace_back(glm::normalize(noise));
     }
 
     glGenTextures(1, &app->noiseTextureHandle);
@@ -277,7 +277,8 @@ void Init(App* app)
     SSAOShader.Bind();
     SSAOShader.SetUniform1i("gBufPosition", 0);
     SSAOShader.SetUniform1i("gBufNormal", 1);
-    SSAOShader.SetUniform1i("noiseTexture", 2);
+    SSAOShader.SetUniform1i("gBufDepth", 2);
+    SSAOShader.SetUniform1i("noiseTexture", 3);
     for (u32 i = 0; i < 64; ++i)
         SSAOShader.SetUniform3f("samples[" + std::to_string(i) + "]", app->ssaoKernel[i]);
 
@@ -499,12 +500,14 @@ void Render(App* app)
 
     // SSAO //
     app->ssaoBuffer.Bind();
+    glDisable(GL_BLEND);
     glClear(GL_COLOR_BUFFER_BIT);
 
     Shader& SSAOShader = app->shaderPrograms[app->ssaoShaderID];
     SSAOShader.Bind();
 
     SSAOShader.SetUniformMat4("projection", app->camera.GetProjectionMatrix(app->displaySize));
+    SSAOShader.SetUniformMat4("view", app->camera.GetViewMatrix(app->displaySize));
     SSAOShader.SetUniform2f("displaySize", glm::vec2(app->displaySize.x, app->displaySize.y));
 
     glActiveTexture(GL_TEXTURE0);
@@ -512,11 +515,14 @@ void Render(App* app)
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, app->GBuffer.colorAttachmentHandles[1]); // Normal
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, app->noiseTextureHandle);
+    glBindTexture(GL_TEXTURE_2D, app->GBuffer.depthAttachment); // Depth
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, app->noiseTextureHandle); // SSAO Noise Texture
 
     glBindVertexArray(app->screenQuad.VAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
     glBindVertexArray(0);
+    glEnable(GL_BLEND);
     SSAOShader.Unbind();
     BindDefaultFramebuffer();
 
