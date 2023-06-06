@@ -7,8 +7,7 @@ layout(location = 1) in vec2 aTexCoord;
 
 out vec2 vTexCoord;
 
-void main()
-{
+void main() {
     vTexCoord = aTexCoord;
 
     gl_Position = vec4(aPosition, 0.0, 1.0);
@@ -35,6 +34,16 @@ int kernelSize = 64;
 float radius = 0.5;
 float bias = 0.025;
 
+vec3 ReconstructPixelPos(float depth)
+{
+    float xndc = gl_FragCoord.x / displaySize.x * 2.0 - 1.0;
+    float yndc = gl_FragCoord.y / displaySize.y * 2.0 - 1.0;
+    float zndc = depth * 2.0 - 1.0;
+    vec4 posNDC = vec4(xndc, yndc, zndc, 1.0);
+    vec4 posView = inverse(projection) * posNDC;
+    return posView.xyz / posView.w;
+}
+
 void main()
 {
     vec2 noiseScale = displaySize / textureSize(noiseTexture, 0);
@@ -49,24 +58,7 @@ void main()
 
     // Iterate over each sample
     float occlusion = 0.0;
-
-    // for(int i = 0; i < kernelSize; ++i)
-    // {
-    //     vec3 samplePos = TBN * samples[i];
-    //     samplePos = fragPos + samplePos * radius;
-
-    //     vec4 offset = vec4(samplePos, 1.0);
-    //     offset = projection * offset; //from view to clip-space
-    //     offset.xyz /= offset.w; //perspective divide
-    //     offset.xyz = offset.xyz * 0.5 + 0.5; //transform to range 0.0 - 1.0
-
-    //     float sampleDepth = vec3(view * texture(gBufPosition, offset.xy)).z;
-    //     float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragPos.z - sampleDepth));
-    //     occlusion += (sampleDepth <= samplePos.z + bias ? 1.0 : 0.0) * rangeCheck;
-    // }
-
-    for(int i = 0; i < kernelSize; ++i)
-    {
+    for(int i = 0; i < kernelSize; ++i) {
         vec3 offsetView = TBN * samples[i];
         vec3 samplePosView = fragPosView.xyz + offsetView * radius;
 
@@ -75,15 +67,7 @@ void main()
         sampleTexCoord.xyz = sampleTexCoord.xyz * 0.5 + 0.5;
 
         float sampledDepth = texture(gBufDepth, sampleTexCoord.xy).r;
-        //----func----
-        float xndc = gl_FragCoord.x / displaySize.x * 2.0 - 1.0;
-        float yndc = gl_FragCoord.y / displaySize.y * 2.0 - 1.0;
-        float zndc = sampledDepth * 2.0 - 1.0;
-        vec4 posNDC = vec4(xndc, yndc, zndc, 1.0);
-        vec4 posView = inverse(projection) * posNDC;
-        vec3 result = posView.xyz / posView.w;
-        //------------
-        vec3 sampledPosView = result;
+        vec3 sampledPosView = ReconstructPixelPos(sampledDepth);
 
         float rangeCheck = smoothstep(0.0, 1.0, radius / abs(samplePosView.z - sampledPosView.z));
         rangeCheck *= rangeCheck;
