@@ -41,7 +41,7 @@ void Framebuffer::CheckStatus()
 
 void Framebuffer::AttachDepthTexture(const glm::ivec2& size)
 {
-	m_DepthAttachment = CreateAttachment(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, size, false);
+	depthAttachment = CreateAttachment(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, size, false);
 }
 
 void Framebuffer::AttachColorTexture(FBAttachmentType attachmentType, const glm::ivec2& size, bool clamp)

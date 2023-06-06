@@ -40,11 +40,9 @@ uniform sampler2D gBufPosition;
 uniform sampler2D gBufNormal;
 uniform sampler2D gBufAlbedo;
 uniform sampler2D gBufSpecular;
-uniform sampler2D gBufDepth;
-uniform sampler2D gBufDepthLinear;
 
-uniform samplerCube skybox;
 uniform sampler2D ssaoColor;
+//uniform samplerCube skybox;
 
 vec3 ComputeDirLight(Light light, vec3 albedo, float specularC, float ambientOcclusion, vec3 normal, vec3 viewDir);
 vec3 ComputePointLight(Light light, vec3 albedo, float specularC, float ambientOcclusion, vec3 normal, vec3 fragPos, vec3 viewDir);
@@ -54,9 +52,7 @@ void main() {
 	vec3 normal = texture(gBufNormal, vTexCoord).rgb;
 	vec3 albedo = texture(gBufAlbedo, vTexCoord).rgb;
 	float specularC = texture(gBufSpecular, vTexCoord).r;
-
-	vec3 depth = texture(gBufDepth, vTexCoord).rgb;
-	vec3 depthLinear = texture(gBufDepthLinear, vTexCoord).rgb;
+	
 	float ambientOcclusion = texture(ssaoColor, vTexCoord).r;
 
 	vec3 viewDir = normalize(uViewPos - fragPos);
@@ -70,7 +66,7 @@ void main() {
 			result += ComputePointLight(uLights[i], albedo, specularC, ambientOcclusion, normal, fragPos, viewDir);
 	}
 
-	vec3 specularReflection = reflect(-viewDir, normalize(normal));
+	//vec3 specularReflection = reflect(-viewDir, normalize(normal));
 	//vec3 refr = refract(-viewDir, normalize(normal), 1.00/1.52);
 
 	//result += texture(skybox, specularReflection).rgb;

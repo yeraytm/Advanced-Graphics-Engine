@@ -32,7 +32,5 @@ private:
 public:
     u32 handle;
     std::vector<u32> colorAttachmentHandles;
-
-private:
-    u32 m_DepthAttachment;
+    u32 depthAttachment;
 };

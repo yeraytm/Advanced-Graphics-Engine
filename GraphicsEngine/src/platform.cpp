@@ -24,7 +24,7 @@
 #include "imgui-docking/imgui_impl_glfw.h"
 #include "imgui-docking/imgui_impl_opengl3.h"
 
-#define WINDOW_TITLE  "Advanced Graphics Engine - Yeray Tarifa"
+#define WINDOW_TITLE  "Advanced Graphics Engine - Yeray Tarifa & Sergi Colomer"
 #define WINDOW_WIDTH  1920
 #define WINDOW_HEIGHT 1080
 
