@@ -57,6 +57,9 @@ void Framebuffer::AttachColorTexture(FBAttachmentType attachmentType, const glm:
 	case FBAttachmentType::COLOR_FLOAT:
 		textureHandle = CreateAttachment(GL_COLOR_ATTACHMENT0 + numAttachments, GL_RGBA16F, GL_RGBA, GL_FLOAT, size);
 		break;
+	case FBAttachmentType::COLOR_R:
+		textureHandle = CreateAttachment(GL_COLOR_ATTACHMENT0 + numAttachments, GL_RED, GL_RED, GL_FLOAT, size);
+		break;
 	}
 	colorAttachmentHandles.push_back(textureHandle);
 }

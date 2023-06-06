@@ -101,6 +101,12 @@ struct App
     u32 skyboxShaderID;
     u32 cubemapTextureID;
     u32 skyboxVAO;
+
+    // SSAO //
+    Framebuffer ssaoBuffer;
+    u32 noiseTextureHandle;
+    u32 ssaoShaderID;
+    std::vector<glm::vec3> ssaoKernel;
     
     // RESOURCES //
     std::vector<Texture> textures;
@@ -129,3 +135,4 @@ Entity* CreateEntity(App* app, u32 shaderID, glm::vec3 position, Model* model);
 
 void CreatePointLight(App* app, glm::vec3 position, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, Model* model, float constant = 1.0f, float scale = 1.0f);
 void CreateDirectionalLight(App* app, glm::vec3 entityPosition, glm::vec3 direction, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, Model* model, float scale = 1.0f);
+float Lerp(float a, float b, float f);

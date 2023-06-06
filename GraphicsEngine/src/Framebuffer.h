@@ -9,6 +9,7 @@ enum class FBAttachmentType
 {
     COLOR_BYTE,
     COLOR_FLOAT,
+    COLOR_R,
     DEPTH
 };
 

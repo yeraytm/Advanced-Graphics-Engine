@@ -11,6 +11,7 @@
 
 #include "glad/glad.h"
 #include "imgui-docking/imgui.h"
+#include <random>
 
 void Init(App* app)
 {
@@ -68,6 +69,7 @@ void Init(App* app)
     lightingPassShader.SetUniform1i("gBufDepth",        4);
     lightingPassShader.SetUniform1i("gBufDepthLinear",  5);
     lightingPassShader.SetUniform1i("skybox",  6);
+    lightingPassShader.SetUniform1i("ssaoColor", 7);
 
     // SCREEN-FILLING QUAD //
     app->screenQuad.VAO = CreateQuad();
@@ -205,14 +207,14 @@ void Init(App* app)
     CreatePointLight(app, glm::vec3(6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), sphereLowModel, 1.0f, 0.1f);
 
     // SKYBOX //
-    app->skyboxShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::SKYBOX, "Assets/Shaders/Skybox_Shader.glsl", "SKYBOX");
+    app->skyboxShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/Skybox_Shader.glsl", "SKYBOX");
     Shader& skyboxShader = app->shaderPrograms[app->skyboxShaderID];
     skyboxShader.Bind();
     skyboxShader.SetUniform1i("skybox", 0);
 
     app->skyboxVAO = CreateSkyboxCube();
 
-    Shader& equirectToCubemapShader = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, ShaderType::SKYBOX, "Assets/Shaders/EquirectToCubemap_Shader.glsl", "EQUIRECT_TO_CUBEMAP")];
+    Shader& equirectToCubemapShader = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/EquirectToCubemap_Shader.glsl", "EQUIRECT_TO_CUBEMAP")];
 
     /*
     std::vector<std::string> cubemapFaces
@@ -227,6 +229,56 @@ void Init(App* app)
     app->cubemapTextureID = LoadCubemap(cubemapFaces);
     */
     app->cubemapTextureID = LoadCubemap(app->textures, "Assets/Skybox/little_paris_eiffel_tower_4k.hdr", equirectToCubemapShader, app->skyboxVAO);
+
+    // SSAO //
+    std::uniform_real_distribution<float> randomFloats(0.0f, 1.0f);
+    std::default_random_engine generator;
+    for (u32 i = 0; i < 64; ++i)
+    {
+        glm::vec3 sample(
+            randomFloats(generator) * 2.0f - 1.0f,
+            randomFloats(generator) * 2.0f - 1.0f,
+            randomFloats(generator)
+        );
+        sample = glm::normalize(sample);
+        float scale = float(i) / 64.0f;
+        scale = Lerp(0.1f, 1.0f, scale * scale);
+        sample *= scale;
+        app->ssaoKernel.push_back(sample);
+    }
+
+    std::vector<glm::vec3> ssaoNoise;
+    for (u32 i = 0; i < 16; ++i)
+    {
+        glm::vec3 noise(
+            randomFloats(generator) * 2.0f - 1.0f,
+            randomFloats(generator) * 2.0f - 1.0f,
+            0.0f
+        );
+        ssaoNoise.push_back(noise);
+    }
+
+    glGenTextures(1, &app->noiseTextureHandle);
+    glBindTexture(GL_TEXTURE_2D, app->noiseTextureHandle);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 4, 4, 0, GL_RGB, GL_FLOAT, &ssaoNoise[0]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    app->ssaoBuffer.Generate();
+    app->ssaoBuffer.Bind();
+    app->ssaoBuffer.AttachColorTexture(FBAttachmentType::COLOR_R, app->displaySize);
+    app->ssaoBuffer.SetColorBuffers();
+    BindDefaultFramebuffer();
+
+    app->ssaoShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/SSAO_Shader.glsl", "SSAO");
+    Shader& SSAOShader = app->shaderPrograms[app->ssaoShaderID];
+    SSAOShader.Bind();
+    SSAOShader.SetUniform1i("gBufPosition", 0);
+    SSAOShader.SetUniform1i("gBufNormal", 1);
+    SSAOShader.SetUniform1i("noiseTexture", 2);
+
 
     // ENGINE COUNT OF ENTITIES & LIGHTS //
     app->numEntities = app->entities.size();
@@ -442,6 +494,27 @@ void Render(App* app)
     }
     BindDefaultFramebuffer();
 
+    // SSAO //
+    app->ssaoBuffer.Bind();
+    glClear(GL_COLOR_BUFFER_BIT);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, app->GBuffer.colorAttachmentHandles[0]);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, app->GBuffer.colorAttachmentHandles[1]);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, app->noiseTextureHandle);
+    Shader& SSAOShader = app->shaderPrograms[app->ssaoShaderID];
+    SSAOShader.Bind();
+    for (u32 i = 0; i < 64; ++i)
+        SSAOShader.SetUniform3f("samples[" + std::to_string(i) + "]", app->ssaoKernel[i]);
+    SSAOShader.SetUniformMat4("projection", app->camera.GetProjectionMatrix(app->displaySize));
+    SSAOShader.SetUniform2f("displaySize", app->displaySize);
+
+    glBindVertexArray(app->screenQuad.VAO);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
+    glBindVertexArray(0);
+    BindDefaultFramebuffer();
+
     // DEFERRED SHADING: LIGHTING PASS //
     app->screenQuad.FBO.Bind();
 
@@ -463,6 +536,9 @@ void Render(App* app)
 
     glActiveTexture(GL_TEXTURE0 + app->GBuffer.colorAttachmentHandles.size());
     glBindTexture(GL_TEXTURE_CUBE_MAP, app->cubemapTextureID);
+
+    glActiveTexture(GL_TEXTURE1 + app->GBuffer.colorAttachmentHandles.size());
+    glBindTexture(GL_TEXTURE_2D, app->ssaoBuffer.colorAttachmentHandles[0]);
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
     glBindVertexArray(0);
@@ -661,4 +737,9 @@ void CreateDirectionalLight(App* app, glm::vec3 entityPosition, glm::vec3 direct
 
     Light light = { glm::vec4(direction, 0.0f), ambient, diffuse, specular, 1.0f };
     app->lights.push_back(light);
+}
+
+float Lerp(float a, float b, float f)
+{
+    return a + f * (b - a);
 }

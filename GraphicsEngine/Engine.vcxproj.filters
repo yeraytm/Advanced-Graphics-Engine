@@ -499,5 +499,6 @@
     <None Include="Assets\Shaders\DefaultShader.glsl" />
     <None Include="Assets\Shaders\ModelShader.glsl" />
     <None Include="Assets\Shaders\Skybox_Shader.glsl" />
+    <None Include="Assets\Shaders\SSAO_Shader.glsl" />
   </ItemGroup>
 </Project>
