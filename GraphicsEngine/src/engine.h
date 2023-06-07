@@ -24,10 +24,19 @@ struct OpenGLGUI
     int numExtensions;
 };
 
-struct RendererGUI
+struct RendererOptions
 {
     bool open;
     std::vector<const char*> renderTargets;
+
+    // Environment Mapping Options
+    bool activeSkybox;
+    bool activeIrradiance;
+    bool activeReflection;
+    bool activeRefraction;
+
+    // SSAO Options
+    bool activeSSAO;
     float ssaoRadius;
     float ssaoBias;
     float ssaoPower;
@@ -65,7 +74,7 @@ struct App
 
     // IMGUI //
     OpenGLGUI openGLGui;
-    RendererGUI rendererGui;
+    RendererOptions rendererOptions;
     bool sceneGui;
     bool performanceGui;
 

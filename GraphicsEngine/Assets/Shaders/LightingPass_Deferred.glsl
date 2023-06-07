@@ -43,9 +43,18 @@ uniform sampler2D gBufNormal;
 uniform sampler2D gBufAlbedo;
 uniform sampler2D gBufSpecular;
 
-uniform sampler2D uSSAOColor;
 uniform samplerCube uEnvironmentMap;
 uniform samplerCube uIrradianceMap;
+uniform sampler2D uSSAOColor;
+
+struct RendererOptions
+{
+	bool uActiveIrradiance;
+	bool uActiveReflection;
+	bool uActiveRefraction;
+	bool uActiveSSAO;
+};
+uniform RendererOptions uRendererOptions;
 
 vec3 ComputeDirLight(Light light, vec3 albedo, float specularC, vec3 irradiance, float ambientOcclusion, vec3 normal, vec3 viewDir);
 vec3 ComputePointLight(Light light, vec3 albedo, float specularC,  vec3 irradiance, float ambientOcclusion, vec3 normal, vec3 fragPos, vec3 viewDir);
@@ -56,9 +65,14 @@ void main()
 	vec3 normal = texture(gBufNormal, vTexCoord).rgb;
 	vec3 albedo = texture(gBufAlbedo, vTexCoord).rgb;
 	float specularC = texture(gBufSpecular, vTexCoord).r;
-	
-	float ambientOcclusion = texture(uSSAOColor, vTexCoord).r;
-	vec3 irradiance = texture(uIrradianceMap, normal).rgb;
+
+	vec3 irradiance = vec3(0.2);
+	if(uRendererOptions.uActiveIrradiance)
+		irradiance = texture(uIrradianceMap, normal).rgb;
+
+	float ambientOcclusion = 1.0;
+	if(uRendererOptions.uActiveSSAO)
+		ambientOcclusion = texture(uSSAOColor, vTexCoord).r;
 
 	vec3 viewDir = normalize(uViewPos - fragPos);
 
@@ -72,8 +86,17 @@ void main()
 			result += ComputePointLight(uLights[i], albedo, specularC, irradiance, ambientOcclusion, normal, fragPos, viewDir);
 	}
 
-	vec3 specularReflection = reflect(-viewDir, normalize(normal));
-	result += texture(uEnvironmentMap, specularReflection).rgb * specularC;
+	if(uRendererOptions.uActiveReflection)
+	{
+		vec3 specularReflection = reflect(-viewDir, normal);
+		result += texture(uEnvironmentMap, specularReflection).rgb * specularC;
+	}
+
+	if(uRendererOptions.uActiveRefraction)
+	{
+		vec3 refraction = refract(-viewDir, normal, 1.00/1.52);
+		result += texture(uEnvironmentMap, refraction).rgb;
+	}
 
 	// Final Lighting Color write to G-Buffer
 	FinalColor = vec4(result, 1.0);

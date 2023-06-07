@@ -18,7 +18,19 @@ void Init(App* app)
     // IMGUI //
     // ImGui Windows
     app->openGLGui.open = false;
-    app->rendererGui.open = true;
+
+    app->rendererOptions.open = true;
+
+    app->rendererOptions.activeSkybox = true;
+    app->rendererOptions.activeIrradiance = true;
+    app->rendererOptions.activeReflection = false;
+    app->rendererOptions.activeRefraction = false;
+
+    app->rendererOptions.activeSSAO = true;
+    app->rendererOptions.ssaoRadius = 0.5f;
+    app->rendererOptions.ssaoBias = 0.025f;
+    app->rendererOptions.ssaoPower = 1.0f;
+
     app->sceneGui = false;
     app->performanceGui = false;
 
@@ -36,7 +48,7 @@ void Init(App* app)
     }
 
     // CAMERA //
-    app->camera = Camera(glm::vec3(0.0f, 3.0f, 10.0f), 45.0f, 0.1f, 100.0f);
+    app->camera = Camera(glm::vec3(0.0f, 3.0f, 10.0f), 45.0f, 1.0f, 100.0f);
 
     // UNIFORM BUFFER (CONSTANT BUFFER) //
     int maxUniformBlockSize;
@@ -84,12 +96,12 @@ void Init(App* app)
 
     // Render Target Selection Combo
     app->screenQuad.currentRenderTarget = app->screenQuad.FBO.colorAttachmentHandles[0];
-    app->rendererGui.renderTargets.push_back("FINAL COLOR");
-    app->rendererGui.renderTargets.push_back("DEPTH");
-    app->rendererGui.renderTargets.push_back("POSITION");
-    app->rendererGui.renderTargets.push_back("NORMAL");
-    app->rendererGui.renderTargets.push_back("ALBEDO");
-    app->rendererGui.renderTargets.push_back("SPECULAR");
+    app->rendererOptions.renderTargets.push_back("FINAL COLOR");
+    app->rendererOptions.renderTargets.push_back("DEPTH");
+    app->rendererOptions.renderTargets.push_back("POSITION");
+    app->rendererOptions.renderTargets.push_back("NORMAL");
+    app->rendererOptions.renderTargets.push_back("ALBEDO");
+    app->rendererOptions.renderTargets.push_back("SPECULAR");
 
     // SHADERS & UNIFORM TEXTURES //
     app->defaultShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::DEFAULT, "Assets/Shaders/Default_Deferred.glsl", "DEFERRED_GEOMETRY_DEFAULT");
@@ -184,10 +196,10 @@ void Init(App* app)
     app->firstLightEntityID = app->entities.size();
 
     // LIGHTS //
-    //CreateDirectionalLight(app, glm::vec3(0.0f, -2.0f, 15.0f), glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.1f), glm::vec3(0.4f), glm::vec3(0.3f), cubeModel2, 0.5f);
+    //CreateDirectionalLight(app, glm::vec3(0.0f, -2.0f, 15.0f), glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.2f), glm::vec3(0.3f), cubeModel2, 0.5f);
 
     srand(14);
-    for (unsigned int i = 0; i <= 7; i++)
+    for (unsigned int i = 0; i <= 5; i++)
     {
         // Random Position
         float xPos = static_cast<float>(((rand() % 100) / 70.0f) * 6.0f - 3.0f);
@@ -302,9 +314,9 @@ void Init(App* app)
     SSAOBlurShader.Bind();
     SSAOBlurShader.SetUniform1i("uSSAOColor", 0);
 
-    app->rendererGui.ssaoRadius = 0.5f;
-    app->rendererGui.ssaoBias = 0.025f;
-    app->rendererGui.ssaoPower = 1.0f;
+    app->rendererOptions.ssaoRadius = 0.5f;
+    app->rendererOptions.ssaoBias = 0.025f;
+    app->rendererOptions.ssaoPower = 1.0f;
 
     // ENGINE COUNT OF ENTITIES & LIGHTS //
     app->numEntities = app->entities.size();
@@ -322,7 +334,7 @@ void ImGuiRender(App* app)
         if (ImGui::BeginMenu("Engine"))
         {
             ImGui::MenuItem("OpenGL", NULL, &app->openGLGui.open);
-            ImGui::MenuItem("Renderer", NULL, &app->rendererGui.open);
+            ImGui::MenuItem("Renderer", NULL, &app->rendererOptions.open);
             ImGui::MenuItem("Scene", NULL, &app->sceneGui);
             ImGui::EndMenu();
         }
@@ -354,14 +366,36 @@ void ImGuiRender(App* app)
         ImGui::End();
     }
 
-    if (app->rendererGui.open)
+    if (app->rendererOptions.open)
     {
-        ImGui::Begin("Renderer", &app->rendererGui.open);
+        ImGui::Begin("Renderer", &app->rendererOptions.open);
 
-        ImGui::Text("SSAO Parameters");
-        ImGui::DragFloat("Radius", &app->rendererGui.ssaoRadius, 0.05f, 0.25f, 2.0f);
-        ImGui::DragFloat("Bias", &app->rendererGui.ssaoBias, 0.001f, 0.01f, 0.1f);
-        ImGui::DragFloat("Power", &app->rendererGui.ssaoPower, 0.1f, 1.0f, 10.0f);
+        ImGui::Text("Environment Mapping Options");
+        if (ImGui::Checkbox("Skybox", &app->rendererOptions.activeSkybox))
+        {
+            app->rendererOptions.activeIrradiance = false;
+            app->rendererOptions.activeReflection = false;
+            app->rendererOptions.activeRefraction = false;
+        }
+        if (app->rendererOptions.activeSkybox)
+        {
+            ImGui::Checkbox("Irradiance", &app->rendererOptions.activeIrradiance);
+            ImGui::Checkbox("Reflection", &app->rendererOptions.activeReflection);
+            ImGui::Checkbox("Refraction", &app->rendererOptions.activeRefraction);
+        }
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        ImGui::Text("SSAO Options");
+        ImGui::Checkbox("SSAO", &app->rendererOptions.activeSSAO);
+        if (app->rendererOptions.activeSSAO)
+        {
+            ImGui::DragFloat("Radius", &app->rendererOptions.ssaoRadius, 0.05f, 0.25f, 2.0f);
+            ImGui::DragFloat("Bias", &app->rendererOptions.ssaoBias, 0.001f, 0.01f, 0.1f);
+            ImGui::DragFloat("Power", &app->rendererOptions.ssaoPower, 0.1f, 1.0f, 10.0f);
+        }
 
         ImGui::Spacing();
         ImGui::Separator();
@@ -371,12 +405,12 @@ void ImGuiRender(App* app)
         static const char* preview = "FINAL COLOR";
         if (ImGui::BeginCombo("", preview))
         {
-            for (int i = 0; i < app->rendererGui.renderTargets.size(); ++i)
+            for (int i = 0; i < app->rendererOptions.renderTargets.size(); ++i)
             {
-                bool isSelected = (preview == app->rendererGui.renderTargets[i]);
-                if (ImGui::Selectable(app->rendererGui.renderTargets[i], isSelected))
+                bool isSelected = (preview == app->rendererOptions.renderTargets[i]);
+                if (ImGui::Selectable(app->rendererOptions.renderTargets[i], isSelected))
                 {
-                    preview = app->rendererGui.renderTargets[i];
+                    preview = app->rendererOptions.renderTargets[i];
                     if (i == 0)
                         app->screenQuad.currentRenderTarget = app->screenQuad.FBO.colorAttachmentHandles[0];
                     else if (i == 1)
@@ -531,55 +565,58 @@ void Render(App* app)
     }
     BindDefaultFramebuffer();
 
-    // SSAO //
-    app->ssaoBuffer.Bind();
-    glDisable(GL_BLEND);
-    glClear(GL_COLOR_BUFFER_BIT);
+    if (app->rendererOptions.activeSSAO)
+    {
+        // SSAO //
+        app->ssaoBuffer.Bind();
+        glDisable(GL_BLEND);
+        glClear(GL_COLOR_BUFFER_BIT);
 
-    Shader& SSAOShader = app->shaderPrograms[app->ssaoShaderID];
-    SSAOShader.Bind();
+        Shader& SSAOShader = app->shaderPrograms[app->ssaoShaderID];
+        SSAOShader.Bind();
 
-    SSAOShader.SetUniformMat4("uProjection", app->camera.GetProjectionMatrix(app->displaySize));
-    SSAOShader.SetUniformMat4("uView", app->camera.GetViewMatrix(app->displaySize));
-    SSAOShader.SetUniform2f("uDisplaySize", glm::vec2(app->displaySize.x, app->displaySize.y));
+        SSAOShader.SetUniformMat4("uProjection", app->camera.GetProjectionMatrix(app->displaySize));
+        SSAOShader.SetUniformMat4("uView", app->camera.GetViewMatrix(app->displaySize));
+        SSAOShader.SetUniform2f("uDisplaySize", glm::vec2(app->displaySize.x, app->displaySize.y));
 
-    SSAOShader.SetUniform1f("uRadius", app->rendererGui.ssaoRadius);
-    SSAOShader.SetUniform1f("uBias", app->rendererGui.ssaoBias);
-    SSAOShader.SetUniform1f("uPower", app->rendererGui.ssaoPower);
+        SSAOShader.SetUniform1f("uSSAOptions.uRadius", app->rendererOptions.ssaoRadius);
+        SSAOShader.SetUniform1f("uSSAOptions.uBias", app->rendererOptions.ssaoBias);
+        SSAOShader.SetUniform1f("uSSAOptions.uPower", app->rendererOptions.ssaoPower);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, app->GBuffer.colorAttachmentHandles[0]); // Position
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, app->GBuffer.colorAttachmentHandles[1]); // Normal
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, app->GBuffer.depthAttachment); // Depth
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, app->noiseTextureHandle); // SSAO Noise Texture
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, app->GBuffer.colorAttachmentHandles[0]); // Position
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, app->GBuffer.colorAttachmentHandles[1]); // Normal
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, app->GBuffer.depthAttachment); // Depth
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, app->noiseTextureHandle); // SSAO Noise Texture
 
-    glBindVertexArray(app->screenQuad.VAO);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
-    glBindVertexArray(0);
-    glEnable(GL_BLEND);
-    SSAOShader.Unbind();
-    BindDefaultFramebuffer();
+        glBindVertexArray(app->screenQuad.VAO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
+        glBindVertexArray(0);
+        glEnable(GL_BLEND);
+        SSAOShader.Unbind();
+        BindDefaultFramebuffer();
 
-    // SSAO Blur
-    app->ssaoBlurBuffer.Bind();
-    glDisable(GL_BLEND);
-    glClear(GL_COLOR_BUFFER_BIT);
+        // SSAO Blur
+        app->ssaoBlurBuffer.Bind();
+        glDisable(GL_BLEND);
+        glClear(GL_COLOR_BUFFER_BIT);
 
-    Shader& SSAOBlurShader = app->shaderPrograms[app->ssaoBlurShaderID];
-    SSAOBlurShader.Bind();
+        Shader& SSAOBlurShader = app->shaderPrograms[app->ssaoBlurShaderID];
+        SSAOBlurShader.Bind();
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, app->ssaoBuffer.colorAttachmentHandles[0]); // SSAO Color Texture
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, app->ssaoBuffer.colorAttachmentHandles[0]); // SSAO Color Texture
 
-    glBindVertexArray(app->screenQuad.VAO);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
-    glBindVertexArray(0);
-    glEnable(GL_BLEND);
-    SSAOBlurShader.Unbind();
-    BindDefaultFramebuffer();
+        glBindVertexArray(app->screenQuad.VAO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
+        glBindVertexArray(0);
+        glEnable(GL_BLEND);
+        SSAOBlurShader.Unbind();
+        BindDefaultFramebuffer();
+    }
 
     // DEFERRED SHADING: LIGHTING PASS //
     app->screenQuad.FBO.Bind();
@@ -598,10 +635,6 @@ void Render(App* app)
         glBindTexture(GL_TEXTURE_2D, app->GBuffer.colorAttachmentHandles[i]);
     }
     
-    // SSAO Color (with Blur)
-    glActiveTexture(GL_TEXTURE0 + app->GBuffer.colorAttachmentHandles.size());
-    glBindTexture(GL_TEXTURE_2D, app->ssaoBlurBuffer.colorAttachmentHandles[0]);
-
     // Environment Map
     glActiveTexture(GL_TEXTURE1 + app->GBuffer.colorAttachmentHandles.size());
     glBindTexture(GL_TEXTURE_CUBE_MAP, app->environmentMapHandle);
@@ -609,6 +642,15 @@ void Render(App* app)
     // Irradiance Map
     glActiveTexture(GL_TEXTURE2 + app->GBuffer.colorAttachmentHandles.size());
     glBindTexture(GL_TEXTURE_CUBE_MAP, app->irradianceMapHandle);
+
+    // SSAO Color (with Blur)
+    glActiveTexture(GL_TEXTURE0 + app->GBuffer.colorAttachmentHandles.size());
+    glBindTexture(GL_TEXTURE_2D, app->ssaoBlurBuffer.colorAttachmentHandles[0]);
+
+    lightingPassShader.SetUniform1i("uRendererOptions.uActiveIrradiance", app->rendererOptions.activeIrradiance);
+    lightingPassShader.SetUniform1i("uRendererOptions.uActiveReflection", app->rendererOptions.activeReflection);
+    lightingPassShader.SetUniform1i("uRendererOptions.uActiveRefraction", app->rendererOptions.activeRefraction);
+    lightingPassShader.SetUniform1i("uRendererOptions.uActiveSSAO", app->rendererOptions.activeSSAO);
 
     glBindVertexArray(app->screenQuad.VAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
@@ -664,21 +706,24 @@ void Render(App* app)
     }
     lightCasterShader.Unbind();
 
-    // SKYBOX //
-    glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content
-    Shader& skyboxShader = app->shaderPrograms[app->skyboxShaderID];
-    skyboxShader.Bind();
-    glm::mat4 view = glm::mat4(glm::mat3(app->camera.GetViewMatrix(app->displaySize))); // remove translation from the view matrix
-    skyboxShader.SetUniformMat4("uView", view);
-    skyboxShader.SetUniformMat4("uProjection", app->camera.GetProjectionMatrix(app->displaySize));
+    if (app->rendererOptions.activeSkybox)
+    {
+        // SKYBOX //
+        glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content
+        Shader& skyboxShader = app->shaderPrograms[app->skyboxShaderID];
+        skyboxShader.Bind();
+        glm::mat4 view = glm::mat4(glm::mat3(app->camera.GetViewMatrix(app->displaySize))); // remove translation from the view matrix
+        skyboxShader.SetUniformMat4("uView", view);
+        skyboxShader.SetUniformMat4("uProjection", app->camera.GetProjectionMatrix(app->displaySize));
 
-    // Skybox Cube
-    glBindVertexArray(app->skyboxCubeVAO);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, app->environmentMapHandle);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    glBindVertexArray(0);
-    glDepthFunc(GL_LESS);
+        // Skybox Cube
+        glBindVertexArray(app->skyboxCubeVAO);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, app->environmentMapHandle);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+        glDepthFunc(GL_LESS);
+    }
 }
 
 u32 FindVAO(Model* model, u32 meshIndex, const Shader& shaderProgram)

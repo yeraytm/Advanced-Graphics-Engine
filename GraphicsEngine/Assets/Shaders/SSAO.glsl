@@ -30,9 +30,13 @@ uniform mat4 uProjection;
 uniform mat4 uView;
 uniform vec2 uDisplaySize;
 
-uniform float uRadius = 0.5;
-uniform float uBias = 0.025;
-uniform float uPower = 1.0;
+struct SSAOptions
+{
+    float uRadius;
+    float uBias;
+    float uPower;
+};
+uniform SSAOptions uSSAOptions;
 
 const int kernelSize = 64;
 
@@ -63,7 +67,7 @@ void main()
     for(int i = 0; i < kernelSize; ++i)
     {
         vec3 offsetView = TBN * uSamples[i];
-        vec3 samplePosView = fragPosView.xyz + offsetView * uRadius;
+        vec3 samplePosView = fragPosView.xyz + offsetView * uSSAOptions.uRadius;
 
         vec4 sampleTexCoord = uProjection * vec4(samplePosView, 1.0);
         sampleTexCoord.xyz /= sampleTexCoord.w;
@@ -72,14 +76,14 @@ void main()
         float sampledDepth = texture(gBufDepth, sampleTexCoord.xy).r;
         vec3 sampledPosView = ReconstructPixelPos(sampledDepth);
 
-        float rangeCheck = smoothstep(0.0, 1.0, uRadius / abs(samplePosView.z - sampledPosView.z));
+        float rangeCheck = smoothstep(0.0, 1.0, uSSAOptions.uRadius / abs(samplePosView.z - sampledPosView.z));
         rangeCheck *= rangeCheck;
 
-        occlusion += (samplePosView.z < sampledPosView.z - uBias ? 1.0 : 0.0);
+        occlusion += (samplePosView.z < sampledPosView.z - uSSAOptions.uBias ? 1.0 : 0.0);
     }
 
     occlusion = 1.0 - (occlusion / float(kernelSize));
-    FragColor = pow(occlusion, uPower);
+    FragColor = pow(occlusion, uSSAOptions.uPower);
 }
 
 #endif /////////////////////////////////////////////////////////////////
