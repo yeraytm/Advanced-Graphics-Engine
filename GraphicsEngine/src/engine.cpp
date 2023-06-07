@@ -229,7 +229,7 @@ void Init(App* app)
     };
     app->cubemapTextureID = LoadCubemap(cubemapFaces);
     */
-    glm::uvec2 cubemapTextures = LoadCubemap(app->textures, "Assets/Skybox/little_paris_eiffel_tower_4k.hdr", equirectToCubemapShader, irradianceConvShader, app->skyboxCubeVAO);
+    glm::uvec2 cubemapTextures = LoadCubemap(app->textures, "Assets/Skybox/rocks_4k.hdr", equirectToCubemapShader, irradianceConvShader, app->skyboxCubeVAO);
 
     app->environmentMapHandle = cubemapTextures.x;
     app->irradianceMapHandle = cubemapTextures.y;
