@@ -149,6 +149,7 @@ void Init(App* app)
     Model* cubeModel = CreatePrimitive(app, PrimitiveType::CUBE, containerMat);
     Model* cubeModel2 = CreatePrimitive(app, PrimitiveType::CUBE, blackMaterial);
 
+    Model* bunnyModel = LoadModel(app, "Assets/Models/Bunny/bunny.obj");
     Model* patrickModel = LoadModel(app, "Assets/Models/Patrick/patrick.obj");
 
     // ENTITIES //
@@ -164,6 +165,9 @@ void Init(App* app)
     Entity* cubeEntity2 = CreateEntity(app, app->defaultShaderID, glm::vec3(-5.0f, 0.0f, 7.0f), cubeModel2);
 
     // 3D Models
+    Entity* bunnyEntity = CreateEntity(app, app->defaultShaderID, glm::vec3(0.0f, -5.0f, 7.0f), bunnyModel);
+    bunnyEntity->modelMatrix = glm::scale(bunnyEntity->modelMatrix, glm::vec3(2.0f));
+
     CreateEntity(app, texturedAlbShaderID, glm::vec3(-6.0f, 0.0f, 0.0f), patrickModel);
     CreateEntity(app, texturedAlbShaderID, glm::vec3(0.0f, 0.0f, 0.0f), patrickModel);
     CreateEntity(app, texturedAlbShaderID, glm::vec3(6.0f, 0.0f, 0.0f), patrickModel);
