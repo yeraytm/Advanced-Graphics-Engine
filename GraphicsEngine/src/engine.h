@@ -37,7 +37,8 @@ struct RendererOptions
 
     // SSAO Options
     bool activeSSAO;
-    bool rangeCheck;
+    bool activeRangeCheck;
+    bool activeSSAOBlur;
     float ssaoRadius;
     float ssaoBias;
     float ssaoPower;

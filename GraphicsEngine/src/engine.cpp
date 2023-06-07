@@ -64,9 +64,9 @@ void Init(App* app)
     lightingPassShader.SetUniform1i("gBufNormal",       1);
     lightingPassShader.SetUniform1i("gBufAlbedo",       2);
     lightingPassShader.SetUniform1i("gBufSpecular",     3);
-    lightingPassShader.SetUniform1i("uSSAOColor",       4);
-    lightingPassShader.SetUniform1i("uEnvironmentMap",  5);
-    lightingPassShader.SetUniform1i("uIrradianceMap",   6);
+    lightingPassShader.SetUniform1i("uEnvironmentMap",  4);
+    lightingPassShader.SetUniform1i("uIrradianceMap",   5);
+    lightingPassShader.SetUniform1i("uSSAOColor",       6);
 
     // SCREEN-FILLING QUAD //
     app->screenQuad.VAO = CreateQuad();
@@ -155,19 +155,19 @@ void Init(App* app)
 
     // ENTITIES //
     // Primitives
-    Entity* planeEntity = CreateEntity(app, app->defaultShaderID, glm::vec3(0.0f, -5.0f, 0.0f), planeModel);
+    Entity* planeEntity = CreateEntity(app, app->defaultShaderID, glm::vec3(0.0f, -3.4f, 0.0f), planeModel);
     planeEntity->modelMatrix = glm::rotate(planeEntity->modelMatrix, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     planeEntity->modelMatrix = glm::scale(planeEntity->modelMatrix, glm::vec3(35.0f));
 
-    Entity* sphereEntity = CreateEntity(app, app->defaultShaderID, glm::vec3(0.0f, 0.0f, 7.0f), sphereModel);
+    Entity* sphereEntity = CreateEntity(app, app->defaultShaderID, glm::vec3(0.0f, 1.0f, 7.0f), sphereModel);
 
     Entity* cubeEntity = CreateEntity(app, texturedAlbSpecShaderID, glm::vec3(5.0f, 0.0f, 7.0f), cubeModel);
 
     Entity* cubeEntity2 = CreateEntity(app, app->defaultShaderID, glm::vec3(-5.0f, 0.0f, 7.0f), cubeModel2);
 
     // 3D Models
-    Entity* bunnyEntity = CreateEntity(app, app->defaultShaderID, glm::vec3(0.0f, -5.0f, 7.0f), bunnyModel);
-    bunnyEntity->modelMatrix = glm::scale(bunnyEntity->modelMatrix, glm::vec3(2.0f));
+    Entity* bunnyEntity = CreateEntity(app, app->defaultShaderID, glm::vec3(0.0f, -3.5f, 7.0f), bunnyModel);
+    bunnyEntity->modelMatrix = glm::scale(bunnyEntity->modelMatrix, glm::vec3(1.5f));
 
     CreateEntity(app, texturedAlbShaderID, glm::vec3(-6.0f, 0.0f, 0.0f), patrickModel);
     CreateEntity(app, texturedAlbShaderID, glm::vec3(0.0f, 0.0f, 0.0f), patrickModel);
@@ -203,8 +203,8 @@ void Init(App* app)
         CreatePointLight(app, glm::vec3(xPos, yPos, zPos), color, glm::vec3(1.0f), sphereLowModel, 1.0f, 0.1f);
     }
 
-    CreatePointLight(app, glm::vec3(-6.0f, -4.5f, 10.0f), glm::vec3(0.6f), glm::vec3(1.0f), sphereLowModel, 0.5f, 0.1f);
-    CreatePointLight(app, glm::vec3(6.0f, -4.5f, 10.0f), glm::vec3(0.6f), glm::vec3(1.0f), sphereLowModel, 1.0f, 0.1f);
+    CreatePointLight(app, glm::vec3(-6.0f, -3.0f, 10.0f), glm::vec3(0.6f), glm::vec3(1.0f), sphereLowModel, 0.5f, 0.1f);
+    CreatePointLight(app, glm::vec3(6.0f, -3.0f, 10.0f), glm::vec3(0.6f), glm::vec3(1.0f), sphereLowModel, 1.0f, 0.1f);
 
     // SKYBOX //
     app->skyboxShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/Skybox.glsl", "SKYBOX");
@@ -308,7 +308,8 @@ void Init(App* app)
     SSAOBlurShader.SetUniform1i("uSSAOColor", 0);
 
     app->rendererOptions.activeSSAO = true;
-    app->rendererOptions.rangeCheck = true;
+    app->rendererOptions.activeRangeCheck = true;
+    app->rendererOptions.activeSSAOBlur = true;
     app->rendererOptions.ssaoRadius = 0.5f;
     app->rendererOptions.ssaoBias = 0.025f;
     app->rendererOptions.ssaoPower = 1.0f;
@@ -387,7 +388,8 @@ void ImGuiRender(App* app)
         ImGui::Checkbox("SSAO", &app->rendererOptions.activeSSAO);
         if (app->rendererOptions.activeSSAO)
         {
-            ImGui::Checkbox("Range Check", &app->rendererOptions.rangeCheck);
+            ImGui::Checkbox("Range Check", &app->rendererOptions.activeRangeCheck);
+            ImGui::Checkbox("Blur", &app->rendererOptions.activeSSAOBlur);
             ImGui::DragFloat("Radius", &app->rendererOptions.ssaoRadius, 0.05f, 0.25f, 2.0f);
             ImGui::DragFloat("Bias", &app->rendererOptions.ssaoBias, 0.001f, 0.01f, 0.1f);
             ImGui::DragFloat("Power", &app->rendererOptions.ssaoPower, 0.1f, 1.0f, 10.0f);
@@ -575,7 +577,7 @@ void Render(App* app)
         SSAOShader.SetUniformMat4("uView", app->camera.GetViewMatrix(app->displaySize));
         SSAOShader.SetUniform2f("uDisplaySize", glm::vec2(app->displaySize.x, app->displaySize.y));
 
-        SSAOShader.SetUniform1i("uSSAOptions.uRangeCheck", app->rendererOptions.rangeCheck);
+        SSAOShader.SetUniform1i("uSSAOptions.uRangeCheck", app->rendererOptions.activeRangeCheck);
         SSAOShader.SetUniform1f("uSSAOptions.uRadius", app->rendererOptions.ssaoRadius);
         SSAOShader.SetUniform1f("uSSAOptions.uBias", app->rendererOptions.ssaoBias);
         SSAOShader.SetUniform1f("uSSAOptions.uPower", app->rendererOptions.ssaoPower);
@@ -633,16 +635,16 @@ void Render(App* app)
     }
     
     // Environment Map
-    glActiveTexture(GL_TEXTURE1 + app->GBuffer.colorAttachmentHandles.size());
+    glActiveTexture(GL_TEXTURE0 + app->GBuffer.colorAttachmentHandles.size());
     glBindTexture(GL_TEXTURE_CUBE_MAP, app->environmentMapHandle);
 
     // Irradiance Map
-    glActiveTexture(GL_TEXTURE2 + app->GBuffer.colorAttachmentHandles.size());
+    glActiveTexture(GL_TEXTURE1 + app->GBuffer.colorAttachmentHandles.size());
     glBindTexture(GL_TEXTURE_CUBE_MAP, app->irradianceMapHandle);
 
-    // SSAO Color (with Blur)
-    glActiveTexture(GL_TEXTURE0 + app->GBuffer.colorAttachmentHandles.size());
-    glBindTexture(GL_TEXTURE_2D, app->ssaoBlurBuffer.colorAttachmentHandles[0]);
+    // SSAO Color
+    glActiveTexture(GL_TEXTURE2 + app->GBuffer.colorAttachmentHandles.size());
+    glBindTexture(GL_TEXTURE_2D, app->rendererOptions.activeSSAOBlur ? app->ssaoBlurBuffer.colorAttachmentHandles[0] : app->ssaoBuffer.colorAttachmentHandles[0]);
 
     lightingPassShader.SetUniform1i("uRendererOptions.uActiveIrradiance", app->rendererOptions.activeIrradiance);
     lightingPassShader.SetUniform1i("uRendererOptions.uActiveReflection", app->rendererOptions.activeReflection);
