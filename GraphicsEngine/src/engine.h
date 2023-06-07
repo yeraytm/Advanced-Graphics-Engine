@@ -28,6 +28,9 @@ struct RendererGUI
 {
     bool open;
     std::vector<const char*> renderTargets;
+    float ssaoRadius;
+    float ssaoBias;
+    float ssaoPower;
 };
 
 struct Quad

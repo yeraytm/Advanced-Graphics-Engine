@@ -30,11 +30,11 @@ uniform mat4 uProjection;
 uniform mat4 uView;
 uniform vec2 uDisplaySize;
 
-// parameters (probably want to use them as uniforms to more easily tweak the effect)
-int kernelSize = 64;
-float radius = 0.5;
-float bias = 0.025;
-float power = 1.0;
+uniform float uRadius = 0.5;
+uniform float uBias = 0.025;
+uniform float uPower = 1.0;
+
+const int kernelSize = 64;
 
 vec3 ReconstructPixelPos(float depth)
 {
@@ -63,7 +63,7 @@ void main()
     for(int i = 0; i < kernelSize; ++i)
     {
         vec3 offsetView = TBN * uSamples[i];
-        vec3 samplePosView = fragPosView.xyz + offsetView * radius;
+        vec3 samplePosView = fragPosView.xyz + offsetView * uRadius;
 
         vec4 sampleTexCoord = uProjection * vec4(samplePosView, 1.0);
         sampleTexCoord.xyz /= sampleTexCoord.w;
@@ -72,14 +72,14 @@ void main()
         float sampledDepth = texture(gBufDepth, sampleTexCoord.xy).r;
         vec3 sampledPosView = ReconstructPixelPos(sampledDepth);
 
-        float rangeCheck = smoothstep(0.0, 1.0, radius / abs(samplePosView.z - sampledPosView.z));
+        float rangeCheck = smoothstep(0.0, 1.0, uRadius / abs(samplePosView.z - sampledPosView.z));
         rangeCheck *= rangeCheck;
 
-        occlusion += (samplePosView.z < sampledPosView.z - 0.02 ? 1.0 : 0.0);
+        occlusion += (samplePosView.z < sampledPosView.z - uBias ? 1.0 : 0.0);
     }
 
     occlusion = 1.0 - (occlusion / float(kernelSize));
-    FragColor = pow(occlusion, power);
+    FragColor = pow(occlusion, uPower);
 }
 
 #endif /////////////////////////////////////////////////////////////////

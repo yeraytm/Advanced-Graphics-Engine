@@ -297,6 +297,10 @@ void Init(App* app)
     SSAOBlurShader.Bind();
     SSAOBlurShader.SetUniform1i("uSSAOColor", 0);
 
+    app->rendererGui.ssaoRadius = 0.5f;
+    app->rendererGui.ssaoBias = 0.025f;
+    app->rendererGui.ssaoPower = 1.0f;
+
     // ENGINE COUNT OF ENTITIES & LIGHTS //
     app->numEntities = app->entities.size();
     app->numLights = app->lights.size();
@@ -348,6 +352,15 @@ void ImGuiRender(App* app)
     if (app->rendererGui.open)
     {
         ImGui::Begin("Renderer", &app->rendererGui.open);
+
+        ImGui::Text("SSAO Parameters");
+        ImGui::DragFloat("Radius", &app->rendererGui.ssaoRadius, 0.05f, 0.25f, 2.0f);
+        ImGui::DragFloat("Bias", &app->rendererGui.ssaoBias, 0.001f, 0.01f, 0.1f);
+        ImGui::DragFloat("Power", &app->rendererGui.ssaoPower, 0.1f, 1.0f, 10.0f);
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
 
         ImGui::Text("Render Target");
         static const char* preview = "FINAL COLOR";
@@ -524,6 +537,10 @@ void Render(App* app)
     SSAOShader.SetUniformMat4("uProjection", app->camera.GetProjectionMatrix(app->displaySize));
     SSAOShader.SetUniformMat4("uView", app->camera.GetViewMatrix(app->displaySize));
     SSAOShader.SetUniform2f("uDisplaySize", glm::vec2(app->displaySize.x, app->displaySize.y));
+
+    SSAOShader.SetUniform1f("uRadius", app->rendererGui.ssaoRadius);
+    SSAOShader.SetUniform1f("uBias", app->rendererGui.ssaoBias);
+    SSAOShader.SetUniform1f("uPower", app->rendererGui.ssaoPower);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, app->GBuffer.colorAttachmentHandles[0]); // Position
