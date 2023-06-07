@@ -200,11 +200,11 @@ void Init(App* app)
         float bColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.0
         glm::vec3 color = glm::vec3(rColor, gColor, bColor);
 
-        CreatePointLight(app, glm::vec3(xPos, yPos, zPos), color * 0.2f, color, glm::vec3(1.0f), sphereLowModel, 1.0f, 0.1f);
+        CreatePointLight(app, glm::vec3(xPos, yPos, zPos), color, glm::vec3(1.0f), sphereLowModel, 1.0f, 0.1f);
     }
 
-    CreatePointLight(app, glm::vec3(-6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), sphereLowModel, 0.5f, 0.1f);
-    CreatePointLight(app, glm::vec3(6.0f, -4.5f, 10.0f), glm::vec3(0.2f), glm::vec3(0.6f), glm::vec3(1.0f), sphereLowModel, 1.0f, 0.1f);
+    CreatePointLight(app, glm::vec3(-6.0f, -4.5f, 10.0f), glm::vec3(0.6f), glm::vec3(1.0f), sphereLowModel, 0.5f, 0.1f);
+    CreatePointLight(app, glm::vec3(6.0f, -4.5f, 10.0f), glm::vec3(0.6f), glm::vec3(1.0f), sphereLowModel, 1.0f, 0.1f);
 
     // SKYBOX //
     app->skyboxShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/Skybox.glsl", "SKYBOX");
@@ -229,7 +229,7 @@ void Init(App* app)
     };
     app->cubemapTextureID = LoadCubemap(cubemapFaces);
     */
-    glm::uvec2 cubemapTextures = LoadCubemap(app->textures, "Assets/Skybox/rocks_4k.hdr", equirectToCubemapShader, irradianceConvShader, app->skyboxCubeVAO);
+    glm::uvec2 cubemapTextures = LoadCubemap(app->textures, "Assets/Skybox/little_paris_eiffel_tower_4k.hdr", equirectToCubemapShader, irradianceConvShader, app->skyboxCubeVAO);
 
     app->environmentMapHandle = cubemapTextures.x;
     app->irradianceMapHandle = cubemapTextures.y;
@@ -754,7 +754,6 @@ void UpdateUniformBuffer(App* app)
 
         Light& light = app->lights[i];
         PushVec4(app->UBO, light.lightVector);
-        PushVec3(app->UBO, light.ambient);
         PushVec3(app->UBO, light.diffuse);
         PushVec3(app->UBO, light.specular);
         PushFloat(app->UBO, light.constant);
@@ -789,23 +788,23 @@ Entity* CreateEntity(App* app, u32 shaderID, glm::vec3 position, Model* model)
     return &app->entities[app->entities.size() - 1u];
 }
 
-void CreatePointLight(App* app, glm::vec3 position, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, Model* model, float constant, float scale)
+void CreatePointLight(App* app, glm::vec3 position, glm::vec3 diffuse, glm::vec3 specular, Model* model, float constant, float scale)
 {
     Entity lightEntity = Entity(app->lightCasterShaderID, position, model);
     lightEntity.modelMatrix = glm::scale(lightEntity.modelMatrix, glm::vec3(scale));
     app->entities.push_back(lightEntity);
 
-    Light light = { glm::vec4(position, 1.0f), ambient, diffuse, specular, constant };
+    Light light = { glm::vec4(position, 1.0f), diffuse, specular, constant };
     app->lights.push_back(light);
 }
 
-void CreateDirectionalLight(App* app, glm::vec3 entityPosition, glm::vec3 direction, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, Model* model, float scale)
+void CreateDirectionalLight(App* app, glm::vec3 entityPosition, glm::vec3 direction, glm::vec3 diffuse, glm::vec3 specular, Model* model, float scale)
 {
     Entity lightEntity = Entity(app->lightCasterShaderID, entityPosition, model);
     lightEntity.modelMatrix = glm::scale(lightEntity.modelMatrix, glm::vec3(scale));
     app->entities.push_back(lightEntity);
 
-    Light light = { glm::vec4(direction, 0.0f), ambient, diffuse, specular, 1.0f };
+    Light light = { glm::vec4(direction, 0.0f), diffuse, specular, 1.0f };
     app->lights.push_back(light);
 }
 

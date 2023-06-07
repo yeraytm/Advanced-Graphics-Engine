@@ -25,8 +25,7 @@ struct Light
 {
 	// XYZ for position/direction and W for type
 	vec4 lightVector;
-
-	vec3 ambient;
+	
 	vec3 diffuse;
 	vec3 specular;
 

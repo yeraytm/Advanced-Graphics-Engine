@@ -23,7 +23,6 @@ struct Light
 	// XYZ for position/direction and W for type
 	vec4 lightVector;
 
-	vec3 ambient;
 	vec3 diffuse;
 	vec3 specular;
 
@@ -49,7 +48,7 @@ uniform samplerCube uEnvironmentMap;
 uniform samplerCube uIrradianceMap;
 
 vec3 ComputeDirLight(Light light, vec3 albedo, float specularC, vec3 irradiance, float ambientOcclusion, vec3 normal, vec3 viewDir);
-vec3 ComputePointLight(Light light, vec3 albedo, float specularC, vec3 irradiance, float ambientOcclusion, vec3 normal, vec3 fragPos, vec3 viewDir);
+vec3 ComputePointLight(Light light, vec3 albedo, float specularC,  vec3 irradiance, float ambientOcclusion, vec3 normal, vec3 fragPos, vec3 viewDir);
 
 void main()
 {
@@ -74,8 +73,6 @@ void main()
 	}
 
 	vec3 specularReflection = reflect(-viewDir, normalize(normal));
-	//vec3 refr = refract(-viewDir, normalize(normal), 1.00/1.52);
-
 	result += texture(uEnvironmentMap, specularReflection).rgb * specularC;
 
 	// Final Lighting Color write to G-Buffer
@@ -87,7 +84,7 @@ vec3 ComputeDirLight(Light light, vec3 albedo, float specularC, vec3 irradiance,
 	vec3 lightDir = normalize(-light.lightVector.xyz);
 
 	// Ambient
-	vec3 ambient = light.ambient * albedo * ambientOcclusion;
+	vec3 ambient = albedo * ambientOcclusion * irradiance;
 
 	// Diffuse
 	float diff = max(dot(normal, lightDir), 0.0);
@@ -110,7 +107,7 @@ vec3 ComputePointLight(Light light, vec3 albedo, float specularC, vec3 irradianc
 	float attenuation = 1.0 / (light.constant + 0.09 * distance + 0.032 * (distance * distance));
 
 	// Ambient
-	vec3 ambient = light.ambient * albedo * attenuation * ambientOcclusion;
+	vec3 ambient = albedo * attenuation * ambientOcclusion * irradiance;
 
 	// Diffuse
 	float diff = max(dot(normal, lightDir), 0.0);

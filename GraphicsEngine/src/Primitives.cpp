@@ -205,7 +205,6 @@ Model* CreatePrimitive(App* app, PrimitiveType type, Material& material, u32 xNu
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(u32), mesh.indices.data(), GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     model->meshes.push_back(mesh);
@@ -270,6 +269,7 @@ u32 CreateSkyboxCube()
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
     return VAO;

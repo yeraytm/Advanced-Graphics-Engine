@@ -13,7 +13,7 @@ void main()
 {
     vWorldPos = aPos;
     gl_Position = uProjection * uView * vec4(aPos,1.0);
-} 
+}
 
 #elif defined(FRAGMENT) ///////////////////////////////////////////////
 
@@ -37,6 +37,10 @@ void main()
 {
     vec2 uv = SampleSphericalMap(normalize(vWorldPos));
     vec3 color = min(vec3(1000.0), texture(uEquirectangularMap, uv).rgb);
+
+    color = color / (color + vec3(1.0));
+    color = pow(color, vec3(1.0/2.2));
+
 	FragColor = vec4(color, 1.0);
 }
 
