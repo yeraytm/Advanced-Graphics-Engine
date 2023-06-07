@@ -21,5 +21,5 @@ struct Texture
 
 u32 LoadTexture2D(std::vector<Texture>& textures, const char* filepath, bool isFlipped = true);
 
-u32 LoadCubemap(std::vector<Texture>& textures, const char* filepath, Shader& equirectToCubemapShader, u32 skyboxVAO);
+glm::uvec2 LoadCubemap(std::vector<Texture>& textures, const char* filepath, Shader& equirectToCubemapShader, Shader& irradianceConvShader, u32 skyboxCubeVAO);
 u32 LoadCubemap(std::vector<std::string>& faces);

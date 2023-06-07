@@ -102,8 +102,9 @@ struct App
 
     // SKYBOX //
     u32 skyboxShaderID;
-    u32 cubemapTextureID;
-    u32 skyboxVAO;
+    u32 environmentMapHandle;
+    u32 irradianceMapHandle;
+    u32 skyboxCubeVAO;
 
     // SSAO //
     Framebuffer ssaoBuffer;

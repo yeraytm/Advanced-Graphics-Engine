@@ -64,8 +64,9 @@ void Init(App* app)
     lightingPassShader.SetUniform1i("gBufNormal",       1);
     lightingPassShader.SetUniform1i("gBufAlbedo",       2);
     lightingPassShader.SetUniform1i("gBufSpecular",     3);
-    lightingPassShader.SetUniform1i("uSSAOColor", 4);
-    //lightingPassShader.SetUniform1i("uSkybox",  5);
+    lightingPassShader.SetUniform1i("uSSAOColor",       4);
+    lightingPassShader.SetUniform1i("uEnvironmentMap",  5);
+    lightingPassShader.SetUniform1i("uIrradianceMap",   6);
 
     // SCREEN-FILLING QUAD //
     app->screenQuad.VAO = CreateQuad();
@@ -209,11 +210,12 @@ void Init(App* app)
     app->skyboxShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/Skybox.glsl", "SKYBOX");
     Shader& skyboxShader = app->shaderPrograms[app->skyboxShaderID];
     skyboxShader.Bind();
-    skyboxShader.SetUniform1i("uSkybox", 0);
+    skyboxShader.SetUniform1i("uEnvironmentMap", 0);
 
-    app->skyboxVAO = CreateSkyboxCube();
+    app->skyboxCubeVAO = CreateSkyboxCube();
 
     Shader& equirectToCubemapShader = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/EquirectToCubemap.glsl", "EQUIRECT_TO_CUBEMAP")];
+    Shader& irradianceConvShader = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/Irradiance_Convolution.glsl", "IRRADIANCE_CONVOLUTION")];
 
     /*
     std::vector<std::string> cubemapFaces
@@ -227,7 +229,10 @@ void Init(App* app)
     };
     app->cubemapTextureID = LoadCubemap(cubemapFaces);
     */
-    app->cubemapTextureID = LoadCubemap(app->textures, "Assets/Skybox/little_paris_eiffel_tower_4k.hdr", equirectToCubemapShader, app->skyboxVAO);
+    glm::uvec2 cubemapTextures = LoadCubemap(app->textures, "Assets/Skybox/little_paris_eiffel_tower_4k.hdr", equirectToCubemapShader, irradianceConvShader, app->skyboxCubeVAO);
+
+    app->environmentMapHandle = cubemapTextures.x;
+    app->irradianceMapHandle = cubemapTextures.y;
 
     // SSAO //
     app->ssaoBuffer.Generate();
@@ -592,12 +597,18 @@ void Render(App* app)
         glActiveTexture(GL_TEXTURE0 + i);
         glBindTexture(GL_TEXTURE_2D, app->GBuffer.colorAttachmentHandles[i]);
     }
-
+    
+    // SSAO Color (with Blur)
     glActiveTexture(GL_TEXTURE0 + app->GBuffer.colorAttachmentHandles.size());
     glBindTexture(GL_TEXTURE_2D, app->ssaoBlurBuffer.colorAttachmentHandles[0]);
 
-    //glActiveTexture(GL_TEXTURE1 + app->GBuffer.colorAttachmentHandles.size());
-    //glBindTexture(GL_TEXTURE_CUBE_MAP, app->cubemapTextureID);
+    // Environment Map
+    glActiveTexture(GL_TEXTURE1 + app->GBuffer.colorAttachmentHandles.size());
+    glBindTexture(GL_TEXTURE_CUBE_MAP, app->environmentMapHandle);
+
+    // Irradiance Map
+    glActiveTexture(GL_TEXTURE2 + app->GBuffer.colorAttachmentHandles.size());
+    glBindTexture(GL_TEXTURE_CUBE_MAP, app->irradianceMapHandle);
 
     glBindVertexArray(app->screenQuad.VAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
@@ -662,9 +673,9 @@ void Render(App* app)
     skyboxShader.SetUniformMat4("uProjection", app->camera.GetProjectionMatrix(app->displaySize));
 
     // Skybox Cube
-    glBindVertexArray(app->skyboxVAO);
+    glBindVertexArray(app->skyboxCubeVAO);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, app->cubemapTextureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, app->environmentMapHandle);
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
     glDepthFunc(GL_LESS);

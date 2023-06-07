@@ -45,10 +45,11 @@ uniform sampler2D gBufAlbedo;
 uniform sampler2D gBufSpecular;
 
 uniform sampler2D uSSAOColor;
-//uniform samplerCube uSkybox;
+uniform samplerCube uEnvironmentMap;
+uniform samplerCube uIrradianceMap;
 
-vec3 ComputeDirLight(Light light, vec3 albedo, float specularC, float ambientOcclusion, vec3 normal, vec3 viewDir);
-vec3 ComputePointLight(Light light, vec3 albedo, float specularC, float ambientOcclusion, vec3 normal, vec3 fragPos, vec3 viewDir);
+vec3 ComputeDirLight(Light light, vec3 albedo, float specularC, vec3 irradiance, float ambientOcclusion, vec3 normal, vec3 viewDir);
+vec3 ComputePointLight(Light light, vec3 albedo, float specularC, vec3 irradiance, float ambientOcclusion, vec3 normal, vec3 fragPos, vec3 viewDir);
 
 void main()
 {
@@ -58,6 +59,7 @@ void main()
 	float specularC = texture(gBufSpecular, vTexCoord).r;
 	
 	float ambientOcclusion = texture(uSSAOColor, vTexCoord).r;
+	vec3 irradiance = texture(uIrradianceMap, normal).rgb;
 
 	vec3 viewDir = normalize(uViewPos - fragPos);
 
@@ -66,21 +68,21 @@ void main()
 	for(int i = 0; i < uNumLights; ++i)
 	{
 		if(uLights[i].lightVector.w == 0.0)
-			result += ComputeDirLight(uLights[i], albedo, specularC, ambientOcclusion, normal, viewDir);
+			result += ComputeDirLight(uLights[i], albedo, specularC, irradiance, ambientOcclusion, normal, viewDir);
 		else if(uLights[i].lightVector.w == 1.0)
-			result += ComputePointLight(uLights[i], albedo, specularC, ambientOcclusion, normal, fragPos, viewDir);
+			result += ComputePointLight(uLights[i], albedo, specularC, irradiance, ambientOcclusion, normal, fragPos, viewDir);
 	}
 
-	//vec3 specularReflection = reflect(-viewDir, normalize(normal));
+	vec3 specularReflection = reflect(-viewDir, normalize(normal));
 	//vec3 refr = refract(-viewDir, normalize(normal), 1.00/1.52);
 
-	//result += texture(uSkybox, specularReflection).rgb;
+	result += texture(uEnvironmentMap, specularReflection).rgb * specularC;
 
 	// Final Lighting Color write to G-Buffer
 	FinalColor = vec4(result, 1.0);
 }
 
-vec3 ComputeDirLight(Light light, vec3 albedo, float specularC, float ambientOcclusion, vec3 normal, vec3 viewDir)
+vec3 ComputeDirLight(Light light, vec3 albedo, float specularC, vec3 irradiance, float ambientOcclusion, vec3 normal, vec3 viewDir)
 {
 	vec3 lightDir = normalize(-light.lightVector.xyz);
 
@@ -99,7 +101,7 @@ vec3 ComputeDirLight(Light light, vec3 albedo, float specularC, float ambientOcc
 	return (ambient + diffuse + specular);
 }
 
-vec3 ComputePointLight(Light light, vec3 albedo, float specularC, float ambientOcclusion, vec3 normal, vec3 fragPos, vec3 viewDir)
+vec3 ComputePointLight(Light light, vec3 albedo, float specularC, vec3 irradiance, float ambientOcclusion, vec3 normal, vec3 fragPos, vec3 viewDir)
 {
 	vec3 lightPosition = light.lightVector.xyz;
 	vec3 lightDir = normalize(lightPosition - fragPos);

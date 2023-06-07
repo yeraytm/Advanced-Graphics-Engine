@@ -102,33 +102,9 @@ u32 LoadTexture2D(std::vector<Texture>& textures, const char* filepath, bool isF
         return UINT32_MAX;
 }
 
-u32 LoadCubemap(std::vector<Texture>& textures, const char* filepath, Shader& equirectToCubemapShader, u32 skyboxVAO)
+glm::uvec2 LoadCubemap(std::vector<Texture>& textures, const char* filepath, Shader& equirectToCubemapShader, Shader& irradianceConvShader, u32 skyboxCubeVAO)
 {
-    u32 cubemapFBO, cubemapRBO;
-    glGenFramebuffers(1, &cubemapFBO);
-    glGenRenderbuffers(1, &cubemapRBO);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, cubemapFBO);
-    glBindRenderbuffer(GL_RENDERBUFFER, cubemapRBO);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, cubemapRBO);
-
-    Texture& hdrTexture = textures[LoadTexture2D(textures, filepath, true)];
-
-    u32 cubemapTexID;
-    glGenTextures(1, &cubemapTexID);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexID);
-
-    for (u32 i = 0; i < 6; i++)
-    {
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, nullptr);
-    }
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
+    // Matrices needed to generate cubemap faces
     glm::mat4 captureProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
     glm::mat4 captureViews[] =
     {
@@ -139,40 +115,103 @@ u32 LoadCubemap(std::vector<Texture>& textures, const char* filepath, Shader& eq
         glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
         glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
     };
+    
+    // Framebuffer to capture cubemap faces
+    u32 cubemapFBO, cubemapRBO;
+    glGenFramebuffers(1, &cubemapFBO);
+    glGenRenderbuffers(1, &cubemapRBO);
+
+    // CUBEMAP SKYBOX TEXTURE //
+    glBindFramebuffer(GL_FRAMEBUFFER, cubemapFBO);
+    glBindRenderbuffer(GL_RENDERBUFFER, cubemapRBO);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, cubemapRBO);
+
+    Texture& hdrTexture = textures[LoadTexture2D(textures, filepath, true)];
+
+    u32 environmentMapHandle;
+    glGenTextures(1, &environmentMapHandle);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, environmentMapHandle);
+    for (u32 i = 0; i < 6; i++)
+    {
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, nullptr);
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     equirectToCubemapShader.Bind();
     equirectToCubemapShader.SetUniform1i("uEquirectangularMap", 0);
     equirectToCubemapShader.SetUniformMat4("uProjection", captureProj);
-
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, hdrTexture.handle);
 
     // Configure viewport to the dimensions of each face we want to capture
     glViewport(0, 0, 512, 512);
-
     glBindFramebuffer(GL_FRAMEBUFFER, cubemapFBO);
-
     for (u32 i = 0; i < 6; ++i)
     {
         equirectToCubemapShader.SetUniformMat4("uView", captureViews[i]);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, cubemapTexID, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, environmentMapHandle, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glBindVertexArray(skyboxVAO);
+        glBindVertexArray(skyboxCubeVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
     }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     equirectToCubemapShader.Unbind();
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    return cubemapTexID;
+    // IRRADIANCE CUBEMAP TEXTURE //
+    u32 irradianceMapHandle;
+    glGenTextures(1, &irradianceMapHandle);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMapHandle);
+    for (u32 i = 0; i < 6; i++)
+    {
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 32, 32, 0, GL_RGB, GL_FLOAT, nullptr);
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, cubemapFBO);
+    glBindRenderbuffer(GL_RENDERBUFFER, cubemapRBO);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 32, 32);
+
+    irradianceConvShader.Bind();
+    irradianceConvShader.SetUniform1i("uEnvironmentMap", 0);
+    irradianceConvShader.SetUniformMat4("uProjection", captureProj);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, environmentMapHandle);
+
+    // Configure viewport to the dimensions of each face we want to capture
+    glViewport(0, 0, 32, 32);
+    glBindFramebuffer(GL_FRAMEBUFFER, cubemapFBO);
+    for (u32 i = 0; i < 6; ++i)
+    {
+        irradianceConvShader.SetUniformMat4("uView", captureViews[i]);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, irradianceMapHandle, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glBindVertexArray(skyboxCubeVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+    }
+    irradianceConvShader.Unbind();
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    return glm::uvec2(environmentMapHandle, irradianceMapHandle);
 }
 
 u32 LoadCubemap(std::vector<std::string>& faces)
 {
-    u32 textureID;
-    glGenTextures(1, &textureID);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+    u32 cubemapTexHandle;
+    glGenTextures(1, &cubemapTexHandle);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexHandle);
 
     for (unsigned int i = 0; i < faces.size(); i++)
     {
@@ -195,5 +234,5 @@ u32 LoadCubemap(std::vector<std::string>& faces)
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    return textureID;
+    return cubemapTexHandle;
 }

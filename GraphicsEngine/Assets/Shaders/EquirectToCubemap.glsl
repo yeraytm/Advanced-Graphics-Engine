@@ -4,14 +4,14 @@
 
 layout (location = 0) in vec3 aPos;
 
-out vec3 vLocalPos;
+out vec3 vWorldPos;
 
 uniform mat4 uProjection;
 uniform mat4 uView;
 
 void main()
 {
-    vLocalPos = aPos;
+    vWorldPos = aPos;
     gl_Position = uProjection * uView * vec4(aPos,1.0);
 } 
 
@@ -19,7 +19,7 @@ void main()
 
 layout(location = 0) out vec4 FragColor;
 
-in vec3 vLocalPos;
+in vec3 vWorldPos;
 
 uniform sampler2D uEquirectangularMap;
 
@@ -35,7 +35,7 @@ vec2 SampleSphericalMap(vec3 v)
 
 void main()
 {
-    vec2 uv = SampleSphericalMap(normalize(vLocalPos));
+    vec2 uv = SampleSphericalMap(normalize(vWorldPos));
     vec3 color = min(vec3(1000.0), texture(uEquirectangularMap, uv).rgb);
 	FragColor = vec4(color, 1.0);
 }

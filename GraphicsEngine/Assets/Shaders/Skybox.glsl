@@ -22,11 +22,11 @@ layout(location = 0) out vec4 FragColor;
 
 in vec3 vTexCoord;
 
-uniform samplerCube uSkybox;
+uniform samplerCube uEnvironmentMap;
 
 void main()
 {
-    vec3 envColor = texture(uSkybox, vTexCoord).rgb;
+    vec3 envColor = texture(uEnvironmentMap, vTexCoord).rgb;
 
     envColor = envColor / (envColor + vec3(1.0));
     envColor = pow(envColor, vec3(1.0/2.2));
