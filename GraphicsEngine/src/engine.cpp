@@ -18,19 +18,7 @@ void Init(App* app)
     // IMGUI //
     // ImGui Windows
     app->openGLGui.open = false;
-
     app->rendererOptions.open = true;
-
-    app->rendererOptions.activeSkybox = true;
-    app->rendererOptions.activeIrradiance = true;
-    app->rendererOptions.activeReflection = false;
-    app->rendererOptions.activeRefraction = false;
-
-    app->rendererOptions.activeSSAO = true;
-    app->rendererOptions.ssaoRadius = 0.5f;
-    app->rendererOptions.ssaoBias = 0.025f;
-    app->rendererOptions.ssaoPower = 1.0f;
-
     app->sceneGui = false;
     app->performanceGui = false;
 
@@ -246,6 +234,11 @@ void Init(App* app)
     app->environmentMapHandle = cubemapTextures.x;
     app->irradianceMapHandle = cubemapTextures.y;
 
+    app->rendererOptions.activeSkybox = true;
+    app->rendererOptions.activeIrradiance = true;
+    app->rendererOptions.activeReflection = false;
+    app->rendererOptions.activeRefraction = false;
+
     // SSAO //
     app->ssaoBuffer.Generate();
     app->ssaoBuffer.Bind();
@@ -314,6 +307,8 @@ void Init(App* app)
     SSAOBlurShader.Bind();
     SSAOBlurShader.SetUniform1i("uSSAOColor", 0);
 
+    app->rendererOptions.activeSSAO = true;
+    app->rendererOptions.rangeCheck = true;
     app->rendererOptions.ssaoRadius = 0.5f;
     app->rendererOptions.ssaoBias = 0.025f;
     app->rendererOptions.ssaoPower = 1.0f;
@@ -392,6 +387,7 @@ void ImGuiRender(App* app)
         ImGui::Checkbox("SSAO", &app->rendererOptions.activeSSAO);
         if (app->rendererOptions.activeSSAO)
         {
+            ImGui::Checkbox("Range Check", &app->rendererOptions.rangeCheck);
             ImGui::DragFloat("Radius", &app->rendererOptions.ssaoRadius, 0.05f, 0.25f, 2.0f);
             ImGui::DragFloat("Bias", &app->rendererOptions.ssaoBias, 0.001f, 0.01f, 0.1f);
             ImGui::DragFloat("Power", &app->rendererOptions.ssaoPower, 0.1f, 1.0f, 10.0f);
@@ -579,6 +575,7 @@ void Render(App* app)
         SSAOShader.SetUniformMat4("uView", app->camera.GetViewMatrix(app->displaySize));
         SSAOShader.SetUniform2f("uDisplaySize", glm::vec2(app->displaySize.x, app->displaySize.y));
 
+        SSAOShader.SetUniform1i("uSSAOptions.uRangeCheck", app->rendererOptions.rangeCheck);
         SSAOShader.SetUniform1f("uSSAOptions.uRadius", app->rendererOptions.ssaoRadius);
         SSAOShader.SetUniform1f("uSSAOptions.uBias", app->rendererOptions.ssaoBias);
         SSAOShader.SetUniform1f("uSSAOptions.uPower", app->rendererOptions.ssaoPower);

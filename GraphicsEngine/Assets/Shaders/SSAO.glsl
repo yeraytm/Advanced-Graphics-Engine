@@ -32,6 +32,7 @@ uniform vec2 uDisplaySize;
 
 struct SSAOptions
 {
+    bool uRangeCheck;
     float uRadius;
     float uBias;
     float uPower;
@@ -76,10 +77,14 @@ void main()
         float sampledDepth = texture(gBufDepth, sampleTexCoord.xy).r;
         vec3 sampledPosView = ReconstructPixelPos(sampledDepth);
 
-        float rangeCheck = smoothstep(0.0, 1.0, uSSAOptions.uRadius / abs(samplePosView.z - sampledPosView.z));
-        rangeCheck *= rangeCheck;
+        float rangeCheck = 1.0;
+        if(uSSAOptions.uRangeCheck)
+        {
+            rangeCheck = smoothstep(0.0, 1.0, uSSAOptions.uRadius / abs(samplePosView.z - sampledPosView.z));
+            rangeCheck *= rangeCheck;
+        }
 
-        occlusion += (samplePosView.z < sampledPosView.z - uSSAOptions.uBias ? 1.0 : 0.0);
+        occlusion += (samplePosView.z < sampledPosView.z - uSSAOptions.uBias ? 1.0 : 0.0) * rangeCheck;
     }
 
     occlusion = 1.0 - (occlusion / float(kernelSize));
