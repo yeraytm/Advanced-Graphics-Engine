@@ -18,40 +18,41 @@ void main()
 
 layout(location = 0) out float FragColor;
 
+in vec2 vTexCoord;
+
 uniform sampler2D gBufPosition;
 uniform sampler2D gBufNormal;
 uniform sampler2D gBufDepth;
-uniform sampler2D noiseTexture;
 
-uniform vec3 samples[64];
-uniform mat4 projection;
-uniform mat4 view;
-uniform vec2 displaySize;
-
-in vec2 vTexCoord;
+uniform sampler2D uNoiseTexture;
+uniform vec3 uSamples[64];
+uniform mat4 uProjection;
+uniform mat4 uView;
+uniform vec2 uDisplaySize;
 
 // parameters (probably want to use them as uniforms to more easily tweak the effect)
 int kernelSize = 64;
 float radius = 0.5;
 float bias = 0.025;
+float power = 1.0;
 
 vec3 ReconstructPixelPos(float depth)
 {
-    float xndc = gl_FragCoord.x / displaySize.x * 2.0 - 1.0;
-    float yndc = gl_FragCoord.y / displaySize.y * 2.0 - 1.0;
+    float xndc = gl_FragCoord.x / uDisplaySize.x * 2.0 - 1.0;
+    float yndc = gl_FragCoord.y / uDisplaySize.y * 2.0 - 1.0;
     float zndc = depth * 2.0 - 1.0;
     vec4 posNDC = vec4(xndc, yndc, zndc, 1.0);
-    vec4 posView = inverse(projection) * posNDC;
+    vec4 posView = inverse(uProjection) * posNDC;
     return posView.xyz / posView.w;
 }
 
 void main()
 {
-    vec2 noiseScale = displaySize / textureSize(noiseTexture, 0);
+    vec2 noiseScale = uDisplaySize / textureSize(uNoiseTexture, 0);
 
-    vec4 fragPosView = view * vec4(texture(gBufPosition, vTexCoord).rgb, 1.0);
-    vec3 normalView = mat3(view) * texture(gBufNormal, vTexCoord).rgb;
-    vec3 noise = texture(noiseTexture, vTexCoord * noiseScale).rgb;
+    vec4 fragPosView = uView * vec4(texture(gBufPosition, vTexCoord).rgb, 1.0);
+    vec3 normalView = mat3(uView) * texture(gBufNormal, vTexCoord).rgb;
+    vec3 noise = texture(uNoiseTexture, vTexCoord * noiseScale).rgb;
 
     vec3 tangent = normalize(noise - normalView * dot(noise, normalView));
     vec3 bitangent = cross(normalView, tangent);
@@ -61,10 +62,10 @@ void main()
     float occlusion = 0.0;
     for(int i = 0; i < kernelSize; ++i)
     {
-        vec3 offsetView = TBN * samples[i];
+        vec3 offsetView = TBN * uSamples[i];
         vec3 samplePosView = fragPosView.xyz + offsetView * radius;
 
-        vec4 sampleTexCoord = projection * vec4(samplePosView, 1.0);
+        vec4 sampleTexCoord = uProjection * vec4(samplePosView, 1.0);
         sampleTexCoord.xyz /= sampleTexCoord.w;
         sampleTexCoord.xyz = sampleTexCoord.xyz * 0.5 + 0.5;
 
@@ -77,7 +78,8 @@ void main()
         occlusion += (samplePosView.z < sampledPosView.z - 0.02 ? 1.0 : 0.0);
     }
 
-    FragColor = 1.0 - (occlusion / float(kernelSize));
+    occlusion = 1.0 - (occlusion / float(kernelSize));
+    FragColor = pow(occlusion, power);
 }
 
 #endif /////////////////////////////////////////////////////////////////

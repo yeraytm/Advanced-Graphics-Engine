@@ -104,9 +104,11 @@ struct App
 
     // SSAO //
     Framebuffer ssaoBuffer;
+    Framebuffer ssaoBlurBuffer;
+    std::vector<glm::vec3> ssaoKernel;
     u32 noiseTextureHandle;
     u32 ssaoShaderID;
-    std::vector<glm::vec3> ssaoKernel;
+    u32 ssaoBlurShaderID;
     
     // RESOURCES //
     std::vector<Texture> textures;

@@ -141,8 +141,8 @@ u32 LoadCubemap(std::vector<Texture>& textures, const char* filepath, Shader& eq
     };
 
     equirectToCubemapShader.Bind();
-    equirectToCubemapShader.SetUniform1i("equirectangularMap", 0);
-    equirectToCubemapShader.SetUniformMat4("projection", captureProj);
+    equirectToCubemapShader.SetUniform1i("uEquirectangularMap", 0);
+    equirectToCubemapShader.SetUniformMat4("uProjection", captureProj);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, hdrTexture.handle);
@@ -154,7 +154,7 @@ u32 LoadCubemap(std::vector<Texture>& textures, const char* filepath, Shader& eq
 
     for (u32 i = 0; i < 6; ++i)
     {
-        equirectToCubemapShader.SetUniformMat4("view", captureViews[i]);
+        equirectToCubemapShader.SetUniformMat4("uView", captureViews[i]);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, cubemapTexID, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

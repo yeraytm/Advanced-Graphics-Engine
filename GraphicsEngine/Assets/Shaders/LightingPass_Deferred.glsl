@@ -44,8 +44,8 @@ uniform sampler2D gBufNormal;
 uniform sampler2D gBufAlbedo;
 uniform sampler2D gBufSpecular;
 
-uniform sampler2D ssaoColor;
-//uniform samplerCube skybox;
+uniform sampler2D uSSAOColor;
+//uniform samplerCube uSkybox;
 
 vec3 ComputeDirLight(Light light, vec3 albedo, float specularC, float ambientOcclusion, vec3 normal, vec3 viewDir);
 vec3 ComputePointLight(Light light, vec3 albedo, float specularC, float ambientOcclusion, vec3 normal, vec3 fragPos, vec3 viewDir);
@@ -57,7 +57,7 @@ void main()
 	vec3 albedo = texture(gBufAlbedo, vTexCoord).rgb;
 	float specularC = texture(gBufSpecular, vTexCoord).r;
 	
-	float ambientOcclusion = texture(ssaoColor, vTexCoord).r;
+	float ambientOcclusion = texture(uSSAOColor, vTexCoord).r;
 
 	vec3 viewDir = normalize(uViewPos - fragPos);
 
@@ -74,7 +74,7 @@ void main()
 	//vec3 specularReflection = reflect(-viewDir, normalize(normal));
 	//vec3 refr = refract(-viewDir, normalize(normal), 1.00/1.52);
 
-	//result += texture(skybox, specularReflection).rgb;
+	//result += texture(uSkybox, specularReflection).rgb;
 
 	// Final Lighting Color write to G-Buffer
 	FinalColor = vec4(result, 1.0);

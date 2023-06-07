@@ -4,24 +4,24 @@
 
 layout (location = 0) in vec3 aPos;
 
-out vec3 localPos;
+out vec3 vLocalPos;
 
-uniform mat4 projection;
-uniform mat4 view;
+uniform mat4 uProjection;
+uniform mat4 uView;
 
 void main()
 {
-    localPos = aPos;
-    gl_Position = projection * view * vec4(aPos,1.0);
+    vLocalPos = aPos;
+    gl_Position = uProjection * uView * vec4(aPos,1.0);
 } 
 
 #elif defined(FRAGMENT) ///////////////////////////////////////////////
 
-out vec4 FragColor;
+layout(location = 0) out vec4 FragColor;
 
-in vec3 localPos;
+in vec3 vLocalPos;
 
-uniform sampler2D equirectangularMap;
+uniform sampler2D uEquirectangularMap;
 
 const vec2 invAtan = vec2(0.1591, 0.3183);
 
@@ -35,8 +35,8 @@ vec2 SampleSphericalMap(vec3 v)
 
 void main()
 {
-    vec2 uv = SampleSphericalMap(normalize(localPos));
-    vec3 color = min(vec3(1000.0), texture(equirectangularMap, uv).rgb);
+    vec2 uv = SampleSphericalMap(normalize(vLocalPos));
+    vec3 color = min(vec3(1000.0), texture(uEquirectangularMap, uv).rgb);
 	FragColor = vec4(color, 1.0);
 }
 

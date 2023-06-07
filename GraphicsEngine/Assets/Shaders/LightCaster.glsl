@@ -40,11 +40,11 @@ layout(binding = 0, std140) uniform GlobalParameters
 	Light uLights[16];
 };
 
-uniform unsigned int lightID;
+uniform unsigned int uLightID;
 
 void main()
 {
-	FragColor = vec4(uLights[lightID].diffuse, 1.0);
+	FragColor = vec4(uLights[uLightID].diffuse, 1.0);
 }
 
 #endif /////////////////////////////////////////////////////////////////
