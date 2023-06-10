@@ -102,6 +102,7 @@ u32 LoadTexture2D(std::vector<Texture>& textures, const char* filepath, bool isF
         return UINT32_MAX;
 }
 
+// Load equirectangular image and create a cubemap
 glm::uvec2 LoadCubemap(std::vector<Texture>& textures, const char* filepath, Shader& equirectToCubemapShader, Shader& irradianceConvShader, u32 skyboxCubeVAO)
 {
     // Matrices needed to generate cubemap faces
@@ -207,6 +208,7 @@ glm::uvec2 LoadCubemap(std::vector<Texture>& textures, const char* filepath, Sha
     return glm::uvec2(environmentMapHandle, irradianceMapHandle);
 }
 
+// Load 6 images and create its respective cubemap
 u32 LoadCubemap(std::vector<std::string>& faces)
 {
     u32 cubemapTexHandle;

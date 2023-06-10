@@ -16,7 +16,7 @@ Camera::Camera(glm::vec3 position, float FOV, float nearPlane, float farPlane, f
 	UpdateVectors();
 }
 
-void Camera::ProcessInput(const Input& input, const glm::ivec2& displaySize, float deltaTime)
+void Camera::Update(const Input& input, const glm::ivec2& displaySize, float deltaTime)
 {
 	if (input.keys[K_LSHIFT] == BUTTON_PRESS)
 		speed *= 3.0f;
@@ -38,6 +38,9 @@ void Camera::ProcessInput(const Input& input, const glm::ivec2& displaySize, flo
 
 	if (input.mouseButtons[MOUSE_LEFT] == BUTTON_PRESSED)
 		ProcessMouse(input.mouseDelta);
+
+	m_View = glm::lookAt(position, position + m_Front, m_Up);
+	m_Projection = glm::perspective(glm::radians(FOV), float(displaySize.x) / float(displaySize.y), m_NearPlane, m_FarPlane);
 }
 
 void Camera::ProcessKeyboard(CameraDirection direction, float dt)
@@ -105,26 +108,6 @@ void Camera::Zoom(float scrollY)
 	FOV -= scrollY;
 	FOV < 5.0f ? FOV = 5.0f : FOV;
 	FOV > 45.0f ? FOV = m_DefaultFOV : FOV;
-}
-
-glm::mat4 Camera::GetViewProjectionMatrix(const glm::ivec2& displaySize) const
-{
-	// Projection Matrix
-	glm::mat4 projection = glm::perspective(glm::radians(FOV), float(displaySize.x) / float(displaySize.y), m_NearPlane, m_FarPlane);
-
-	glm::mat4 view = glm::lookAt(position, position + m_Front, m_Up);
-
-	return projection * view;
-}
-
-glm::mat4 Camera::GetViewMatrix(const glm::ivec2& displaySize) const
-{
-	return glm::lookAt(position, position + m_Front, m_Up);
-}
-
-glm::mat4 Camera::GetProjectionMatrix(const glm::ivec2& displaySize) const
-{
-	return glm::perspective(glm::radians(FOV), float(displaySize.x) / float(displaySize.y), m_NearPlane, m_FarPlane);
 }
 
 // Rotate Camera around target

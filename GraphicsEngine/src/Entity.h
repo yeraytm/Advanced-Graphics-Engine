@@ -52,17 +52,25 @@ class Entity
 {
 public:
     Entity();
-    Entity(u32 shaderID, glm::vec3 newPosition);
-    Entity(u32 shaderID, glm::vec3 newPosition, Model* model);
+    Entity(u32 shaderID, const glm::vec3& newPosition);
+    Entity(u32 shaderID, const glm::vec3& newPosition, Model* model);
     ~Entity();
+
+    void Translate(const glm::vec3& newPosition);
+    void Rotate(float newRotation, const glm::vec3& axis);
+    void Scale(float newScale);
+
+    inline const glm::mat4& GetModelMatrix() const { return modelMatrix; }
 
 public:
     glm::vec3 position;
-    glm::mat4 modelMatrix;
 
     u32 localParamOffset;
     u32 localParamSize;
 
     Model* model;
     u32 shaderID;
+
+private:
+    glm::mat4 modelMatrix;
 };

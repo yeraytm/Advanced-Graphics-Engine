@@ -156,8 +156,8 @@ void Init(App* app)
     // ENTITIES //
     // Primitives
     Entity* planeEntity = CreateEntity(app, app->defaultShaderID, glm::vec3(0.0f, -3.4f, 0.0f), planeModel);
-    planeEntity->modelMatrix = glm::rotate(planeEntity->modelMatrix, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    planeEntity->modelMatrix = glm::scale(planeEntity->modelMatrix, glm::vec3(35.0f));
+    planeEntity->Rotate(-90.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+    planeEntity->Scale(35.0f);
 
     Entity* sphereEntity = CreateEntity(app, app->defaultShaderID, glm::vec3(0.0f, 1.0f, 7.0f), sphereModel);
 
@@ -167,7 +167,7 @@ void Init(App* app)
 
     // 3D Models
     Entity* bunnyEntity = CreateEntity(app, app->defaultShaderID, glm::vec3(0.0f, -3.5f, 7.0f), bunnyModel);
-    bunnyEntity->modelMatrix = glm::scale(bunnyEntity->modelMatrix, glm::vec3(1.5f));
+    bunnyEntity->Scale(1.5f);
 
     CreateEntity(app, texturedAlbShaderID, glm::vec3(-6.0f, 0.0f, 0.0f), patrickModel);
     CreateEntity(app, texturedAlbShaderID, glm::vec3(0.0f, 0.0f, 0.0f), patrickModel);
@@ -463,7 +463,7 @@ void Update(App* app)
     if (app->input.keys[K_ESCAPE] == BUTTON_PRESS)
         app->isRunning = false;
     
-    app->camera.ProcessInput(app->input, app->displaySize, app->deltaTime);
+    app->camera.Update(app->input, app->displaySize, app->deltaTime);
 
     for (u32 i = 0; i < app->shaderPrograms.size(); ++i)
     {
@@ -804,7 +804,7 @@ void UpdateUniformBuffer(App* app)
     }
     app->globalParamSize = app->UBO.head - app->globalParamOffset;
 
-    glm::mat4 VPMatrix = app->camera.GetViewProjectionMatrix(app->displaySize);
+    glm::mat4 VPMatrix = app->camera.GetProjectionMatrix(app->displaySize) * app->camera.GetViewMatrix(app->displaySize);
     // Local Parameters //
     for (u32 i = 0; i < app->numEntities; ++i)
     {
@@ -813,7 +813,7 @@ void UpdateUniformBuffer(App* app)
         Entity& entity = app->entities[i];
         entity.localParamOffset = app->UBO.head;
 
-        const glm::mat4& modelMatrix = entity.modelMatrix;
+        glm::mat4 modelMatrix = entity.GetModelMatrix();
         PushMat4(app->UBO, modelMatrix);
 
         glm::mat4 MVP = VPMatrix * modelMatrix;
@@ -835,7 +835,7 @@ Entity* CreateEntity(App* app, u32 shaderID, glm::vec3 position, Model* model)
 void CreatePointLight(App* app, glm::vec3 position, glm::vec3 diffuse, glm::vec3 specular, Model* model, float constant, float scale)
 {
     Entity lightEntity = Entity(app->lightCasterShaderID, position, model);
-    lightEntity.modelMatrix = glm::scale(lightEntity.modelMatrix, glm::vec3(scale));
+    lightEntity.Scale(scale);
     app->entities.push_back(lightEntity);
 
     Light light = { glm::vec4(position, 1.0f), diffuse, specular, constant };
@@ -845,7 +845,7 @@ void CreatePointLight(App* app, glm::vec3 position, glm::vec3 diffuse, glm::vec3
 void CreateDirectionalLight(App* app, glm::vec3 entityPosition, glm::vec3 direction, glm::vec3 diffuse, glm::vec3 specular, Model* model, float scale)
 {
     Entity lightEntity = Entity(app->lightCasterShaderID, entityPosition, model);
-    lightEntity.modelMatrix = glm::scale(lightEntity.modelMatrix, glm::vec3(scale));
+    lightEntity.Scale(scale);
     app->entities.push_back(lightEntity);
 
     Light light = { glm::vec4(direction, 0.0f), diffuse, specular, 1.0f };

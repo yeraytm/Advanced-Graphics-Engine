@@ -20,13 +20,12 @@ public:
     Camera(float speed = CAMERA_DEFAULT_SPEED);
 	Camera(glm::vec3 position, float FOV, float nearPlane, float farPlane, float speed = CAMERA_DEFAULT_SPEED);
 
-    void ProcessInput(const Input& input, const glm::ivec2& displaySize, float deltaTime);
+    void Update(const Input& input, const glm::ivec2& displaySize, float deltaTime);
 
     void Zoom(float scrollY);
 
-    glm::mat4 GetViewProjectionMatrix(const glm::ivec2& displaySize) const;
-    glm::mat4 GetViewMatrix(const glm::ivec2& displaySize) const;
-    glm::mat4 GetProjectionMatrix(const glm::ivec2& displaySize) const;
+    inline const glm::mat4& GetViewMatrix(const glm::ivec2& displaySize) const { return m_View; }
+    inline const glm::mat4& GetProjectionMatrix(const glm::ivec2& displaySize) const { return m_Projection; }
 
 public:
     glm::vec3 position;
@@ -44,6 +43,11 @@ private:
     void UpdateVectors();
 
 private:
+    // Matrices
+    glm::mat4 m_View;
+    glm::mat4 m_Projection;
+
+    // Direction Vectors
     glm::vec3 m_Front;
     glm::vec3 m_Up;
     glm::vec3 m_Right;
