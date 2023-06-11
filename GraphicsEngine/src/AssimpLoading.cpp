@@ -9,20 +9,23 @@ void ProcessAssimpMaterial(App* app, aiMaterial* material, Material& myMaterial,
 
     aiColor3D diffuseColor;
     aiColor3D specularColor;
+    aiColor3D reflectiveColor;
     aiColor3D emissiveColor;
     ai_real shininess;
 
     material->Get(AI_MATKEY_NAME, name);
     material->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor);
     material->Get(AI_MATKEY_COLOR_SPECULAR, specularColor);
+    material->Get(AI_MATKEY_COLOR_REFLECTIVE, reflectiveColor);
     material->Get(AI_MATKEY_COLOR_EMISSIVE, emissiveColor);
     material->Get(AI_MATKEY_SHININESS, shininess);
 
     myMaterial.name = name.C_Str();
     myMaterial.albedo = glm::vec3(diffuseColor.r, diffuseColor.g, diffuseColor.b);
     myMaterial.specular = glm::vec3(specularColor.r, specularColor.g, specularColor.b);
+    myMaterial.reflective = glm::vec3(reflectiveColor.r, reflectiveColor.g, reflectiveColor.b);
     myMaterial.emissive = glm::vec3(emissiveColor.r, emissiveColor.g, emissiveColor.b);
-    myMaterial.shininess = shininess / 256.0f;
+    shininess > 0.0f ? myMaterial.shininess = shininess / 256.0f : myMaterial.shininess = 32.0f / 256.0f;
 
     aiString aiFilename;
     if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0)

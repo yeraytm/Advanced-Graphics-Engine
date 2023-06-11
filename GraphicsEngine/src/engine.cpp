@@ -52,6 +52,7 @@ void Init(App* app)
     app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize);       // Normal Color Buffer
     app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);        // Albedo Color Buffer
     app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);        // Specular Color Buffer
+    app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);        // Reflective + Shininess Color Buffer
     app->GBuffer.AttachDepthTexture(app->displaySize);                                      // Depth Attachment
     app->GBuffer.SetColorBuffers(); // Set color buffers with glDrawBuffers
     BindDefaultFramebuffer();
@@ -64,9 +65,10 @@ void Init(App* app)
     lightingPassShader.SetUniform1i("gBufNormal",       1);
     lightingPassShader.SetUniform1i("gBufAlbedo",       2);
     lightingPassShader.SetUniform1i("gBufSpecular",     3);
-    lightingPassShader.SetUniform1i("uEnvironmentMap",  4);
-    lightingPassShader.SetUniform1i("uIrradianceMap",   5);
-    lightingPassShader.SetUniform1i("uSSAOColor",       6);
+    lightingPassShader.SetUniform1i("gBufReflShini",    4);
+    lightingPassShader.SetUniform1i("uEnvironmentMap",  5);
+    lightingPassShader.SetUniform1i("uIrradianceMap",   6);
+    lightingPassShader.SetUniform1i("uSSAOColor",       7);
 
     // SCREEN-FILLING QUAD //
     app->screenQuad.VAO = CreateQuad();
@@ -90,6 +92,7 @@ void Init(App* app)
     app->rendererOptions.renderTargets.push_back("NORMAL");
     app->rendererOptions.renderTargets.push_back("ALBEDO");
     app->rendererOptions.renderTargets.push_back("SPECULAR");
+    app->rendererOptions.renderTargets.push_back("REFLECTIVE + SHININESS");
 
     // SHADERS & UNIFORM TEXTURES //
     app->defaultShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::DEFAULT, "Assets/Shaders/Default_Deferred.glsl", "DEFERRED_GEOMETRY_DEFAULT");
@@ -120,24 +123,18 @@ void Init(App* app)
     Material greyMaterial = {};
     greyMaterial.name = "Grey Material";
     greyMaterial.albedo = glm::vec3(0.4f, 0.4f, 0.4f);
-    greyMaterial.specular = glm::vec3(0.5f);
-    greyMaterial.shininess = 32.0f;
 
     Material orangeMaterial = {};
     orangeMaterial.name = "Orange Material";
     orangeMaterial.albedo = glm::vec3(1.0f, 0.5f, 0.31f);
-    orangeMaterial.specular = glm::vec3(0.5f);
-    orangeMaterial.shininess = 32.0f;
+    orangeMaterial.reflective = glm::vec3(0.5f);
 
     Material blackMaterial = {};
     blackMaterial.name = "Black Material";
     blackMaterial.albedo = glm::vec3(0.1f, 0.1f, 0.1f);
-    blackMaterial.specular = glm::vec3(0.5f);
-    blackMaterial.shininess = 32.0f;
 
     Material containerMat = {};
     containerMat.name = "Container Material";
-    containerMat.shininess = 32.0f;
     containerMat.albedoTextureID = containerAlbedoTexID;
     containerMat.specularTextureID = containerSpecularID;
 
@@ -184,14 +181,14 @@ void Init(App* app)
     app->firstLightEntityID = app->entities.size();
 
     // LIGHTS //
-    //CreateDirectionalLight(app, glm::vec3(0.0f, -2.0f, 15.0f), glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.2f), glm::vec3(0.3f), cubeModel2, 0.5f);
+    CreateDirectionalLight(app, glm::vec3(0.0f, -2.0f, 15.0f), glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.0f), cubeModel2, 0.5f);
 
     srand(14);
     for (unsigned int i = 0; i <= 5; i++)
     {
         // Random Position
-        float xPos = static_cast<float>(((rand() % 100) / 70.0f) * 6.0f - 3.0f);
-        float yPos = static_cast<float>(((rand() % 100) / 80.0f) * 6.0f - 4.0f);
+        float xPos = static_cast<float>(((rand() % 100) / 70.0f) * 9.0f - 3.0f);
+        float yPos = static_cast<float>(((rand() % 100) / 80.0f) * 6.0f + 2.0f);
         float zPos = static_cast<float>(((rand() % 100) / 25.0f) * 6.0f - 16.0f);
 
         // Random Color
@@ -200,11 +197,11 @@ void Init(App* app)
         float bColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.0
         glm::vec3 color = glm::vec3(rColor, gColor, bColor);
 
-        CreatePointLight(app, glm::vec3(xPos, yPos, zPos), color, glm::vec3(1.0f), sphereLowModel, 1.0f, 0.1f);
+        CreatePointLight(app, glm::vec3(xPos, yPos, zPos), color, sphereLowModel, 1.0f, 0.1f);
     }
 
-    CreatePointLight(app, glm::vec3(-6.0f, -3.0f, 10.0f), glm::vec3(0.6f), glm::vec3(1.0f), sphereLowModel, 0.5f, 0.1f);
-    CreatePointLight(app, glm::vec3(6.0f, -3.0f, 10.0f), glm::vec3(0.6f), glm::vec3(1.0f), sphereLowModel, 1.0f, 0.1f);
+    CreatePointLight(app, glm::vec3(-6.0f, -3.0f, 10.0f), glm::vec3(0.6f), sphereLowModel, 0.5f, 0.1f);
+    CreatePointLight(app, glm::vec3(6.0f, -3.0f, 10.0f), glm::vec3(0.6f), sphereLowModel, 1.0f, 0.1f);
 
     // SKYBOX //
     app->skyboxShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/Skybox.glsl", "SKYBOX");
@@ -437,12 +434,12 @@ void ImGuiRender(App* app)
         ImGui::Spacing();
 
         ImGui::Text("Lights");
-        //ImGui::DragFloat3("Directional Light", &app->lights[0].lightVector[0], 0.1f, -1.0f, 1.0f);
-        //ImGui::Spacing();
-        //ImGui::Spacing();
-        //ImGui::Spacing();
+        ImGui::DragFloat3("Directional Light Color", &app->lights[0].color[0], 0.05f, 0.0f, 1.0f);
+        ImGui::Spacing();
+        ImGui::Spacing();
+        ImGui::Spacing();
         for (u32 i = 1; i < app->numLights - 1; ++i)
-            ImGui::DragFloat3(std::string("Point Light " + std::to_string(i) + " Color").c_str(), &app->lights[i].diffuse[0], 0.05f, 0.0f, 1.0f);
+            ImGui::DragFloat3(std::string("Point Light " + std::to_string(i) + " Color").c_str(), &app->lights[i].color[0], 0.05f, 0.0f, 1.0f);
 
         ImGui::End();
     }
@@ -525,6 +522,7 @@ void Render(App* app)
                 // Material
                 shader.SetUniform3f("uMaterial.albedo", meshMaterial.albedo);
                 shader.SetUniform3f("uMaterial.specular", meshMaterial.specular);
+                shader.SetUniform3f("uMaterial.reflective", meshMaterial.reflective);
                 shader.SetUniform1f("uMaterial.shininess", meshMaterial.shininess);
             }
             break;
@@ -536,6 +534,7 @@ void Render(App* app)
 
                 // Material
                 shader.SetUniform3f("uMaterial.specular", meshMaterial.specular);
+                shader.SetUniform3f("uMaterial.reflective", meshMaterial.reflective);
                 shader.SetUniform1f("uMaterial.shininess", meshMaterial.shininess);
             }
             break;
@@ -550,6 +549,7 @@ void Render(App* app)
                 glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.specularTextureID].handle);
 
                 // Material
+                shader.SetUniform3f("uMaterial.reflective", meshMaterial.reflective);
                 shader.SetUniform1f("uMaterial.shininess", meshMaterial.shininess);
             }
             break;
@@ -798,8 +798,7 @@ void UpdateUniformBuffer(App* app)
 
         Light& light = app->lights[i];
         PushVec4(app->UBO, light.lightVector);
-        PushVec3(app->UBO, light.diffuse);
-        PushVec3(app->UBO, light.specular);
+        PushVec3(app->UBO, light.color);
         PushFloat(app->UBO, light.constant);
     }
     app->globalParamSize = app->UBO.head - app->globalParamOffset;
@@ -832,23 +831,23 @@ Entity* CreateEntity(App* app, u32 shaderID, glm::vec3 position, Model* model)
     return &app->entities[app->entities.size() - 1u];
 }
 
-void CreatePointLight(App* app, glm::vec3 position, glm::vec3 diffuse, glm::vec3 specular, Model* model, float constant, float scale)
+void CreatePointLight(App* app, glm::vec3 position, glm::vec3 color, Model* model, float constant, float scale)
 {
     Entity lightEntity = Entity(app->lightCasterShaderID, position, model);
     lightEntity.Scale(scale);
     app->entities.push_back(lightEntity);
 
-    Light light = { glm::vec4(position, 1.0f), diffuse, specular, constant };
+    Light light = { glm::vec4(position, 1.0f), color, constant };
     app->lights.push_back(light);
 }
 
-void CreateDirectionalLight(App* app, glm::vec3 entityPosition, glm::vec3 direction, glm::vec3 diffuse, glm::vec3 specular, Model* model, float scale)
+void CreateDirectionalLight(App* app, glm::vec3 entityPosition, glm::vec3 direction, glm::vec3 color, Model* model, float scale)
 {
     Entity lightEntity = Entity(app->lightCasterShaderID, entityPosition, model);
     lightEntity.Scale(scale);
     app->entities.push_back(lightEntity);
 
-    Light light = { glm::vec4(direction, 0.0f), diffuse, specular, 1.0f };
+    Light light = { glm::vec4(direction, 0.0f), color, 1.0f };
     app->lights.push_back(light);
 }
 

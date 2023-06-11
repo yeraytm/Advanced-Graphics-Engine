@@ -23,12 +23,8 @@ layout(location = 0) out vec4 FragColor;
 
 struct Light
 {
-	// XYZ for position/direction and W for type
-	vec4 lightVector;
-	
-	vec3 diffuse;
-	vec3 specular;
-
+	vec4 lightVector; // XYZ for position/direction and W for type
+	vec3 color;
 	float constant;
 };
 
@@ -43,7 +39,7 @@ uniform unsigned int uLightID;
 
 void main()
 {
-	FragColor = vec4(uLights[uLightID].diffuse, 1.0);
+	FragColor = vec4(uLights[uLightID].color, 1.0);
 }
 
 #endif /////////////////////////////////////////////////////////////////

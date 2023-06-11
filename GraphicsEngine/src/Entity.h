@@ -37,9 +37,10 @@ struct Material
     std::string name;
 
     glm::vec3 albedo;
-    glm::vec3 specular;
-    glm::vec3 emissive;
-    float shininess;
+    glm::vec3 specular = glm::vec3(0.5f);
+    glm::vec3 reflective = glm::vec3(0.0f);
+    glm::vec3 emissive = glm::vec3(0.0f);
+    float shininess = 32.0f / 256.0f;
 
     u32 albedoTextureID;
     u32 emissiveTextureID;

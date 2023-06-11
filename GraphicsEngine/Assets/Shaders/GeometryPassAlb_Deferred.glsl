@@ -32,15 +32,17 @@ void main()
 
 #elif defined(FRAGMENT) ///////////////////////////////////////////////
 
-layout(location = 0) out vec3 gBufPosition;
-layout(location = 1) out vec3 gBufNormal;
-layout(location = 2) out vec3 gBufAlbedo;
-layout(location = 3) out vec3 gBufSpecular;
+layout(location = 0) out vec4 gBufPosition;
+layout(location = 1) out vec4 gBufNormal;
+layout(location = 2) out vec4 gBufAlbedo;
+layout(location = 3) out vec4 gBufSpecular;
+layout(location = 4) out vec4 gBufReflShini;
 
 struct Material
 {
 	sampler2D albedo;
 	vec3 specular;
+	vec3 reflective;
 	float shininess;
 };
 uniform Material uMaterial;
@@ -54,12 +56,15 @@ in VS_OUT
 
 void main()
 {
-	gBufPosition = fs_in.FragPos;
+	gBufPosition = vec4(fs_in.FragPos, 1.0);
 	
-	gBufNormal = fs_in.Normal;
+	gBufNormal = vec4(fs_in.Normal, 1.0);
 
-	gBufAlbedo = texture(uMaterial.albedo, fs_in.TexCoord).rgb;
-	gBufSpecular = uMaterial.specular;
+	gBufAlbedo = texture(uMaterial.albedo, fs_in.TexCoord);
+
+	gBufSpecular = vec4(uMaterial.specular, 1.0);
+
+	gBufReflShini = vec4(uMaterial.reflective, uMaterial.shininess);
 }
 
 #endif /////////////////////////////////////////////////////////////////

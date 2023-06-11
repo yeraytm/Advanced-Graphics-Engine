@@ -11,13 +11,9 @@ layout(location = 4) in vec3 aBitangent;
 struct Light
 {
 	unsigned int type;
-
 	vec3 position;
 	vec3 direction;
-
-	vec3 diffuse;
-	vec3 specular;
-
+	vec3 color;
 	float constant;
 };
 

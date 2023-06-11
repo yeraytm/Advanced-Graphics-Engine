@@ -58,8 +58,7 @@ struct Light
     // 0.0 is Directional light and 1.0 is Point light
     glm::vec4 lightVector;
 
-    glm::vec3 diffuse;
-    glm::vec3 specular;
+    glm::vec3 color;
     float constant;
 };
 
@@ -148,6 +147,6 @@ void UpdateUniformBuffer(App* app);
 
 Entity* CreateEntity(App* app, u32 shaderID, glm::vec3 position, Model* model);
 
-void CreatePointLight(App* app, glm::vec3 position, glm::vec3 diffuse, glm::vec3 specular, Model* model, float constant = 1.0f, float scale = 1.0f);
-void CreateDirectionalLight(App* app, glm::vec3 entityPosition, glm::vec3 direction, glm::vec3 diffuse, glm::vec3 specular, Model* model, float scale = 1.0f);
+void CreatePointLight(App* app, glm::vec3 position, glm::vec3 color, Model* model, float constant = 1.0f, float scale = 1.0f);
+void CreateDirectionalLight(App* app, glm::vec3 entityPosition, glm::vec3 direction, glm::vec3 color, Model* model, float scale = 1.0f);
 float Lerp(float a, float b, float f);
