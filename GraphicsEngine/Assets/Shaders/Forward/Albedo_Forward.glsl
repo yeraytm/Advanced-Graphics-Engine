@@ -104,7 +104,6 @@ void main()
 		irradiance = texture(uIrradianceMap, fs_in.Normal).rgb;
 
 	vec3 result = vec3(0.0);
-
 	for(int i = 0; i < uNumLights; ++i)
 	{
 		if(uLights[i].lightVector.w == 0.0)

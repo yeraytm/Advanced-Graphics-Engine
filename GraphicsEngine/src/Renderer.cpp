@@ -153,7 +153,7 @@ void Renderer::ForwardRender(App* app)
                 shader.SetUniform3f("uMaterial.albedo", meshMaterial.albedo);
                 shader.SetUniform3f("uMaterial.specular", meshMaterial.specular);
                 shader.SetUniform3f("uMaterial.reflective", meshMaterial.reflective);
-                shader.SetUniform1f("uMaterial.shininess", meshMaterial.shininess);
+                shader.SetUniform1f("uMaterial.shininess", meshMaterial.shininess * 256.0f);
 
                 // Environment Map
                 glActiveTexture(GL_TEXTURE0);
@@ -177,7 +177,7 @@ void Renderer::ForwardRender(App* app)
                 // Material
                 shader.SetUniform3f("uMaterial.specular", meshMaterial.specular);
                 shader.SetUniform3f("uMaterial.reflective", meshMaterial.reflective);
-                shader.SetUniform1f("uMaterial.shininess", meshMaterial.shininess);
+                shader.SetUniform1f("uMaterial.shininess", meshMaterial.shininess * 256.0f);
 
                 // Environment Map
                 glActiveTexture(GL_TEXTURE1);
@@ -204,7 +204,7 @@ void Renderer::ForwardRender(App* app)
 
                 // Material
                 shader.SetUniform3f("uMaterial.reflective", meshMaterial.reflective);
-                shader.SetUniform1f("uMaterial.shininess", meshMaterial.shininess);
+                shader.SetUniform1f("uMaterial.shininess", meshMaterial.shininess * 256.0f);
 
                 // Environment Map
                 glActiveTexture(GL_TEXTURE2);

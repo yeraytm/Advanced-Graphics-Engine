@@ -94,12 +94,11 @@ vec3 ComputePointLight(Light light, vec3 irradiance, vec3 normal, vec3 fragPos, 
 
 void main()
 {
-	vec3 result = vec3(0.0);
-
 	vec3 irradiance = vec3(0.2);
 	if(uRendererOptions.uActiveIrradiance)
 		irradiance = texture(uIrradianceMap, fs_in.Normal).rgb;
 
+	vec3 result = vec3(0.0);
 	for(int i = 0; i < uNumLights; ++i)
 	{
 		if(uLights[i].lightVector.w == 0.0)
