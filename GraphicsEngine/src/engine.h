@@ -46,6 +46,7 @@ struct RendererOptions
     float ssaoRadius;
     float ssaoBias;
     float ssaoPower;
+    int ssaoKernelSize;
 };
 
 struct Light

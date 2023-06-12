@@ -227,6 +227,7 @@ void Init(App* app)
     app->rendererOptions.ssaoRadius = 0.5f;
     app->rendererOptions.ssaoBias = 0.025f;
     app->rendererOptions.ssaoPower = 1.0f;
+    app->rendererOptions.ssaoKernelSize = 64;
 
     // ENGINE COUNT OF ENTITIES & LIGHTS //
     app->numEntities = app->entities.size();
@@ -283,7 +284,42 @@ void ImGuiRender(App* app)
         ImGui::Text("Rendering Mode:");
         ImGui::SameLine();
         ImGui::SetCursorPosY((ImGui::GetFontSize() * 1.5f + ImGui::GetStyle().FramePadding.y * 2.0f));
-        if (ImGui::Button(app->forwardRendering ? "Switch to Deferred" : "Switch to Forward"))
+        const char* options[] = { "DEFERRED","FORWARD" };
+        static const char* preview = options[0];
+        if (ImGui::BeginCombo("", preview))
+        {
+            for (u32 i = 0; i < 2; ++i)
+            {
+                bool isSelected = (preview ==options[i]);
+                if (ImGui::Selectable(options[i], isSelected))
+                {
+                    preview = options[i];
+                    app->forwardRendering = i != 0;
+
+                    for (u32 i = 0; i < app->numEntities; ++i)
+                    {
+                        Entity& entity = app->entities[i];
+                        switch (app->shaderPrograms[entity.shaderID].type)
+                        {
+                        case ShaderType::DEFAULT:
+                            entity.shaderID = app->forwardRendering ? app->renderer.forwardShadersID[0] : app->renderer.deferredShadersID[0];
+                            break;
+                        case ShaderType::TEXTURED_ALBEDO:
+                            entity.shaderID = app->forwardRendering ? app->renderer.forwardShadersID[1] : app->renderer.deferredShadersID[1];
+                            break;
+                        case ShaderType::TEXTURED_ALB_SPEC:
+                            entity.shaderID = app->forwardRendering ? app->renderer.forwardShadersID[2] : app->renderer.deferredShadersID[2];
+                            break;
+                        default:
+                            break;
+                        }
+                    }
+                }
+            }
+            ImGui::EndCombo();
+        }
+
+        /*if (ImGui::Button(app->forwardRendering ? "Switch to Deferred" : "Switch to Forward"))
         {
             app->forwardRendering = !app->forwardRendering;
 
@@ -306,7 +342,7 @@ void ImGuiRender(App* app)
                 }
             }
         }
-
+        */
         ImGui::Spacing();
         ImGui::Separator();
         ImGui::Spacing();
@@ -340,6 +376,7 @@ void ImGuiRender(App* app)
                 ImGui::DragFloat("Radius", &app->rendererOptions.ssaoRadius, 0.05f, 0.25f, 2.0f);
                 ImGui::DragFloat("Bias", &app->rendererOptions.ssaoBias, 0.001f, 0.01f, 0.1f);
                 ImGui::DragFloat("Power", &app->rendererOptions.ssaoPower, 0.1f, 1.0f, 10.0f);
+                ImGui::DragInt("Kernel Size", &app->rendererOptions.ssaoKernelSize, 1.0f, 1, 64);
             }
 
             ImGui::Spacing();

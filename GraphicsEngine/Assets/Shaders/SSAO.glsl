@@ -36,10 +36,9 @@ struct SSAOptions
     float uRadius;
     float uBias;
     float uPower;
+    int uKernelSize;
 };
 uniform SSAOptions uSSAOptions;
-
-const int kernelSize = 64;
 
 vec3 ReconstructPixelPos(float depth)
 {
@@ -65,7 +64,7 @@ void main()
 
     // Iterate over each sample
     float occlusion = 0.0;
-    for(int i = 0; i < kernelSize; ++i)
+    for(int i = 0; i < uSSAOptions.uKernelSize; ++i)
     {
         vec3 offsetView = TBN * uSamples[i];
         vec3 samplePosView = fragPosView.xyz + offsetView * uSSAOptions.uRadius;
@@ -87,7 +86,7 @@ void main()
         occlusion += (samplePosView.z < sampledPosView.z - uSSAOptions.uBias ? 1.0 : 0.0) * rangeCheck;
     }
 
-    occlusion = 1.0 - (occlusion / float(kernelSize));
+    occlusion = 1.0 - (occlusion / float(uSSAOptions.uKernelSize));
     FragColor = pow(occlusion, uSSAOptions.uPower);
 }
 

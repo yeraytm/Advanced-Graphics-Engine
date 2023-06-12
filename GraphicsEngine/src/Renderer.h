@@ -29,6 +29,10 @@ public:
 
 	void DeferredRender(App* app);
 
+	void GenerateKernelSamples(App* app);
+
+	void GenerateKernelNoise();
+
 private:
 	inline void BindDefaultFramebuffer() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
 
@@ -58,6 +62,7 @@ public:
 	Framebuffer ssaoBuffer;
 	Framebuffer ssaoBlurBuffer;
 	std::vector<glm::vec3> ssaoKernel;
+	std::vector<glm::vec3> ssaoNoise;
 	u32 noiseTextureHandle;
 	u32 ssaoShaderID;
 	u32 ssaoBlurShaderID;

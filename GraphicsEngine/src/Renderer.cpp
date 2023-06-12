@@ -61,45 +61,8 @@ void Renderer::Init(App* app)
     ssaoBlurBuffer.SetColorBuffers();
     BindDefaultFramebuffer();
 
-    std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
-    std::default_random_engine generator;
-    ssaoKernel.reserve(64);
-    for (u32 i = 0; i < 64; i++)
-    {
-        glm::vec3 sample(
-            randomFloats(generator) * 2.0 - 1.0,
-            randomFloats(generator) * 2.0 - 1.0,
-            randomFloats(generator)
-        );
-        sample = glm::normalize(sample);
-        sample *= randomFloats(generator);
-
-        float scale = float(i) / 64.0f;
-        scale = Lerp(0.1f, 1.0f, scale * scale);
-
-        sample *= scale;
-        ssaoKernel.emplace_back(sample);
-    }
-
-    std::vector<glm::vec3> ssaoNoise;
-    ssaoNoise.reserve(16);
-    for (u32 i = 0; i < 16; i++)
-    {
-        glm::vec3 noise(
-            randomFloats(generator) * 2.0 - 1.0,
-            randomFloats(generator) * 2.0 - 1.0,
-            0.0f
-        );
-        ssaoNoise.emplace_back(glm::normalize(noise));
-    }
-
-    glGenTextures(1, &noiseTextureHandle);
-    glBindTexture(GL_TEXTURE_2D, noiseTextureHandle);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 4, 4, 0, GL_RGB, GL_FLOAT, &ssaoNoise[0]);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    GenerateKernelSamples(app);
+    GenerateKernelNoise();
 
     Shader& SSAOShader = app->shaderPrograms[ssaoShaderID];
     SSAOShader.Bind();
@@ -332,6 +295,7 @@ void Renderer::DeferredRender(App* app)
         SSAOShader.SetUniform1f("uSSAOptions.uRadius", app->rendererOptions.ssaoRadius);
         SSAOShader.SetUniform1f("uSSAOptions.uBias", app->rendererOptions.ssaoBias);
         SSAOShader.SetUniform1f("uSSAOptions.uPower", app->rendererOptions.ssaoPower);
+        SSAOShader.SetUniform1i("uSSAOptions.uKernelSize", app->rendererOptions.ssaoKernelSize);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, GBuffer.colorAttachmentHandles[0]); // Position
@@ -461,6 +425,58 @@ void Renderer::DeferredRender(App* app)
         lightID++;
     }
     lightCasterShader.Unbind();
+}
+
+void Renderer::GenerateKernelSamples(App* app)
+{
+    std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
+    std::default_random_engine generator;
+    ssaoKernel.reserve(64);
+    for (u32 i = 0; i < 64; i++)
+    {
+        glm::vec3 sample(
+            randomFloats(generator) * 2.0 - 1.0,
+            randomFloats(generator) * 2.0 - 1.0,
+            randomFloats(generator)
+        );
+        sample = glm::normalize(sample);
+        sample *= randomFloats(generator);
+
+        float scale = float(i) / 64.0f;
+        scale = Lerp(0.1f, 1.0f, scale * scale);
+
+        sample *= scale;
+        ssaoKernel.emplace_back(sample);
+    }
+
+    Shader& SSAOShader = app->shaderPrograms[ssaoShaderID];
+    SSAOShader.Bind();
+    for (u32 i = 0; i < 64; ++i)
+        SSAOShader.SetUniform3f("uSamples[" + std::to_string(i) + "]", ssaoKernel[i]);
+}
+
+void Renderer::GenerateKernelNoise()
+{
+    std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
+    std::default_random_engine generator;
+    ssaoNoise.reserve(16);
+    for (u32 i = 0; i < 16; i++)
+    {
+        glm::vec3 noise(
+            randomFloats(generator) * 2.0 - 1.0,
+            randomFloats(generator) * 2.0 - 1.0,
+            0.0f
+        );
+        ssaoNoise.emplace_back(glm::normalize(noise));
+    }
+
+    glGenTextures(1, &noiseTextureHandle);
+    glBindTexture(GL_TEXTURE_2D, noiseTextureHandle);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 4, 4, 0, GL_RGB, GL_FLOAT, &ssaoNoise[0]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }
 
 u32 Renderer::FindVAO(Model* model, u32 meshIndex, const Shader& shaderProgram)

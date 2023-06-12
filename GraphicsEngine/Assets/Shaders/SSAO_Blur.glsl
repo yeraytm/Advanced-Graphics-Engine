@@ -21,21 +21,22 @@ layout(location = 0) out float FragColor;
 in vec2 vTexCoord;
 
 uniform sampler2D uSSAOColor;
+uniform int uNoiseSize;
 
 void main()
 {
     vec2 texelSize = 1.0 / vec2(textureSize(uSSAOColor, 0));
     float result = 0.0;
-
-    for(int x = -2; x < 2; ++x)
+    int arraySize = uNoiseSize/2;
+    for(int x = -arraySize; x < arraySize; ++x)
     {
-        for(int y = -2; y < 2; ++y)
+        for(int y = -arraySize; y < arraySize; ++y)
         {
             vec2 offset = vec2(float(x), float(y)) * texelSize;
             result += texture(uSSAOColor, vTexCoord + offset).r;
         }
     }
-    FragColor = result / (4.0 * 4.0);
+    FragColor = result / float(uNoiseSize * uNoiseSize);
 }
 #endif /////////////////////////////////////////////////////////////////
 
