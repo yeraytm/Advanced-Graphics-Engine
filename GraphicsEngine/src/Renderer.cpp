@@ -61,8 +61,8 @@ void Renderer::Init(App* app)
     ssaoBlurBuffer.SetColorBuffers();
     BindDefaultFramebuffer();
 
-    GenerateKernelSamples(app);
-    GenerateKernelNoise();
+    GenerateKernelSamples(app->shaderPrograms[ssaoShaderID], app->rendererOptions.ssaoKernelSize);
+    GenerateKernelNoise(app->rendererOptions.ssaoNoiseSize);
 
     Shader& SSAOShader = app->shaderPrograms[ssaoShaderID];
     SSAOShader.Bind();
@@ -327,6 +327,8 @@ void Renderer::DeferredRender(App* app)
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, ssaoBuffer.colorAttachmentHandles[0]); // SSAO Color Texture
 
+            SSAOBlurShader.SetUniform1i("uNoiseSize", app->rendererOptions.ssaoNoiseSize);
+
             glBindVertexArray(screenQuad.VAO);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
             glBindVertexArray(0);
@@ -427,12 +429,17 @@ void Renderer::DeferredRender(App* app)
     lightCasterShader.Unbind();
 }
 
-void Renderer::GenerateKernelSamples(App* app)
+float Lerp(float a, float b, float f)
+{
+    return a + f * (b - a);
+}
+
+void Renderer::GenerateKernelSamples(Shader& SSAOShader, int ssaoKernelSize)
 {
     std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
     std::default_random_engine generator;
-    ssaoKernel.reserve(64);
-    for (u32 i = 0; i < 64; i++)
+    ssaoKernel.reserve(ssaoKernelSize);
+    for (u32 i = 0; i < ssaoKernelSize; i++)
     {
         glm::vec3 sample(
             randomFloats(generator) * 2.0 - 1.0,
@@ -442,25 +449,24 @@ void Renderer::GenerateKernelSamples(App* app)
         sample = glm::normalize(sample);
         sample *= randomFloats(generator);
 
-        float scale = float(i) / 64.0f;
+        float scale = float(i) / float(ssaoKernelSize);
         scale = Lerp(0.1f, 1.0f, scale * scale);
 
         sample *= scale;
         ssaoKernel.emplace_back(sample);
     }
 
-    Shader& SSAOShader = app->shaderPrograms[ssaoShaderID];
     SSAOShader.Bind();
-    for (u32 i = 0; i < 64; ++i)
+    for (u32 i = 0; i < ssaoKernelSize; ++i)
         SSAOShader.SetUniform3f("uSamples[" + std::to_string(i) + "]", ssaoKernel[i]);
 }
 
-void Renderer::GenerateKernelNoise()
+void Renderer::GenerateKernelNoise(int ssaoNoiseSize)
 {
     std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
     std::default_random_engine generator;
-    ssaoNoise.reserve(16);
-    for (u32 i = 0; i < 16; i++)
+    ssaoNoise.reserve(ssaoNoiseSize);
+    for (u32 i = 0; i < ssaoNoiseSize; i++)
     {
         glm::vec3 noise(
             randomFloats(generator) * 2.0 - 1.0,
@@ -470,9 +476,10 @@ void Renderer::GenerateKernelNoise()
         ssaoNoise.emplace_back(glm::normalize(noise));
     }
 
+    int noiseSideSize = ssaoNoiseSize / glm::sqrt(ssaoNoiseSize);
     glGenTextures(1, &noiseTextureHandle);
     glBindTexture(GL_TEXTURE_2D, noiseTextureHandle);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 4, 4, 0, GL_RGB, GL_FLOAT, &ssaoNoise[0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, noiseSideSize, noiseSideSize, 0, GL_RGB, GL_FLOAT, &ssaoNoise[0]);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);

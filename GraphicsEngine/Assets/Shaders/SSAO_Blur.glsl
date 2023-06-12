@@ -26,8 +26,10 @@ uniform int uNoiseSize;
 void main()
 {
     vec2 texelSize = 1.0 / vec2(textureSize(uSSAOColor, 0));
+
+    int arraySize = int(sqrt(float(uNoiseSize))/2);
+
     float result = 0.0;
-    int arraySize = uNoiseSize/2;
     for(int x = -arraySize; x < arraySize; ++x)
     {
         for(int y = -arraySize; y < arraySize; ++y)
@@ -36,7 +38,7 @@ void main()
             result += texture(uSSAOColor, vTexCoord + offset).r;
         }
     }
-    FragColor = result / float(uNoiseSize * uNoiseSize);
+    FragColor = result / float(uNoiseSize);
 }
 #endif /////////////////////////////////////////////////////////////////
 

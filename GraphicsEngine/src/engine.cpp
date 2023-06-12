@@ -15,6 +15,52 @@
 
 void Init(App* app)
 {
+    // IMGUI SETTINGS //
+    // ImGui Windows
+    app->openGLGui.open = false;
+    app->rendererOptions.open = true;
+    app->sceneGui = false;
+    app->performanceGui = false;
+    app->forwardRendering = false;
+
+    // ImGui OpenGL Info
+    app->openGLGui.version = "Version: " + std::string((const char*)glGetString(GL_VERSION));
+    app->openGLGui.renderer = "Renderer: " + std::string((const char*)glGetString(GL_RENDERER));
+    app->openGLGui.vendor = "Vendor: " + std::string((const char*)glGetString(GL_VENDOR));
+    app->openGLGui.glslVersion = "GLSL Version: " + std::string((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
+
+    glGetIntegerv(GL_NUM_EXTENSIONS, &app->openGLGui.numExtensions);
+    app->openGLGui.extensions.reserve(app->openGLGui.numExtensions);
+    for (int i = 0; i < app->openGLGui.numExtensions; ++i)
+    {
+        app->openGLGui.extensions.emplace_back((const char*)glGetStringi(GL_EXTENSIONS, GLuint(i)));
+    }
+
+    // ImGui Render Target Selection Combo
+    app->rendererOptions.renderTargets.push_back("FINAL COLOR");
+    app->rendererOptions.renderTargets.push_back("DEPTH");
+    app->rendererOptions.renderTargets.push_back("POSITION");
+    app->rendererOptions.renderTargets.push_back("NORMAL");
+    app->rendererOptions.renderTargets.push_back("ALBEDO");
+    app->rendererOptions.renderTargets.push_back("SPECULAR");
+    app->rendererOptions.renderTargets.push_back("REFLECTIVE + SHININESS");
+
+    // ImGui Skybox Options
+    app->rendererOptions.activeSkybox = true;
+    app->rendererOptions.activeIrradiance = true;
+    app->rendererOptions.activeReflection = false;
+    app->rendererOptions.activeRefraction = false;
+
+    // ImGui SSAO Options
+    app->rendererOptions.activeSSAO = true;
+    app->rendererOptions.activeRangeCheck = true;
+    app->rendererOptions.activeSSAOBlur = true;
+    app->rendererOptions.ssaoRadius = 0.5f;
+    app->rendererOptions.ssaoBias = 0.025f;
+    app->rendererOptions.ssaoPower = 1.0f;
+    app->rendererOptions.ssaoKernelSize = 64;
+    app->rendererOptions.ssaoNoiseSize = 16;
+
     // CAMERA //
     app->camera = Camera(glm::vec3(0.0f, 3.0f, 10.0f), 45.0f, 1.0f, 100.0f);
 
@@ -96,9 +142,6 @@ void Init(App* app)
     // SSAO //
     app->renderer.ssaoShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/SSAO.glsl", "SSAO");
     app->renderer.ssaoBlurShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/SSAO_Blur.glsl", "SSAO_BLUR");
-
-    // RENDERER INIT //
-    app->renderer.Init(app);
 
     // MATERIALS //
     Material greyMaterial = {};
@@ -184,54 +227,12 @@ void Init(App* app)
     CreatePointLight(app, glm::vec3(-6.0f, 0.0f, 10.0f), glm::vec3(0.6f), sphereLowModel, 0.5f, 0.1f);
     CreatePointLight(app, glm::vec3(6.0f, 0.0f, 10.0f), glm::vec3(0.6f), sphereLowModel, 1.0f, 0.1f);
 
-    // IMGUI SETTINGS //
-    // ImGui Windows
-    app->openGLGui.open = false;
-    app->rendererOptions.open = true;
-    app->sceneGui = false;
-    app->performanceGui = false;
-    app->forwardRendering = false;
-
-    // ImGui OpenGL Info
-    app->openGLGui.version = "Version: " + std::string((const char*)glGetString(GL_VERSION));
-    app->openGLGui.renderer = "Renderer: " + std::string((const char*)glGetString(GL_RENDERER));
-    app->openGLGui.vendor = "Vendor: " + std::string((const char*)glGetString(GL_VENDOR));
-    app->openGLGui.glslVersion = "GLSL Version: " + std::string((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
-
-    glGetIntegerv(GL_NUM_EXTENSIONS, &app->openGLGui.numExtensions);
-    app->openGLGui.extensions.reserve(app->openGLGui.numExtensions);
-    for (int i = 0; i < app->openGLGui.numExtensions; ++i)
-    {
-        app->openGLGui.extensions.emplace_back((const char*)glGetStringi(GL_EXTENSIONS, GLuint(i)));
-    }
-
-    // ImGui Render Target Selection Combo
-    app->rendererOptions.renderTargets.push_back("FINAL COLOR");
-    app->rendererOptions.renderTargets.push_back("DEPTH");
-    app->rendererOptions.renderTargets.push_back("POSITION");
-    app->rendererOptions.renderTargets.push_back("NORMAL");
-    app->rendererOptions.renderTargets.push_back("ALBEDO");
-    app->rendererOptions.renderTargets.push_back("SPECULAR");
-    app->rendererOptions.renderTargets.push_back("REFLECTIVE + SHININESS");
-
-    // ImGui Skybox Options
-    app->rendererOptions.activeSkybox = true;
-    app->rendererOptions.activeIrradiance = true;
-    app->rendererOptions.activeReflection = false;
-    app->rendererOptions.activeRefraction = false;
-
-    // ImGui SSAO Options
-    app->rendererOptions.activeSSAO = true;
-    app->rendererOptions.activeRangeCheck = true;
-    app->rendererOptions.activeSSAOBlur = true;
-    app->rendererOptions.ssaoRadius = 0.5f;
-    app->rendererOptions.ssaoBias = 0.025f;
-    app->rendererOptions.ssaoPower = 1.0f;
-    app->rendererOptions.ssaoKernelSize = 64;
-
     // ENGINE COUNT OF ENTITIES & LIGHTS //
     app->numEntities = app->entities.size();
     app->numLights = app->lights.size();
+
+    // RENDERER INIT //
+    app->renderer.Init(app);
 
     // OPENGL GLOBAL STATE //
     glViewport(0, 0, app->displaySize.x, app->displaySize.y);
@@ -284,17 +285,17 @@ void ImGuiRender(App* app)
         ImGui::Text("Rendering Mode:");
         ImGui::SameLine();
         ImGui::SetCursorPosY((ImGui::GetFontSize() * 1.5f + ImGui::GetStyle().FramePadding.y * 2.0f));
-        const char* options[] = { "DEFERRED","FORWARD" };
-        static const char* preview = options[0];
+        const char* options[] = { "FORWARD", "DEFERRED" };
+        static const char* preview = options[1];
         if (ImGui::BeginCombo("", preview))
         {
             for (u32 i = 0; i < 2; ++i)
             {
-                bool isSelected = (preview ==options[i]);
+                bool isSelected = (preview == options[i]);
                 if (ImGui::Selectable(options[i], isSelected))
                 {
                     preview = options[i];
-                    app->forwardRendering = i != 0;
+                    app->forwardRendering = i == 0;
 
                     for (u32 i = 0; i < app->numEntities; ++i)
                     {
@@ -343,6 +344,7 @@ void ImGuiRender(App* app)
             }
         }
         */
+
         ImGui::Spacing();
         ImGui::Separator();
         ImGui::Spacing();
@@ -376,7 +378,22 @@ void ImGuiRender(App* app)
                 ImGui::DragFloat("Radius", &app->rendererOptions.ssaoRadius, 0.05f, 0.25f, 2.0f);
                 ImGui::DragFloat("Bias", &app->rendererOptions.ssaoBias, 0.001f, 0.01f, 0.1f);
                 ImGui::DragFloat("Power", &app->rendererOptions.ssaoPower, 0.1f, 1.0f, 10.0f);
-                ImGui::DragInt("Kernel Size", &app->rendererOptions.ssaoKernelSize, 1.0f, 1, 64);
+
+                if (ImGui::DragInt("Kernel Size", &app->rendererOptions.ssaoKernelSize, 4.0f, 4, 64))
+                {
+                    app->renderer.ssaoKernel.clear();
+                    app->renderer.GenerateKernelSamples(app->shaderPrograms[app->renderer.ssaoShaderID], app->rendererOptions.ssaoKernelSize);
+                }
+                
+                static int increment = 2;
+                if (ImGui::SliderInt("Noise Size Scale", &increment, 1, 8))
+                {
+                    app->rendererOptions.ssaoNoiseSize = glm::pow(2 * increment, 2);
+                    
+                    glDeleteTextures(1, &app->renderer.noiseTextureHandle);
+                    app->renderer.ssaoNoise.clear();
+                    app->renderer.GenerateKernelNoise(app->rendererOptions.ssaoNoiseSize);
+                }
             }
 
             ImGui::Spacing();
@@ -571,9 +588,4 @@ void CreateDirectionalLight(App* app, glm::vec3 entityPosition, glm::vec3 direct
 
     Light light = { glm::vec4(direction, 0.0f), color, 1.0f };
     app->lights.push_back(light);
-}
-
-float Lerp(float a, float b, float f)
-{
-    return a + f * (b - a);
 }

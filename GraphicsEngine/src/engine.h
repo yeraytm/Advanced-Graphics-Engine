@@ -19,6 +19,7 @@ class Shader;
 struct OpenGLGUI
 {
     bool open;
+
     std::string version;
     std::string vendor;
     std::string renderer;
@@ -47,6 +48,7 @@ struct RendererOptions
     float ssaoBias;
     float ssaoPower;
     int ssaoKernelSize;
+    int ssaoNoiseSize;
 };
 
 struct Light
@@ -122,4 +124,3 @@ Entity* CreateEntity(App* app, u32 shaderID, glm::vec3 position, Model* model);
 
 void CreatePointLight(App* app, glm::vec3 position, glm::vec3 color, Model* model, float constant = 1.0f, float scale = 1.0f);
 void CreateDirectionalLight(App* app, glm::vec3 entityPosition, glm::vec3 direction, glm::vec3 color, Model* model, float scale = 1.0f);
-float Lerp(float a, float b, float f);

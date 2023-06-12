@@ -29,9 +29,8 @@ public:
 
 	void DeferredRender(App* app);
 
-	void GenerateKernelSamples(App* app);
-
-	void GenerateKernelNoise();
+	void GenerateKernelSamples(Shader& SSAOShader, int ssaoKernelSize);
+	void GenerateKernelNoise(int ssaoNoiseSize);
 
 private:
 	inline void BindDefaultFramebuffer() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
@@ -42,6 +41,9 @@ public:
 	u32 lightCasterShaderID;
 
 	// Shaders specific to the rendering mode
+	// O is Default Shader
+	// 1 is ALbedo Texture Shader
+	// 2 is ALbedo + Specular Texture Shader
 	std::array<u32, 3> forwardShadersID;
 	std::array<u32, 3> deferredShadersID;
 
