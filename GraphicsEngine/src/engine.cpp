@@ -109,16 +109,6 @@ void Init(App* app)
     texturedAlbSpecShader.SetUniform1i("uMaterial.albedo", 0);
     texturedAlbSpecShader.SetUniform1i("uMaterial.specular", 1);
 
-    // TEXTURES //
-    u32 diceTexIdx = LoadTexture2D(app->textures, "Assets/dice.png");
-    u32 whiteTexIdx = LoadTexture2D(app->textures, "Assets/color_white.png");
-    u32 blackTexIdx = LoadTexture2D(app->textures, "Assets/color_black.png");
-    u32 normalTexIdx = LoadTexture2D(app->textures, "Assets/color_normal.png");
-    u32 magentaTexIdx = LoadTexture2D(app->textures, "Assets/color_magenta.png");
-
-    u32 containerAlbedoTexID = LoadTexture2D(app->textures, "Assets/container_albedo.png");
-    u32 containerSpecularID = LoadTexture2D(app->textures, "Assets/container_specular.png");
-
     // MATERIALS //
     Material greyMaterial = {};
     greyMaterial.name = "Grey Material";
@@ -135,8 +125,8 @@ void Init(App* app)
 
     Material containerMat = {};
     containerMat.name = "Container Material";
-    containerMat.albedoTextureID = containerAlbedoTexID;
-    containerMat.specularTextureID = containerSpecularID;
+    containerMat.albedoTextureID = LoadTexture2D(app->textures, "Assets/container_albedo.png");;
+    containerMat.specularTextureID = LoadTexture2D(app->textures, "Assets/container_specular.png");
 
     // MODELS //
     Model* planeModel = CreatePrimitive(app, PrimitiveType::PLANE, greyMaterial);
@@ -184,11 +174,11 @@ void Init(App* app)
     CreateDirectionalLight(app, glm::vec3(0.0f, -2.0f, 15.0f), glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.0f), cubeModel2, 0.5f);
 
     srand(14);
-    for (unsigned int i = 0; i <= 5; i++)
+    for (unsigned int i = 0; i <= 8; i++)
     {
         // Random Position
         float xPos = static_cast<float>(((rand() % 100) / 70.0f) * 9.0f - 3.0f);
-        float yPos = static_cast<float>(((rand() % 100) / 80.0f) * 6.0f + 2.0f);
+        float yPos = static_cast<float>(((rand() % 100) / 80.0f) * 6.0f + 6.0f);
         float zPos = static_cast<float>(((rand() % 100) / 25.0f) * 6.0f - 16.0f);
 
         // Random Color
@@ -200,8 +190,8 @@ void Init(App* app)
         CreatePointLight(app, glm::vec3(xPos, yPos, zPos), color, sphereLowModel, 1.0f, 0.1f);
     }
 
-    CreatePointLight(app, glm::vec3(-6.0f, -3.0f, 10.0f), glm::vec3(0.6f), sphereLowModel, 0.5f, 0.1f);
-    CreatePointLight(app, glm::vec3(6.0f, -3.0f, 10.0f), glm::vec3(0.6f), sphereLowModel, 1.0f, 0.1f);
+    CreatePointLight(app, glm::vec3(-6.0f, 0.0f, 10.0f), glm::vec3(0.6f), sphereLowModel, 0.5f, 0.1f);
+    CreatePointLight(app, glm::vec3(6.0f, 0.0f, 10.0f), glm::vec3(0.6f), sphereLowModel, 1.0f, 0.1f);
 
     // SKYBOX //
     app->skyboxShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/Skybox.glsl", "SKYBOX");

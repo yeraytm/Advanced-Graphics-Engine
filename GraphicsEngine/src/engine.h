@@ -13,6 +13,8 @@
 #include "BufferManagement.h"
 #include "Framebuffer.h"
 
+#include <memory>
+
 struct OpenGLGUI
 {
     bool open;
@@ -123,6 +125,7 @@ struct App
     u32 ssaoBlurShaderID;
     
     // RESOURCES //
+    std::vector<std::unique_ptr<Model>> models;
     std::vector<Texture> textures;
     std::vector<Material> materials;
     std::vector<Shader> shaderPrograms;

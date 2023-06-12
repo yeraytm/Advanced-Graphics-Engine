@@ -3,6 +3,8 @@
 #include "Layouts.h"
 #include "Texture.h"
 
+#include <memory>
+
 void ProcessAssimpMaterial(App* app, aiMaterial* material, Material& myMaterial, String directory, bool flipTextures)
 {
     aiString name;
@@ -67,7 +69,7 @@ void ProcessAssimpMaterial(App* app, aiMaterial* material, Material& myMaterial,
     //myMaterial.createNormalFromBump();
 }
 
-void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Model* myModel, u32 baseMeshMaterialIndex, std::vector<u32>& modelMaterialIndices)
+void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Model& myModel, u32 baseMeshMaterialIndex, std::vector<u32>& modelMaterialIndices)
 {
     Mesh myMesh = {};
 
@@ -145,10 +147,10 @@ void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Model* myModel, u32 b
     }
 
     // add the mesh into the model
-    myModel->meshes.push_back(myMesh);
+    myModel.meshes.push_back(myMesh);
 }
 
-void ProcessAssimpNode(const aiScene* scene, aiNode* node, Model* myModel, u32 baseMeshMaterialIndex, std::vector<u32>& modelMaterialIndices)
+void ProcessAssimpNode(const aiScene* scene, aiNode* node, Model& myModel, u32 baseMeshMaterialIndex, std::vector<u32>& modelMaterialIndices)
 {
     // process all the node's meshes (if any)
     for (unsigned int i = 0; i < node->mNumMeshes; i++)
@@ -166,7 +168,8 @@ void ProcessAssimpNode(const aiScene* scene, aiNode* node, Model* myModel, u32 b
 
 Model* LoadModel(App* app, const char* filename, bool flipTextures)
 {
-    Model* model = new Model();
+    app->models.push_back(std::make_unique<Model>());
+    Model* model = app->models.back().get();
 
     const aiScene* scene = aiImportFile(filename,
         aiProcess_Triangulate |
@@ -195,7 +198,7 @@ Model* LoadModel(App* app, const char* filename, bool flipTextures)
         ProcessAssimpMaterial(app, scene->mMaterials[i], material, directory, flipTextures);
     }
 
-    ProcessAssimpNode(scene, scene->mRootNode, model, baseMeshMaterialIndex, model->materialIDs);
+    ProcessAssimpNode(scene, scene->mRootNode, *model, baseMeshMaterialIndex, (*model).materialIDs);
 
     aiReleaseImport(scene);
 
