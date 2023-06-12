@@ -75,6 +75,7 @@ struct App
     RendererOptions rendererOptions;
     bool sceneGui;
     bool performanceGui;
+    bool forwardRendering;
 
     // CAMERA //
     Camera camera;

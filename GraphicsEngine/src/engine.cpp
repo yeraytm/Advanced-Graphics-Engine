@@ -255,6 +255,18 @@ void ImGuiRender(App* app)
     {
         ImGui::Begin("Renderer", &app->rendererOptions.open);
 
+        ImGui::Text("Rendering Mode:");
+        ImGui::SameLine();
+        ImGui::SetCursorPosY((ImGui::GetFontSize() * 1.5f + ImGui::GetStyle().FramePadding.y * 2.0f));
+        if (ImGui::Button(app->forwardRendering ? "Switch to Deferred" : "Switch to Forward"))
+        {
+            app->forwardRendering = !app->forwardRendering;
+        }
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
         ImGui::Text("Environment Mapping Options");
         if (ImGui::Checkbox("Skybox", &app->rendererOptions.activeSkybox))
         {
@@ -375,223 +387,230 @@ void Render(App* app)
 
     glBindBufferRange(GL_UNIFORM_BUFFER, 0, app->UBO.handle, app->globalParamOffset, app->globalParamSize);
 
-    // DEFERRED SHADING: GEOMETRY PASS //
-    app->renderer.GBuffer.Bind();
-
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    for (u32 i = 0; i < app->firstLightEntityID; ++i)
+    if (app->forwardRendering)
     {
-        Entity& entity = app->entities[i];
-        Shader& shader = app->shaderPrograms[entity.shaderID];
-        Model* model = entity.model;
+        app->renderer.ForwardRender(app);
+    }
+    else
+    {
+        // DEFERRED SHADING: GEOMETRY PASS //
+        app->renderer.GBuffer.Bind();
 
-        glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->UBO.handle, entity.localParamOffset, entity.localParamSize);
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        shader.Bind();
-
-        u32 numMeshes = model->meshes.size();
-        for (u32 meshIndex = 0; meshIndex < numMeshes; ++meshIndex)
+        for (u32 i = 0; i < app->firstLightEntityID; ++i)
         {
-            u32 vao = FindVAO(model, meshIndex, shader);
+            Entity& entity = app->entities[i];
+            Shader& shader = app->shaderPrograms[entity.shaderID];
+            Model* model = entity.model;
+
+            glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->UBO.handle, entity.localParamOffset, entity.localParamSize);
+
+            shader.Bind();
+
+            u32 numMeshes = model->meshes.size();
+            for (u32 meshIndex = 0; meshIndex < numMeshes; ++meshIndex)
+            {
+                u32 vao = FindVAO(model, meshIndex, shader);
+                glBindVertexArray(vao);
+
+                u32 meshMaterialID = model->materialIDs[meshIndex];
+                Material& meshMaterial = app->materials[meshMaterialID];
+
+                // Uniforms
+                switch (shader.type)
+                {
+                case ShaderType::DEFAULT:
+                {
+                    // Material
+                    shader.SetUniform3f("uMaterial.albedo", meshMaterial.albedo);
+                    shader.SetUniform3f("uMaterial.specular", meshMaterial.specular);
+                    shader.SetUniform3f("uMaterial.reflective", meshMaterial.reflective);
+                    shader.SetUniform1f("uMaterial.shininess", meshMaterial.shininess);
+                }
+                break;
+                case ShaderType::TEXTURED_ALBEDO:
+                {
+                    // Albedo Map
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
+
+                    // Material
+                    shader.SetUniform3f("uMaterial.specular", meshMaterial.specular);
+                    shader.SetUniform3f("uMaterial.reflective", meshMaterial.reflective);
+                    shader.SetUniform1f("uMaterial.shininess", meshMaterial.shininess);
+                }
+                break;
+                case ShaderType::TEXTURED_ALB_SPEC:
+                {
+                    // Albedo Map
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
+
+                    // Specular Map
+                    glActiveTexture(GL_TEXTURE1);
+                    glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.specularTextureID].handle);
+
+                    // Material
+                    shader.SetUniform3f("uMaterial.reflective", meshMaterial.reflective);
+                    shader.SetUniform1f("uMaterial.shininess", meshMaterial.shininess);
+                }
+                break;
+                }
+
+                Mesh& mesh = model->meshes[meshIndex];
+                glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.indexOffset);
+                glBindVertexArray(0);
+            }
+            shader.Unbind();
+        }
+        app->renderer.BindDefaultFramebuffer();
+
+        if (app->rendererOptions.activeSSAO)
+        {
+            // SSAO //
+            app->renderer.ssaoBuffer.Bind();
+            glDisable(GL_BLEND);
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            Shader& SSAOShader = app->shaderPrograms[app->renderer.ssaoShaderID];
+            SSAOShader.Bind();
+
+            SSAOShader.SetUniformMat4("uProjection", app->camera.GetProjectionMatrix(app->displaySize));
+            SSAOShader.SetUniformMat4("uView", app->camera.GetViewMatrix(app->displaySize));
+            SSAOShader.SetUniform2f("uDisplaySize", glm::vec2(app->displaySize.x, app->displaySize.y));
+
+            SSAOShader.SetUniform1i("uSSAOptions.uRangeCheck", app->rendererOptions.activeRangeCheck);
+            SSAOShader.SetUniform1f("uSSAOptions.uRadius", app->rendererOptions.ssaoRadius);
+            SSAOShader.SetUniform1f("uSSAOptions.uBias", app->rendererOptions.ssaoBias);
+            SSAOShader.SetUniform1f("uSSAOptions.uPower", app->rendererOptions.ssaoPower);
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, app->renderer.GBuffer.colorAttachmentHandles[0]); // Position
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, app->renderer.GBuffer.colorAttachmentHandles[1]); // Normal
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, app->renderer.GBuffer.depthAttachment); // Depth
+            glActiveTexture(GL_TEXTURE3);
+            glBindTexture(GL_TEXTURE_2D, app->renderer.noiseTextureHandle); // SSAO Noise Texture
+
+            glBindVertexArray(app->renderer.screenQuad.VAO);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
+            glBindVertexArray(0);
+            glEnable(GL_BLEND);
+            SSAOShader.Unbind();
+            app->renderer.BindDefaultFramebuffer();
+
+            // SSAO Blur
+            app->renderer.ssaoBlurBuffer.Bind();
+            glDisable(GL_BLEND);
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            Shader& SSAOBlurShader = app->shaderPrograms[app->renderer.ssaoBlurShaderID];
+            SSAOBlurShader.Bind();
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, app->renderer.ssaoBuffer.colorAttachmentHandles[0]); // SSAO Color Texture
+
+            glBindVertexArray(app->renderer.screenQuad.VAO);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
+            glBindVertexArray(0);
+            glEnable(GL_BLEND);
+            SSAOBlurShader.Unbind();
+            app->renderer.BindDefaultFramebuffer();
+        }
+
+        // DEFERRED SHADING: LIGHTING PASS //
+        app->renderer.screenQuad.FBO.Bind();
+
+        glDisable(GL_DEPTH_TEST);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        Shader& lightingPassShader = app->shaderPrograms[app->renderer.lightingPassShaderID];
+        lightingPassShader.Bind();
+
+        // Set the uniform textures from the G-Buffer
+        for (u32 i = 0; i < app->renderer.GBuffer.colorAttachmentHandles.size(); ++i)
+        {
+            glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_2D, app->renderer.GBuffer.colorAttachmentHandles[i]);
+        }
+
+        // Environment Map
+        glActiveTexture(GL_TEXTURE0 + app->renderer.GBuffer.colorAttachmentHandles.size());
+        glBindTexture(GL_TEXTURE_CUBE_MAP, app->renderer.environmentMapHandle);
+
+        // Irradiance Map
+        glActiveTexture(GL_TEXTURE1 + app->renderer.GBuffer.colorAttachmentHandles.size());
+        glBindTexture(GL_TEXTURE_CUBE_MAP, app->renderer.irradianceMapHandle);
+
+        // SSAO Color
+        glActiveTexture(GL_TEXTURE2 + app->renderer.GBuffer.colorAttachmentHandles.size());
+        glBindTexture(GL_TEXTURE_2D, app->rendererOptions.activeSSAOBlur ? app->renderer.ssaoBlurBuffer.colorAttachmentHandles[0] : app->renderer.ssaoBuffer.colorAttachmentHandles[0]);
+
+        lightingPassShader.SetUniform1i("uRendererOptions.uActiveIrradiance", app->rendererOptions.activeIrradiance);
+        lightingPassShader.SetUniform1i("uRendererOptions.uActiveReflection", app->rendererOptions.activeReflection);
+        lightingPassShader.SetUniform1i("uRendererOptions.uActiveRefraction", app->rendererOptions.activeRefraction);
+        lightingPassShader.SetUniform1i("uRendererOptions.uActiveSSAO", app->rendererOptions.activeSSAO);
+
+        glBindVertexArray(app->renderer.screenQuad.VAO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
+        glBindVertexArray(0);
+        lightingPassShader.Unbind();
+
+        // SCREEN-FILLING QUAD //
+        app->renderer.BindDefaultFramebuffer();
+
+        glDisable(GL_DEPTH_TEST);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        Shader& screenQuadShader = app->shaderPrograms[app->renderer.screenQuad.shaderID];
+        screenQuadShader.Bind();
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, app->renderer.screenQuad.currentRenderTarget);
+
+        glBindVertexArray(app->renderer.screenQuad.VAO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
+        glBindVertexArray(0);
+        screenQuadShader.Unbind();
+
+        // FORWARD SHADING: LIGHTS //
+        glEnable(GL_DEPTH_TEST);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, app->renderer.GBuffer.handle);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        glBlitFramebuffer(0, 0, app->displaySize.x, app->displaySize.y, 0, 0, app->displaySize.x, app->displaySize.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+        app->renderer.BindDefaultFramebuffer();
+
+        Shader& lightCasterShader = app->shaderPrograms[app->renderer.lightCasterShaderID];
+        lightCasterShader.Bind();
+        u32 lightID = 0;
+        for (u32 i = app->firstLightEntityID; i < app->numEntities; ++i)
+        {
+            Entity& lightEntity = app->entities[i];
+
+            glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->UBO.handle, lightEntity.localParamOffset, lightEntity.localParamSize);
+
+            Model* model = lightEntity.model;
+
+            u32 vao = FindVAO(model, 0, lightCasterShader);
             glBindVertexArray(vao);
 
-            u32 meshMaterialID = model->materialIDs[meshIndex];
-            Material& meshMaterial = app->materials[meshMaterialID];
+            lightCasterShader.SetUniform1ui("uLightID", lightID);
 
-            // Uniforms
-            switch (shader.type)
-            {
-            case ShaderType::DEFAULT:
-            {
-                // Material
-                shader.SetUniform3f("uMaterial.albedo", meshMaterial.albedo);
-                shader.SetUniform3f("uMaterial.specular", meshMaterial.specular);
-                shader.SetUniform3f("uMaterial.reflective", meshMaterial.reflective);
-                shader.SetUniform1f("uMaterial.shininess", meshMaterial.shininess);
-            }
-            break;
-            case ShaderType::TEXTURED_ALBEDO:
-            {
-                // Albedo Map
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
-
-                // Material
-                shader.SetUniform3f("uMaterial.specular", meshMaterial.specular);
-                shader.SetUniform3f("uMaterial.reflective", meshMaterial.reflective);
-                shader.SetUniform1f("uMaterial.shininess", meshMaterial.shininess);
-            }
-            break;
-            case ShaderType::TEXTURED_ALB_SPEC:
-            {
-                // Albedo Map
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
-
-                // Specular Map
-                glActiveTexture(GL_TEXTURE1);
-                glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.specularTextureID].handle);
-
-                // Material
-                shader.SetUniform3f("uMaterial.reflective", meshMaterial.reflective);
-                shader.SetUniform1f("uMaterial.shininess", meshMaterial.shininess);
-            }
-            break;
-            }
-
-            Mesh& mesh = model->meshes[meshIndex];
+            Mesh& mesh = model->meshes[0];
             glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.indexOffset);
+
             glBindVertexArray(0);
+            lightID++;
         }
-        shader.Unbind();
+        lightCasterShader.Unbind();
     }
-    app->renderer.BindDefaultFramebuffer();
-
-    if (app->rendererOptions.activeSSAO)
-    {
-        // SSAO //
-        app->renderer.ssaoBuffer.Bind();
-        glDisable(GL_BLEND);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        Shader& SSAOShader = app->shaderPrograms[app->renderer.ssaoShaderID];
-        SSAOShader.Bind();
-
-        SSAOShader.SetUniformMat4("uProjection", app->camera.GetProjectionMatrix(app->displaySize));
-        SSAOShader.SetUniformMat4("uView", app->camera.GetViewMatrix(app->displaySize));
-        SSAOShader.SetUniform2f("uDisplaySize", glm::vec2(app->displaySize.x, app->displaySize.y));
-
-        SSAOShader.SetUniform1i("uSSAOptions.uRangeCheck", app->rendererOptions.activeRangeCheck);
-        SSAOShader.SetUniform1f("uSSAOptions.uRadius", app->rendererOptions.ssaoRadius);
-        SSAOShader.SetUniform1f("uSSAOptions.uBias", app->rendererOptions.ssaoBias);
-        SSAOShader.SetUniform1f("uSSAOptions.uPower", app->rendererOptions.ssaoPower);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, app->renderer.GBuffer.colorAttachmentHandles[0]); // Position
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, app->renderer.GBuffer.colorAttachmentHandles[1]); // Normal
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, app->renderer.GBuffer.depthAttachment); // Depth
-        glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, app->renderer.noiseTextureHandle); // SSAO Noise Texture
-
-        glBindVertexArray(app->renderer.screenQuad.VAO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
-        glBindVertexArray(0);
-        glEnable(GL_BLEND);
-        SSAOShader.Unbind();
-        app->renderer.BindDefaultFramebuffer();
-
-        // SSAO Blur
-        app->renderer.ssaoBlurBuffer.Bind();
-        glDisable(GL_BLEND);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        Shader& SSAOBlurShader = app->shaderPrograms[app->renderer.ssaoBlurShaderID];
-        SSAOBlurShader.Bind();
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, app->renderer.ssaoBuffer.colorAttachmentHandles[0]); // SSAO Color Texture
-
-        glBindVertexArray(app->renderer.screenQuad.VAO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
-        glBindVertexArray(0);
-        glEnable(GL_BLEND);
-        SSAOBlurShader.Unbind();
-        app->renderer.BindDefaultFramebuffer();
-    }
-
-    // DEFERRED SHADING: LIGHTING PASS //
-    app->renderer.screenQuad.FBO.Bind();
-
-    glDisable(GL_DEPTH_TEST);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    Shader& lightingPassShader = app->shaderPrograms[app->renderer.lightingPassShaderID];
-    lightingPassShader.Bind();
-
-    // Set the uniform textures from the G-Buffer
-    for (u32 i = 0; i < app->renderer.GBuffer.colorAttachmentHandles.size(); ++i)
-    {
-        glActiveTexture(GL_TEXTURE0 + i);
-        glBindTexture(GL_TEXTURE_2D, app->renderer.GBuffer.colorAttachmentHandles[i]);
-    }
-    
-    // Environment Map
-    glActiveTexture(GL_TEXTURE0 + app->renderer.GBuffer.colorAttachmentHandles.size());
-    glBindTexture(GL_TEXTURE_CUBE_MAP, app->renderer.environmentMapHandle);
-
-    // Irradiance Map
-    glActiveTexture(GL_TEXTURE1 + app->renderer.GBuffer.colorAttachmentHandles.size());
-    glBindTexture(GL_TEXTURE_CUBE_MAP, app->renderer.irradianceMapHandle);
-
-    // SSAO Color
-    glActiveTexture(GL_TEXTURE2 + app->renderer.GBuffer.colorAttachmentHandles.size());
-    glBindTexture(GL_TEXTURE_2D, app->rendererOptions.activeSSAOBlur ? app->renderer.ssaoBlurBuffer.colorAttachmentHandles[0] : app->renderer.ssaoBuffer.colorAttachmentHandles[0]);
-
-    lightingPassShader.SetUniform1i("uRendererOptions.uActiveIrradiance", app->rendererOptions.activeIrradiance);
-    lightingPassShader.SetUniform1i("uRendererOptions.uActiveReflection", app->rendererOptions.activeReflection);
-    lightingPassShader.SetUniform1i("uRendererOptions.uActiveRefraction", app->rendererOptions.activeRefraction);
-    lightingPassShader.SetUniform1i("uRendererOptions.uActiveSSAO", app->rendererOptions.activeSSAO);
-
-    glBindVertexArray(app->renderer.screenQuad.VAO);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
-    glBindVertexArray(0);
-    lightingPassShader.Unbind();
-
-    // SCREEN-FILLING QUAD //
-    app->renderer.BindDefaultFramebuffer();
-
-    glDisable(GL_DEPTH_TEST);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    Shader& screenQuadShader = app->shaderPrograms[app->renderer.screenQuad.shaderID];
-    screenQuadShader.Bind();
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, app->renderer.screenQuad.currentRenderTarget);
-
-    glBindVertexArray(app->renderer.screenQuad.VAO);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
-    glBindVertexArray(0);
-    screenQuadShader.Unbind();
-
-    // FORWARD SHADING: LIGHTS //
-    glEnable(GL_DEPTH_TEST);
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, app->renderer.GBuffer.handle);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    glBlitFramebuffer(0, 0, app->displaySize.x, app->displaySize.y, 0, 0, app->displaySize.x, app->displaySize.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-    app->renderer.BindDefaultFramebuffer();
-
-    Shader& lightCasterShader = app->shaderPrograms[app->renderer.lightCasterShaderID];
-    lightCasterShader.Bind();
-    u32 lightID = 0;
-    for (u32 i = app->firstLightEntityID; i < app->numEntities; ++i)
-    {
-        Entity& lightEntity = app->entities[i];
-
-        glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->UBO.handle, lightEntity.localParamOffset, lightEntity.localParamSize);
-
-        Model* model = lightEntity.model;
-
-        u32 vao = FindVAO(model, 0, lightCasterShader);
-        glBindVertexArray(vao);
-
-        lightCasterShader.SetUniform1ui("uLightID", lightID);
-
-        Mesh& mesh = model->meshes[0];
-        glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.indexOffset);
-
-        glBindVertexArray(0);
-        lightID++;
-    }
-    lightCasterShader.Unbind();
 
     if (app->rendererOptions.activeSkybox)
     {
