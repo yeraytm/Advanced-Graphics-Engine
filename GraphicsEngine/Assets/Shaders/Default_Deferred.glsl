@@ -16,14 +16,12 @@ layout(binding = 1, std140) uniform LocalParameters
 
 out VS_OUT
 {
-	vec2 TexCoord;
 	vec3 FragPos;
 	vec3 Normal;
 } vs_out;
 
 void main()
 {
-	vs_out.TexCoord = aTexCoord;
 	vs_out.FragPos = vec3(uModel * vec4(aPosition, 1.0));
 	vs_out.Normal = normalize(vec3(uModel * vec4(aNormal, 0.0))); // As we will not perform non-uniform scale, we don't need a normal matrix for now
 
@@ -49,7 +47,6 @@ uniform Material uMaterial;
 
 in VS_OUT
 {
-	vec2 TexCoord;
 	vec3 FragPos;
 	vec3 Normal;
 } fs_in;

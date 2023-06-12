@@ -19,9 +19,6 @@ enum class ShaderType
 class Shader
 {
 public:
-    //Shader();
-    //~Shader();
-
     void Bind();
     void Unbind();
 

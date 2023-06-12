@@ -7,7 +7,6 @@
 
 #include "engine.h"
 #include "Shader.h"
-#include "Framebuffer.h"
 #include "AssimpLoading.h"
 #include "Primitives.h"
 
@@ -25,29 +24,52 @@ void Init(App* app)
     glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBufferOffsetAlignment);
     app->UBO = CreateConstantBuffer(maxUniformBlockSize);
 
-    // DEFERRED SHADING //
-    // Lighting Pass
-    app->renderer.lightingPassShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::LIGHTING_PASS, "Assets/Shaders/LightingPass_Deferred.glsl", "DEFERRED_LIGHTING_PASS");
-
     // SCREEN-FILLING QUAD //
     app->renderer.screenQuad.VAO = CreateQuad();
     app->renderer.screenQuad.shaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::SCREEN_QUAD, "Assets/Shaders/Quad_Deferred.glsl", "SCREEN_QUAD");
 
-    // SHADERS & UNIFORM TEXTURES //
-    u32 defaultShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::DEFAULT, "Assets/Shaders/Default_Deferred.glsl", "DEFERRED_GEOMETRY_DEFAULT");
     app->renderer.lightCasterShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::LIGHT_CASTER, "Assets/Shaders/LightCaster.glsl", "LIGHT_CASTER");
 
-    u32 texturedAlbShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::TEXTURED_ALBEDO, "Assets/Shaders/GeometryPassAlb_Deferred.glsl", "DEFERRED_GEOMETRY_ALBEDO");
-    Shader& texturedAlbShader = app->shaderPrograms[texturedAlbShaderID];
-    texturedAlbShader.Bind();
-    texturedAlbShader.SetUniform1i("uMaterial.albedo", 0);
+    // DEFERRED SHADING: Lighting Pass //
+    app->renderer.lightingPassShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::LIGHTING_PASS, "Assets/Shaders/LightingPass_Deferred.glsl", "DEFERRED_LIGHTING_PASS");
 
-    u32 texturedAlbSpecShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::TEXTURED_ALB_SPEC, "Assets/Shaders/GeometryPassAlbSpec_Deferred.glsl", "DEFERRED_GEOMETRY_ALBEDO_SPECULAR");
-    Shader& texturedAlbSpecShader = app->shaderPrograms[texturedAlbSpecShaderID];
-    texturedAlbSpecShader.Bind();
-    texturedAlbSpecShader.SetUniform1i("uMaterial.albedo", 0);
-    texturedAlbSpecShader.SetUniform1i("uMaterial.specular", 1);
+    // SHADERS FORWARD //
+    app->renderer.forwardShadersID[0] = LoadShaderProgram(app->shaderPrograms, ShaderType::DEFAULT, "Assets/Shaders/Forward/Default_Forward.glsl", "FORWARD_DEFAULT");
+    Shader& defaultShaderF = app->shaderPrograms[app->renderer.forwardShadersID[0]];
+    defaultShaderF.Bind();
+    defaultShaderF.SetUniform1i("uEnvironmentMap", 0);
+    defaultShaderF.SetUniform1i("uIrradianceMap", 1);
 
+    app->renderer.forwardShadersID[1] = LoadShaderProgram(app->shaderPrograms, ShaderType::TEXTURED_ALBEDO, "Assets/Shaders/Forward/Albedo_Forward.glsl", "FORWARD_ALBEDO");
+    Shader& texturedAlbShaderF = app->shaderPrograms[app->renderer.forwardShadersID[1]];
+    texturedAlbShaderF.Bind();
+    texturedAlbShaderF.SetUniform1i("uMaterial.albedo", 0);
+    texturedAlbShaderF.SetUniform1i("uEnvironmentMap", 1);
+    texturedAlbShaderF.SetUniform1i("uIrradianceMap", 2);
+
+    app->renderer.forwardShadersID[2] = LoadShaderProgram(app->shaderPrograms, ShaderType::TEXTURED_ALB_SPEC, "Assets/Shaders/Forward/AlbedoSpecular_Forward.glsl", "FORWARD_ALBEDO_SPECULAR");
+    Shader& texturedAlbSpecShaderF = app->shaderPrograms[app->renderer.forwardShadersID[2]];
+    texturedAlbSpecShaderF.Bind();
+    texturedAlbSpecShaderF.SetUniform1i("uMaterial.albedo", 0);
+    texturedAlbSpecShaderF.SetUniform1i("uMaterial.specular", 1);
+    texturedAlbSpecShaderF.SetUniform1i("uEnvironmentMap", 2);
+    texturedAlbSpecShaderF.SetUniform1i("uIrradianceMap", 3);
+
+    // SHADERS DEFERRED //
+    app->renderer.deferredShadersID[0] = LoadShaderProgram(app->shaderPrograms, ShaderType::DEFAULT, "Assets/Shaders/Default_Deferred.glsl", "DEFERRED_GEOMETRY_DEFAULT");
+
+    app->renderer.deferredShadersID[1] = LoadShaderProgram(app->shaderPrograms, ShaderType::TEXTURED_ALBEDO, "Assets/Shaders/GeometryPassAlb_Deferred.glsl", "DEFERRED_GEOMETRY_ALBEDO");
+    Shader& texturedAlbShaderD = app->shaderPrograms[app->renderer.deferredShadersID[1]];
+    texturedAlbShaderD.Bind();
+    texturedAlbShaderD.SetUniform1i("uMaterial.albedo", 0);
+
+    app->renderer.deferredShadersID[2] = LoadShaderProgram(app->shaderPrograms, ShaderType::TEXTURED_ALB_SPEC, "Assets/Shaders/GeometryPassAlbSpec_Deferred.glsl", "DEFERRED_GEOMETRY_ALBEDO_SPECULAR");
+    Shader& texturedAlbSpecShaderD = app->shaderPrograms[app->renderer.deferredShadersID[2]];
+    texturedAlbSpecShaderD.Bind();
+    texturedAlbSpecShaderD.SetUniform1i("uMaterial.albedo", 0);
+    texturedAlbSpecShaderD.SetUniform1i("uMaterial.specular", 1);
+
+    // SKYBOX //
     app->renderer.skyboxCubeVAO = CreateSkyboxCube();
     app->renderer.skyboxShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/Skybox.glsl", "SKYBOX");
 
@@ -71,9 +93,11 @@ void Init(App* app)
     app->renderer.environmentMapHandle = cubemapTextures.x;
     app->renderer.irradianceMapHandle = cubemapTextures.y;
 
+    // SSAO //
     app->renderer.ssaoShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/SSAO.glsl", "SSAO");
     app->renderer.ssaoBlurShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/SSAO_Blur.glsl", "SSAO_BLUR");
 
+    // RENDERER INIT //
     app->renderer.Init(app);
 
     // MATERIALS //
@@ -109,31 +133,31 @@ void Init(App* app)
 
     // ENTITIES //
     // Primitives
-    Entity* planeEntity = CreateEntity(app, defaultShaderID, glm::vec3(0.0f, -3.4f, 0.0f), planeModel);
+    Entity* planeEntity = CreateEntity(app, app->renderer.deferredShadersID[0], glm::vec3(0.0f, -3.4f, 0.0f), planeModel);
     planeEntity->Rotate(-90.0f, glm::vec3(1.0f, 0.0f, 0.0f));
     planeEntity->Scale(35.0f);
 
-    Entity* sphereEntity = CreateEntity(app, defaultShaderID, glm::vec3(0.0f, 1.0f, 7.0f), sphereModel);
+    Entity* sphereEntity = CreateEntity(app, app->renderer.deferredShadersID[0], glm::vec3(0.0f, 1.0f, 7.0f), sphereModel);
 
-    Entity* cubeEntity = CreateEntity(app, texturedAlbSpecShaderID, glm::vec3(5.0f, 0.0f, 7.0f), cubeModel);
+    Entity* cubeEntity = CreateEntity(app, app->renderer.deferredShadersID[2], glm::vec3(5.0f, 0.0f, 7.0f), cubeModel);
 
-    Entity* cubeEntity2 = CreateEntity(app, defaultShaderID, glm::vec3(-5.0f, 0.0f, 7.0f), cubeModel2);
+    Entity* cubeEntity2 = CreateEntity(app, app->renderer.deferredShadersID[0], glm::vec3(-5.0f, 0.0f, 7.0f), cubeModel2);
 
     // 3D Models
-    Entity* bunnyEntity = CreateEntity(app, defaultShaderID, glm::vec3(0.0f, -3.5f, 7.0f), bunnyModel);
+    Entity* bunnyEntity = CreateEntity(app, app->renderer.deferredShadersID[0], glm::vec3(0.0f, -3.5f, 7.0f), bunnyModel);
     bunnyEntity->Scale(1.5f);
 
-    CreateEntity(app, texturedAlbShaderID, glm::vec3(-6.0f, 0.0f, 0.0f), patrickModel);
-    CreateEntity(app, texturedAlbShaderID, glm::vec3(0.0f, 0.0f, 0.0f), patrickModel);
-    CreateEntity(app, texturedAlbShaderID, glm::vec3(6.0f, 0.0f, 0.0f), patrickModel);
+    CreateEntity(app, app->renderer.deferredShadersID[1], glm::vec3(-6.0f, 0.0f, 0.0f), patrickModel);
+    CreateEntity(app, app->renderer.deferredShadersID[1], glm::vec3(0.0f, 0.0f, 0.0f), patrickModel);
+    CreateEntity(app, app->renderer.deferredShadersID[1], glm::vec3(6.0f, 0.0f, 0.0f), patrickModel);
 
-    CreateEntity(app, texturedAlbShaderID, glm::vec3(-6.0f, 0.0f, -4.0f), patrickModel);
-    CreateEntity(app, texturedAlbShaderID, glm::vec3(0.0f, 0.0f, -4.0f), patrickModel);
-    CreateEntity(app, texturedAlbShaderID, glm::vec3(6.0f, 0.0f, -4.0f), patrickModel);
+    CreateEntity(app, app->renderer.deferredShadersID[1], glm::vec3(-6.0f, 0.0f, -4.0f), patrickModel);
+    CreateEntity(app, app->renderer.deferredShadersID[1], glm::vec3(0.0f, 0.0f, -4.0f), patrickModel);
+    CreateEntity(app, app->renderer.deferredShadersID[1], glm::vec3(6.0f, 0.0f, -4.0f), patrickModel);
 
-    CreateEntity(app, texturedAlbShaderID, glm::vec3(-6.0f, 0.0f, -8.0f), patrickModel);
-    CreateEntity(app, texturedAlbShaderID, glm::vec3(0.0f, 0.0f, -8.0f), patrickModel);
-    CreateEntity(app, texturedAlbShaderID, glm::vec3(6.0f, 0.0f, -8.0f), patrickModel);
+    CreateEntity(app, app->renderer.deferredShadersID[1], glm::vec3(-6.0f, 0.0f, -8.0f), patrickModel);
+    CreateEntity(app, app->renderer.deferredShadersID[1], glm::vec3(0.0f, 0.0f, -8.0f), patrickModel);
+    CreateEntity(app, app->renderer.deferredShadersID[1], glm::vec3(6.0f, 0.0f, -8.0f), patrickModel);
 
     app->firstLightEntityID = app->entities.size();
 
@@ -166,6 +190,7 @@ void Init(App* app)
     app->rendererOptions.open = true;
     app->sceneGui = false;
     app->performanceGui = false;
+    app->forwardRendering = false;
 
     // ImGui OpenGL Info
     app->openGLGui.version = "Version: " + std::string((const char*)glGetString(GL_VERSION));
@@ -261,6 +286,25 @@ void ImGuiRender(App* app)
         if (ImGui::Button(app->forwardRendering ? "Switch to Deferred" : "Switch to Forward"))
         {
             app->forwardRendering = !app->forwardRendering;
+
+            for (u32 i = 0; i < app->numEntities; ++i)
+            {
+                Entity& entity = app->entities[i];
+                switch (app->shaderPrograms[entity.shaderID].type)
+                {
+                case ShaderType::DEFAULT:
+                    entity.shaderID = app->forwardRendering ? app->renderer.forwardShadersID[0] : app->renderer.deferredShadersID[0];
+                    break;
+                case ShaderType::TEXTURED_ALBEDO:
+                    entity.shaderID = app->forwardRendering ? app->renderer.forwardShadersID[1] : app->renderer.deferredShadersID[1];
+                    break;
+                case ShaderType::TEXTURED_ALB_SPEC:
+                    entity.shaderID = app->forwardRendering ? app->renderer.forwardShadersID[2] : app->renderer.deferredShadersID[2];
+                    break;
+                default:
+                    break;
+                }
+            }
         }
 
         ImGui::Spacing();
@@ -281,44 +325,47 @@ void ImGuiRender(App* app)
             ImGui::Checkbox("Refraction", &app->rendererOptions.activeRefraction);
         }
 
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
-
-        ImGui::Text("SSAO Options");
-        ImGui::Checkbox("SSAO", &app->rendererOptions.activeSSAO);
-        if (app->rendererOptions.activeSSAO)
+        if (!app->forwardRendering)
         {
-            ImGui::Checkbox("Range Check", &app->rendererOptions.activeRangeCheck);
-            ImGui::Checkbox("Blur", &app->rendererOptions.activeSSAOBlur);
-            ImGui::DragFloat("Radius", &app->rendererOptions.ssaoRadius, 0.05f, 0.25f, 2.0f);
-            ImGui::DragFloat("Bias", &app->rendererOptions.ssaoBias, 0.001f, 0.01f, 0.1f);
-            ImGui::DragFloat("Power", &app->rendererOptions.ssaoPower, 0.1f, 1.0f, 10.0f);
-        }
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
 
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
-
-        ImGui::Text("Render Target");
-        static const char* preview = "FINAL COLOR";
-        if (ImGui::BeginCombo("", preview))
-        {
-            for (int i = 0; i < app->rendererOptions.renderTargets.size(); ++i)
+            ImGui::Text("SSAO Options");
+            ImGui::Checkbox("SSAO", &app->rendererOptions.activeSSAO);
+            if (app->rendererOptions.activeSSAO)
             {
-                bool isSelected = (preview == app->rendererOptions.renderTargets[i]);
-                if (ImGui::Selectable(app->rendererOptions.renderTargets[i], isSelected))
-                {
-                    preview = app->rendererOptions.renderTargets[i];
-                    if (i == 0)
-                        app->renderer.screenQuad.currentRenderTarget = app->renderer.screenQuad.FBO.colorAttachmentHandles[0];
-                    else if (i == 1)
-                        app->renderer.screenQuad.currentRenderTarget = app->renderer.GBuffer.depthAttachment;
-                    else
-                        app->renderer.screenQuad.currentRenderTarget = app->renderer.GBuffer.colorAttachmentHandles[i64(i) - 2];
-                }
+                ImGui::Checkbox("Range Check", &app->rendererOptions.activeRangeCheck);
+                ImGui::Checkbox("Blur", &app->rendererOptions.activeSSAOBlur);
+                ImGui::DragFloat("Radius", &app->rendererOptions.ssaoRadius, 0.05f, 0.25f, 2.0f);
+                ImGui::DragFloat("Bias", &app->rendererOptions.ssaoBias, 0.001f, 0.01f, 0.1f);
+                ImGui::DragFloat("Power", &app->rendererOptions.ssaoPower, 0.1f, 1.0f, 10.0f);
             }
-            ImGui::EndCombo();
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            ImGui::Text("Render Target");
+            static const char* preview = "FINAL COLOR";
+            if (ImGui::BeginCombo("", preview))
+            {
+                for (int i = 0; i < app->rendererOptions.renderTargets.size(); ++i)
+                {
+                    bool isSelected = (preview == app->rendererOptions.renderTargets[i]);
+                    if (ImGui::Selectable(app->rendererOptions.renderTargets[i], isSelected))
+                    {
+                        preview = app->rendererOptions.renderTargets[i];
+                        if (i == 0)
+                            app->renderer.screenQuad.currentRenderTarget = app->renderer.screenQuad.FBO.colorAttachmentHandles[0];
+                        else if (i == 1)
+                            app->renderer.screenQuad.currentRenderTarget = app->renderer.GBuffer.depthAttachment;
+                        else
+                            app->renderer.screenQuad.currentRenderTarget = app->renderer.GBuffer.colorAttachmentHandles[i64(i) - 2];
+                    }
+                }
+                ImGui::EndCombo();
+            }
         }
 
         ImGui::End();
@@ -342,7 +389,7 @@ void ImGuiRender(App* app)
         ImGui::Spacing();
         ImGui::Spacing();
         ImGui::Spacing();
-        for (u32 i = 1; i < app->numLights - 1; ++i)
+        for (u32 i = 1; i < app->numLights; ++i)
             ImGui::DragFloat3(std::string("Point Light " + std::to_string(i) + " Color").c_str(), &app->lights[i].color[0], 0.05f, 0.0f, 1.0f);
 
         ImGui::End();
@@ -388,234 +435,15 @@ void Render(App* app)
     glBindBufferRange(GL_UNIFORM_BUFFER, 0, app->UBO.handle, app->globalParamOffset, app->globalParamSize);
 
     if (app->forwardRendering)
-    {
         app->renderer.ForwardRender(app);
-    }
     else
-    {
-        // DEFERRED SHADING: GEOMETRY PASS //
-        app->renderer.GBuffer.Bind();
+        app->renderer.DeferredRender(app);
 
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        for (u32 i = 0; i < app->firstLightEntityID; ++i)
-        {
-            Entity& entity = app->entities[i];
-            Shader& shader = app->shaderPrograms[entity.shaderID];
-            Model* model = entity.model;
-
-            glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->UBO.handle, entity.localParamOffset, entity.localParamSize);
-
-            shader.Bind();
-
-            u32 numMeshes = model->meshes.size();
-            for (u32 meshIndex = 0; meshIndex < numMeshes; ++meshIndex)
-            {
-                u32 vao = FindVAO(model, meshIndex, shader);
-                glBindVertexArray(vao);
-
-                u32 meshMaterialID = model->materialIDs[meshIndex];
-                Material& meshMaterial = app->materials[meshMaterialID];
-
-                // Uniforms
-                switch (shader.type)
-                {
-                case ShaderType::DEFAULT:
-                {
-                    // Material
-                    shader.SetUniform3f("uMaterial.albedo", meshMaterial.albedo);
-                    shader.SetUniform3f("uMaterial.specular", meshMaterial.specular);
-                    shader.SetUniform3f("uMaterial.reflective", meshMaterial.reflective);
-                    shader.SetUniform1f("uMaterial.shininess", meshMaterial.shininess);
-                }
-                break;
-                case ShaderType::TEXTURED_ALBEDO:
-                {
-                    // Albedo Map
-                    glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
-
-                    // Material
-                    shader.SetUniform3f("uMaterial.specular", meshMaterial.specular);
-                    shader.SetUniform3f("uMaterial.reflective", meshMaterial.reflective);
-                    shader.SetUniform1f("uMaterial.shininess", meshMaterial.shininess);
-                }
-                break;
-                case ShaderType::TEXTURED_ALB_SPEC:
-                {
-                    // Albedo Map
-                    glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.albedoTextureID].handle);
-
-                    // Specular Map
-                    glActiveTexture(GL_TEXTURE1);
-                    glBindTexture(GL_TEXTURE_2D, app->textures[meshMaterial.specularTextureID].handle);
-
-                    // Material
-                    shader.SetUniform3f("uMaterial.reflective", meshMaterial.reflective);
-                    shader.SetUniform1f("uMaterial.shininess", meshMaterial.shininess);
-                }
-                break;
-                }
-
-                Mesh& mesh = model->meshes[meshIndex];
-                glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.indexOffset);
-                glBindVertexArray(0);
-            }
-            shader.Unbind();
-        }
-        app->renderer.BindDefaultFramebuffer();
-
-        if (app->rendererOptions.activeSSAO)
-        {
-            // SSAO //
-            app->renderer.ssaoBuffer.Bind();
-            glDisable(GL_BLEND);
-            glClear(GL_COLOR_BUFFER_BIT);
-
-            Shader& SSAOShader = app->shaderPrograms[app->renderer.ssaoShaderID];
-            SSAOShader.Bind();
-
-            SSAOShader.SetUniformMat4("uProjection", app->camera.GetProjectionMatrix(app->displaySize));
-            SSAOShader.SetUniformMat4("uView", app->camera.GetViewMatrix(app->displaySize));
-            SSAOShader.SetUniform2f("uDisplaySize", glm::vec2(app->displaySize.x, app->displaySize.y));
-
-            SSAOShader.SetUniform1i("uSSAOptions.uRangeCheck", app->rendererOptions.activeRangeCheck);
-            SSAOShader.SetUniform1f("uSSAOptions.uRadius", app->rendererOptions.ssaoRadius);
-            SSAOShader.SetUniform1f("uSSAOptions.uBias", app->rendererOptions.ssaoBias);
-            SSAOShader.SetUniform1f("uSSAOptions.uPower", app->rendererOptions.ssaoPower);
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, app->renderer.GBuffer.colorAttachmentHandles[0]); // Position
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, app->renderer.GBuffer.colorAttachmentHandles[1]); // Normal
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, app->renderer.GBuffer.depthAttachment); // Depth
-            glActiveTexture(GL_TEXTURE3);
-            glBindTexture(GL_TEXTURE_2D, app->renderer.noiseTextureHandle); // SSAO Noise Texture
-
-            glBindVertexArray(app->renderer.screenQuad.VAO);
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
-            glBindVertexArray(0);
-            glEnable(GL_BLEND);
-            SSAOShader.Unbind();
-            app->renderer.BindDefaultFramebuffer();
-
-            // SSAO Blur
-            app->renderer.ssaoBlurBuffer.Bind();
-            glDisable(GL_BLEND);
-            glClear(GL_COLOR_BUFFER_BIT);
-
-            Shader& SSAOBlurShader = app->shaderPrograms[app->renderer.ssaoBlurShaderID];
-            SSAOBlurShader.Bind();
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, app->renderer.ssaoBuffer.colorAttachmentHandles[0]); // SSAO Color Texture
-
-            glBindVertexArray(app->renderer.screenQuad.VAO);
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
-            glBindVertexArray(0);
-            glEnable(GL_BLEND);
-            SSAOBlurShader.Unbind();
-            app->renderer.BindDefaultFramebuffer();
-        }
-
-        // DEFERRED SHADING: LIGHTING PASS //
-        app->renderer.screenQuad.FBO.Bind();
-
-        glDisable(GL_DEPTH_TEST);
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        Shader& lightingPassShader = app->shaderPrograms[app->renderer.lightingPassShaderID];
-        lightingPassShader.Bind();
-
-        // Set the uniform textures from the G-Buffer
-        for (u32 i = 0; i < app->renderer.GBuffer.colorAttachmentHandles.size(); ++i)
-        {
-            glActiveTexture(GL_TEXTURE0 + i);
-            glBindTexture(GL_TEXTURE_2D, app->renderer.GBuffer.colorAttachmentHandles[i]);
-        }
-
-        // Environment Map
-        glActiveTexture(GL_TEXTURE0 + app->renderer.GBuffer.colorAttachmentHandles.size());
-        glBindTexture(GL_TEXTURE_CUBE_MAP, app->renderer.environmentMapHandle);
-
-        // Irradiance Map
-        glActiveTexture(GL_TEXTURE1 + app->renderer.GBuffer.colorAttachmentHandles.size());
-        glBindTexture(GL_TEXTURE_CUBE_MAP, app->renderer.irradianceMapHandle);
-
-        // SSAO Color
-        glActiveTexture(GL_TEXTURE2 + app->renderer.GBuffer.colorAttachmentHandles.size());
-        glBindTexture(GL_TEXTURE_2D, app->rendererOptions.activeSSAOBlur ? app->renderer.ssaoBlurBuffer.colorAttachmentHandles[0] : app->renderer.ssaoBuffer.colorAttachmentHandles[0]);
-
-        lightingPassShader.SetUniform1i("uRendererOptions.uActiveIrradiance", app->rendererOptions.activeIrradiance);
-        lightingPassShader.SetUniform1i("uRendererOptions.uActiveReflection", app->rendererOptions.activeReflection);
-        lightingPassShader.SetUniform1i("uRendererOptions.uActiveRefraction", app->rendererOptions.activeRefraction);
-        lightingPassShader.SetUniform1i("uRendererOptions.uActiveSSAO", app->rendererOptions.activeSSAO);
-
-        glBindVertexArray(app->renderer.screenQuad.VAO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
-        glBindVertexArray(0);
-        lightingPassShader.Unbind();
-
-        // SCREEN-FILLING QUAD //
-        app->renderer.BindDefaultFramebuffer();
-
-        glDisable(GL_DEPTH_TEST);
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        Shader& screenQuadShader = app->shaderPrograms[app->renderer.screenQuad.shaderID];
-        screenQuadShader.Bind();
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, app->renderer.screenQuad.currentRenderTarget);
-
-        glBindVertexArray(app->renderer.screenQuad.VAO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
-        glBindVertexArray(0);
-        screenQuadShader.Unbind();
-
-        // FORWARD SHADING: LIGHTS //
-        glEnable(GL_DEPTH_TEST);
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, app->renderer.GBuffer.handle);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        glBlitFramebuffer(0, 0, app->displaySize.x, app->displaySize.y, 0, 0, app->displaySize.x, app->displaySize.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-        app->renderer.BindDefaultFramebuffer();
-
-        Shader& lightCasterShader = app->shaderPrograms[app->renderer.lightCasterShaderID];
-        lightCasterShader.Bind();
-        u32 lightID = 0;
-        for (u32 i = app->firstLightEntityID; i < app->numEntities; ++i)
-        {
-            Entity& lightEntity = app->entities[i];
-
-            glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->UBO.handle, lightEntity.localParamOffset, lightEntity.localParamSize);
-
-            Model* model = lightEntity.model;
-
-            u32 vao = FindVAO(model, 0, lightCasterShader);
-            glBindVertexArray(vao);
-
-            lightCasterShader.SetUniform1ui("uLightID", lightID);
-
-            Mesh& mesh = model->meshes[0];
-            glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)mesh.indexOffset);
-
-            glBindVertexArray(0);
-            lightID++;
-        }
-        lightCasterShader.Unbind();
-    }
-
+    // SKYBOX //
     if (app->rendererOptions.activeSkybox)
     {
-        // SKYBOX //
         glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content
+
         Shader& skyboxShader = app->shaderPrograms[app->renderer.skyboxShaderID];
         skyboxShader.Bind();
         glm::mat4 view = glm::mat4(glm::mat3(app->camera.GetViewMatrix(app->displaySize))); // remove translation from the view matrix
@@ -630,61 +458,6 @@ void Render(App* app)
         glBindVertexArray(0);
         glDepthFunc(GL_LESS);
     }
-}
-
-u32 FindVAO(Model* model, u32 meshIndex, const Shader& shaderProgram)
-{
-    Mesh& mesh = model->meshes[meshIndex];
-
-    // Try Finding a VAO for this mesh/program
-    for (u32 i = 0; i < (u32)mesh.VAOs.size(); ++i)
-    {
-        if (mesh.VAOs[i].shaderProgramHandle == shaderProgram.handle)
-            return mesh.VAOs[i].handle;
-    }
-
-    u32 vaoHandle = 0;
-
-    // --- If a VAO wasn't found, create a new VAO for this mesh/program
-
-    glGenVertexArrays(1, &vaoHandle);
-    glBindVertexArray(vaoHandle);
-
-    glBindBuffer(GL_ARRAY_BUFFER, model->VBHandle);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model->EBHandle);
-
-    // We have to link all vertex shader inputs attributes to attributes in the vertex buffer
-    for (u32 i = 0; i < shaderProgram.vertexLayout.attributes.size(); ++i)
-    {
-        bool attributeWasLinked = false;
-
-        const std::vector<VertexBufferAttribute>& attributes = mesh.VBLayout.attributes;
-        for (u32 j = 0; j < attributes.size(); ++j)
-        {
-            if (shaderProgram.vertexLayout.attributes[i].location == attributes[j].location)
-            {
-                const u32 index = attributes[j].location;
-                const u32 nComp = attributes[j].componentCount;
-                const u32 offset = attributes[j].offset + mesh.vertexOffset;
-                const u32 stride = mesh.VBLayout.stride;
-
-                glVertexAttribPointer(index, nComp, GL_FLOAT, GL_FALSE, stride, (void*)(u64)offset);
-                glEnableVertexAttribArray(index);
-
-                attributeWasLinked = true;
-                break;
-            }
-        }
-        assert(attributeWasLinked); // The mesh should provide an attribute for each vertex inputs
-    }
-
-    glBindVertexArray(0);
-
-    // Store the VAO handle in the list of VAOs for this mesh
-    VAO vao = { vaoHandle, shaderProgram.handle };
-    mesh.VAOs.push_back(vao);
-
-    return vaoHandle;
 }
 
 void UpdateUniformBuffer(App* app)

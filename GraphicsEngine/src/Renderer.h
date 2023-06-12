@@ -6,8 +6,11 @@
 
 #include "glad/glad.h"
 
+#include <array>
+
 struct App;
 class Shader;
+struct Model;
 
 struct ScreenQuad
 {
@@ -26,10 +29,17 @@ public:
 
 	void DeferredRender(App* app);
 
+private:
 	inline void BindDefaultFramebuffer() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
+
+	u32 FindVAO(Model* model, u32 meshIndex, const Shader& shaderProgram);
 
 public:
 	u32 lightCasterShaderID;
+
+	// Shaders specific to the rendering mode
+	std::array<u32, 3> forwardShadersID;
+	std::array<u32, 3> deferredShadersID;
 
 	// DEFERRED SHADING //
 	Framebuffer GBuffer;

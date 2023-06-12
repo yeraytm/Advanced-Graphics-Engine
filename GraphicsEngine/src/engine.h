@@ -5,7 +5,6 @@
 #pragma once
 
 #include "platform.h"
-#include "Layouts.h"
 #include "Texture.h"
 #include "Entity.h"
 #include "Camera.h"
@@ -116,8 +115,6 @@ void Render(App* app);
 //void CleanUp(App* app);
 
 // Engine Additional Functions
-u32 FindVAO(Model* model, u32 meshIndex, const Shader& shaderProgram);
-
 void UpdateUniformBuffer(App* app);
 
 Entity* CreateEntity(App* app, u32 shaderID, glm::vec3 position, Model* model);

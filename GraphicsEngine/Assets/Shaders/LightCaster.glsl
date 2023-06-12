@@ -21,25 +21,11 @@ void main()
 
 layout(location = 0) out vec4 FragColor;
 
-struct Light
-{
-	vec4 lightVector; // XYZ for position/direction and W for type
-	vec3 color;
-	float constant;
-};
-
-layout(binding = 0, std140) uniform GlobalParameters
-{
-	vec3 uViewPos;
-	unsigned int uNumLights;
-	Light uLights[16];
-};
-
-uniform unsigned int uLightID;
+uniform vec3 uLightColor;
 
 void main()
 {
-	FragColor = vec4(uLights[uLightID].color, 1.0);
+	FragColor = vec4(uLightColor, 1.0);
 }
 
 #endif /////////////////////////////////////////////////////////////////
