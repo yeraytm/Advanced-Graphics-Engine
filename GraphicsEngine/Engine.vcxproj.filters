@@ -30,6 +30,7 @@
     <ClCompile Include="src\BufferManagement.cpp" />
     <ClCompile Include="src\Primitives.cpp" />
     <ClCompile Include="src\Framebuffer.cpp" />
+    <ClCompile Include="src\Renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Layouts.h">
@@ -346,6 +347,7 @@
     <ClInclude Include="src\BufferManagement.h" />
     <ClInclude Include="src\Primitives.h" />
     <ClInclude Include="src\Framebuffer.h" />
+    <ClInclude Include="src\Renderer.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source">

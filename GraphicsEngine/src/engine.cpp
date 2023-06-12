@@ -6,35 +6,16 @@
 //
 
 #include "engine.h"
+#include "Shader.h"
+#include "Framebuffer.h"
 #include "AssimpLoading.h"
 #include "Primitives.h"
 
 #include "glad/glad.h"
 #include "imgui-docking/imgui.h"
-#include <random>
 
 void Init(App* app)
 {
-    // IMGUI //
-    // ImGui Windows
-    app->openGLGui.open = false;
-    app->rendererOptions.open = true;
-    app->sceneGui = false;
-    app->performanceGui = false;
-
-    // OpenGL Info
-    app->openGLGui.version = "Version: " + std::string((const char*)glGetString(GL_VERSION));
-    app->openGLGui.renderer = "Renderer: " + std::string((const char*)glGetString(GL_RENDERER));
-    app->openGLGui.vendor = "Vendor: " + std::string((const char*)glGetString(GL_VENDOR));
-    app->openGLGui.glslVersion = "GLSL Version: " + std::string((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
-
-    glGetIntegerv(GL_NUM_EXTENSIONS, &app->openGLGui.numExtensions);
-    app->openGLGui.extensions.reserve(app->openGLGui.numExtensions);
-    for (int i = 0; i < app->openGLGui.numExtensions; ++i)
-    {
-        app->openGLGui.extensions.emplace_back((const char*)glGetStringi(GL_EXTENSIONS, GLuint(i)));
-    }
-
     // CAMERA //
     app->camera = Camera(glm::vec3(0.0f, 3.0f, 10.0f), 45.0f, 1.0f, 100.0f);
 
@@ -45,58 +26,16 @@ void Init(App* app)
     app->UBO = CreateConstantBuffer(maxUniformBlockSize);
 
     // DEFERRED SHADING //
-    // G-Buffer
-    app->GBuffer.Generate();
-    app->GBuffer.Bind();
-    app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize, true); // Position Color Buffer
-    app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_FLOAT, app->displaySize);       // Normal Color Buffer
-    app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);        // Albedo Color Buffer
-    app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);        // Specular Color Buffer
-    app->GBuffer.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize);        // Reflective + Shininess Color Buffer
-    app->GBuffer.AttachDepthTexture(app->displaySize);                                      // Depth Attachment
-    app->GBuffer.SetColorBuffers(); // Set color buffers with glDrawBuffers
-    BindDefaultFramebuffer();
-
     // Lighting Pass
-    app->lightingPassShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::LIGHTING_PASS, "Assets/Shaders/LightingPass_Deferred.glsl", "DEFERRED_LIGHTING_PASS");
-    Shader& lightingPassShader = app->shaderPrograms[app->lightingPassShaderID];
-    lightingPassShader.Bind();
-    lightingPassShader.SetUniform1i("gBufPosition",     0);
-    lightingPassShader.SetUniform1i("gBufNormal",       1);
-    lightingPassShader.SetUniform1i("gBufAlbedo",       2);
-    lightingPassShader.SetUniform1i("gBufSpecular",     3);
-    lightingPassShader.SetUniform1i("gBufReflShini",    4);
-    lightingPassShader.SetUniform1i("uEnvironmentMap",  5);
-    lightingPassShader.SetUniform1i("uIrradianceMap",   6);
-    lightingPassShader.SetUniform1i("uSSAOColor",       7);
+    app->renderer.lightingPassShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::LIGHTING_PASS, "Assets/Shaders/LightingPass_Deferred.glsl", "DEFERRED_LIGHTING_PASS");
 
     // SCREEN-FILLING QUAD //
-    app->screenQuad.VAO = CreateQuad();
-    app->screenQuad.shaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::SCREEN_QUAD, "Assets/Shaders/Quad_Deferred.glsl", "SCREEN_QUAD");
-    Shader& screenQuadShader = app->shaderPrograms[app->screenQuad.shaderID];
-    screenQuadShader.Bind();
-    screenQuadShader.SetUniform1i("uRenderTarget", 0);
-
-    // Quad Framebuffer to display a texture
-    app->screenQuad.FBO.Generate();
-    app->screenQuad.FBO.Bind();
-    app->screenQuad.FBO.AttachColorTexture(FBAttachmentType::COLOR_BYTE, app->displaySize); // Final Color Buffer
-    app->screenQuad.FBO.SetColorBuffers(); // Set color buffers with glDrawBuffers
-    BindDefaultFramebuffer();
-
-    // Render Target Selection Combo
-    app->screenQuad.currentRenderTarget = app->screenQuad.FBO.colorAttachmentHandles[0];
-    app->rendererOptions.renderTargets.push_back("FINAL COLOR");
-    app->rendererOptions.renderTargets.push_back("DEPTH");
-    app->rendererOptions.renderTargets.push_back("POSITION");
-    app->rendererOptions.renderTargets.push_back("NORMAL");
-    app->rendererOptions.renderTargets.push_back("ALBEDO");
-    app->rendererOptions.renderTargets.push_back("SPECULAR");
-    app->rendererOptions.renderTargets.push_back("REFLECTIVE + SHININESS");
+    app->renderer.screenQuad.VAO = CreateQuad();
+    app->renderer.screenQuad.shaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::SCREEN_QUAD, "Assets/Shaders/Quad_Deferred.glsl", "SCREEN_QUAD");
 
     // SHADERS & UNIFORM TEXTURES //
-    app->defaultShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::DEFAULT, "Assets/Shaders/Default_Deferred.glsl", "DEFERRED_GEOMETRY_DEFAULT");
-    app->lightCasterShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::LIGHT_CASTER, "Assets/Shaders/LightCaster.glsl", "LIGHT_CASTER");
+    u32 defaultShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::DEFAULT, "Assets/Shaders/Default_Deferred.glsl", "DEFERRED_GEOMETRY_DEFAULT");
+    app->renderer.lightCasterShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::LIGHT_CASTER, "Assets/Shaders/LightCaster.glsl", "LIGHT_CASTER");
 
     u32 texturedAlbShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::TEXTURED_ALBEDO, "Assets/Shaders/GeometryPassAlb_Deferred.glsl", "DEFERRED_GEOMETRY_ALBEDO");
     Shader& texturedAlbShader = app->shaderPrograms[texturedAlbShaderID];
@@ -108,6 +47,34 @@ void Init(App* app)
     texturedAlbSpecShader.Bind();
     texturedAlbSpecShader.SetUniform1i("uMaterial.albedo", 0);
     texturedAlbSpecShader.SetUniform1i("uMaterial.specular", 1);
+
+    app->renderer.skyboxCubeVAO = CreateSkyboxCube();
+    app->renderer.skyboxShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/Skybox.glsl", "SKYBOX");
+
+    Shader& equirectToCubemapShader = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/EquirectToCubemap.glsl", "EQUIRECT_TO_CUBEMAP")];
+    Shader& irradianceConvShader = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/Irradiance_Convolution.glsl", "IRRADIANCE_CONVOLUTION")];
+
+    /*
+    std::vector<std::string> cubemapFaces
+    {
+        "Assets/Skybox/right.jpg",
+        "Assets/Skybox/left.jpg",
+        "Assets/Skybox/top.jpg",
+        "Assets/Skybox/bottom.jpg",
+        "Assets/Skybox/front.jpg",
+        "Assets/Skybox/back.jpg"
+    };
+    app->cubemapTextureID = LoadCubemap(cubemapFaces);
+    */
+    glm::uvec2 cubemapTextures = LoadCubemap(app->textures, "Assets/Skybox/little_paris_eiffel_tower_4k.hdr", equirectToCubemapShader, irradianceConvShader, app->renderer.skyboxCubeVAO);
+
+    app->renderer.environmentMapHandle = cubemapTextures.x;
+    app->renderer.irradianceMapHandle = cubemapTextures.y;
+
+    app->renderer.ssaoShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/SSAO.glsl", "SSAO");
+    app->renderer.ssaoBlurShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/SSAO_Blur.glsl", "SSAO_BLUR");
+
+    app->renderer.Init(app);
 
     // MATERIALS //
     Material greyMaterial = {};
@@ -142,18 +109,18 @@ void Init(App* app)
 
     // ENTITIES //
     // Primitives
-    Entity* planeEntity = CreateEntity(app, app->defaultShaderID, glm::vec3(0.0f, -3.4f, 0.0f), planeModel);
+    Entity* planeEntity = CreateEntity(app, defaultShaderID, glm::vec3(0.0f, -3.4f, 0.0f), planeModel);
     planeEntity->Rotate(-90.0f, glm::vec3(1.0f, 0.0f, 0.0f));
     planeEntity->Scale(35.0f);
 
-    Entity* sphereEntity = CreateEntity(app, app->defaultShaderID, glm::vec3(0.0f, 1.0f, 7.0f), sphereModel);
+    Entity* sphereEntity = CreateEntity(app, defaultShaderID, glm::vec3(0.0f, 1.0f, 7.0f), sphereModel);
 
     Entity* cubeEntity = CreateEntity(app, texturedAlbSpecShaderID, glm::vec3(5.0f, 0.0f, 7.0f), cubeModel);
 
-    Entity* cubeEntity2 = CreateEntity(app, app->defaultShaderID, glm::vec3(-5.0f, 0.0f, 7.0f), cubeModel2);
+    Entity* cubeEntity2 = CreateEntity(app, defaultShaderID, glm::vec3(-5.0f, 0.0f, 7.0f), cubeModel2);
 
     // 3D Models
-    Entity* bunnyEntity = CreateEntity(app, app->defaultShaderID, glm::vec3(0.0f, -3.5f, 7.0f), bunnyModel);
+    Entity* bunnyEntity = CreateEntity(app, defaultShaderID, glm::vec3(0.0f, -3.5f, 7.0f), bunnyModel);
     bunnyEntity->Scale(1.5f);
 
     CreateEntity(app, texturedAlbShaderID, glm::vec3(-6.0f, 0.0f, 0.0f), patrickModel);
@@ -193,107 +160,42 @@ void Init(App* app)
     CreatePointLight(app, glm::vec3(-6.0f, 0.0f, 10.0f), glm::vec3(0.6f), sphereLowModel, 0.5f, 0.1f);
     CreatePointLight(app, glm::vec3(6.0f, 0.0f, 10.0f), glm::vec3(0.6f), sphereLowModel, 1.0f, 0.1f);
 
-    // SKYBOX //
-    app->skyboxShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/Skybox.glsl", "SKYBOX");
-    Shader& skyboxShader = app->shaderPrograms[app->skyboxShaderID];
-    skyboxShader.Bind();
-    skyboxShader.SetUniform1i("uEnvironmentMap", 0);
+    // IMGUI SETTINGS //
+    // ImGui Windows
+    app->openGLGui.open = false;
+    app->rendererOptions.open = true;
+    app->sceneGui = false;
+    app->performanceGui = false;
 
-    app->skyboxCubeVAO = CreateSkyboxCube();
+    // ImGui OpenGL Info
+    app->openGLGui.version = "Version: " + std::string((const char*)glGetString(GL_VERSION));
+    app->openGLGui.renderer = "Renderer: " + std::string((const char*)glGetString(GL_RENDERER));
+    app->openGLGui.vendor = "Vendor: " + std::string((const char*)glGetString(GL_VENDOR));
+    app->openGLGui.glslVersion = "GLSL Version: " + std::string((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
-    Shader& equirectToCubemapShader = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/EquirectToCubemap.glsl", "EQUIRECT_TO_CUBEMAP")];
-    Shader& irradianceConvShader = app->shaderPrograms[LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/Irradiance_Convolution.glsl", "IRRADIANCE_CONVOLUTION")];
-
-    /*
-    std::vector<std::string> cubemapFaces
+    glGetIntegerv(GL_NUM_EXTENSIONS, &app->openGLGui.numExtensions);
+    app->openGLGui.extensions.reserve(app->openGLGui.numExtensions);
+    for (int i = 0; i < app->openGLGui.numExtensions; ++i)
     {
-        "Assets/Skybox/right.jpg",
-        "Assets/Skybox/left.jpg",
-        "Assets/Skybox/top.jpg",
-        "Assets/Skybox/bottom.jpg",
-        "Assets/Skybox/front.jpg",
-        "Assets/Skybox/back.jpg"
-    };
-    app->cubemapTextureID = LoadCubemap(cubemapFaces);
-    */
-    glm::uvec2 cubemapTextures = LoadCubemap(app->textures, "Assets/Skybox/little_paris_eiffel_tower_4k.hdr", equirectToCubemapShader, irradianceConvShader, app->skyboxCubeVAO);
+        app->openGLGui.extensions.emplace_back((const char*)glGetStringi(GL_EXTENSIONS, GLuint(i)));
+    }
 
-    app->environmentMapHandle = cubemapTextures.x;
-    app->irradianceMapHandle = cubemapTextures.y;
+    // ImGui Render Target Selection Combo
+    app->rendererOptions.renderTargets.push_back("FINAL COLOR");
+    app->rendererOptions.renderTargets.push_back("DEPTH");
+    app->rendererOptions.renderTargets.push_back("POSITION");
+    app->rendererOptions.renderTargets.push_back("NORMAL");
+    app->rendererOptions.renderTargets.push_back("ALBEDO");
+    app->rendererOptions.renderTargets.push_back("SPECULAR");
+    app->rendererOptions.renderTargets.push_back("REFLECTIVE + SHININESS");
 
+    // ImGui Skybox Options
     app->rendererOptions.activeSkybox = true;
     app->rendererOptions.activeIrradiance = true;
     app->rendererOptions.activeReflection = false;
     app->rendererOptions.activeRefraction = false;
 
-    // SSAO //
-    app->ssaoBuffer.Generate();
-    app->ssaoBuffer.Bind();
-    app->ssaoBuffer.AttachColorTexture(FBAttachmentType::COLOR_R, app->displaySize, true);
-    app->ssaoBuffer.SetColorBuffers();
-    BindDefaultFramebuffer();
-
-    app->ssaoBlurBuffer.Generate();
-    app->ssaoBlurBuffer.Bind();
-    app->ssaoBlurBuffer.AttachColorTexture(FBAttachmentType::COLOR_R, app->displaySize, true);
-    app->ssaoBlurBuffer.SetColorBuffers();
-    BindDefaultFramebuffer();
-
-    std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
-    std::default_random_engine generator;
-    app->ssaoKernel.reserve(64);
-    for (u32 i = 0; i < 64; i++)
-    {
-        glm::vec3 sample(
-            randomFloats(generator) * 2.0 - 1.0,
-            randomFloats(generator) * 2.0 - 1.0,
-            randomFloats(generator)
-        );
-        sample = glm::normalize(sample);
-        sample *= randomFloats(generator);
-
-        float scale = float(i) / 64.0f;
-        scale = Lerp(0.1f, 1.0f, scale * scale);
-
-        sample *= scale;
-        app->ssaoKernel.emplace_back(sample);
-    }
-
-    std::vector<glm::vec3> ssaoNoise;
-    ssaoNoise.reserve(16);
-    for (u32 i = 0; i < 16; i++)
-    {
-        glm::vec3 noise(
-            randomFloats(generator) * 2.0 - 1.0,
-            randomFloats(generator) * 2.0 - 1.0,
-            0.0f
-        );
-        ssaoNoise.emplace_back(glm::normalize(noise));
-    }
-
-    glGenTextures(1, &app->noiseTextureHandle);
-    glBindTexture(GL_TEXTURE_2D, app->noiseTextureHandle);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 4, 4, 0, GL_RGB, GL_FLOAT, &ssaoNoise[0]);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    app->ssaoShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/SSAO.glsl", "SSAO");
-    Shader& SSAOShader = app->shaderPrograms[app->ssaoShaderID];
-    SSAOShader.Bind();
-    SSAOShader.SetUniform1i("gBufPosition", 0);
-    SSAOShader.SetUniform1i("gBufNormal", 1);
-    SSAOShader.SetUniform1i("gBufDepth", 2);
-    SSAOShader.SetUniform1i("uNoiseTexture", 3);
-    for (u32 i = 0; i < 64; ++i)
-        SSAOShader.SetUniform3f("uSamples[" + std::to_string(i) + "]", app->ssaoKernel[i]);
-
-    app->ssaoBlurShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::OTHER, "Assets/Shaders/SSAO_Blur.glsl", "SSAO_BLUR");
-    Shader& SSAOBlurShader = app->shaderPrograms[app->ssaoBlurShaderID];
-    SSAOBlurShader.Bind();
-    SSAOBlurShader.SetUniform1i("uSSAOColor", 0);
-
+    // ImGui SSAO Options
     app->rendererOptions.activeSSAO = true;
     app->rendererOptions.activeRangeCheck = true;
     app->rendererOptions.activeSSAOBlur = true;
@@ -397,11 +299,11 @@ void ImGuiRender(App* app)
                 {
                     preview = app->rendererOptions.renderTargets[i];
                     if (i == 0)
-                        app->screenQuad.currentRenderTarget = app->screenQuad.FBO.colorAttachmentHandles[0];
+                        app->renderer.screenQuad.currentRenderTarget = app->renderer.screenQuad.FBO.colorAttachmentHandles[0];
                     else if (i == 1)
-                        app->screenQuad.currentRenderTarget = app->GBuffer.depthAttachment;
+                        app->renderer.screenQuad.currentRenderTarget = app->renderer.GBuffer.depthAttachment;
                     else
-                        app->screenQuad.currentRenderTarget = app->GBuffer.colorAttachmentHandles[i64(i) - 2];
+                        app->renderer.screenQuad.currentRenderTarget = app->renderer.GBuffer.colorAttachmentHandles[i64(i) - 2];
                 }
             }
             ImGui::EndCombo();
@@ -474,16 +376,12 @@ void Render(App* app)
     glBindBufferRange(GL_UNIFORM_BUFFER, 0, app->UBO.handle, app->globalParamOffset, app->globalParamSize);
 
     // DEFERRED SHADING: GEOMETRY PASS //
-    app->GBuffer.Bind();
+    app->renderer.GBuffer.Bind();
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    //glEnable(GL_BLEND);
-    //glBlendFunc(GL_ONE, GL_ONE);
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     for (u32 i = 0; i < app->firstLightEntityID; ++i)
     {
@@ -551,16 +449,16 @@ void Render(App* app)
         }
         shader.Unbind();
     }
-    BindDefaultFramebuffer();
+    app->renderer.BindDefaultFramebuffer();
 
     if (app->rendererOptions.activeSSAO)
     {
         // SSAO //
-        app->ssaoBuffer.Bind();
+        app->renderer.ssaoBuffer.Bind();
         glDisable(GL_BLEND);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        Shader& SSAOShader = app->shaderPrograms[app->ssaoShaderID];
+        Shader& SSAOShader = app->shaderPrograms[app->renderer.ssaoShaderID];
         SSAOShader.Bind();
 
         SSAOShader.SetUniformMat4("uProjection", app->camera.GetProjectionMatrix(app->displaySize));
@@ -573,105 +471,105 @@ void Render(App* app)
         SSAOShader.SetUniform1f("uSSAOptions.uPower", app->rendererOptions.ssaoPower);
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, app->GBuffer.colorAttachmentHandles[0]); // Position
+        glBindTexture(GL_TEXTURE_2D, app->renderer.GBuffer.colorAttachmentHandles[0]); // Position
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, app->GBuffer.colorAttachmentHandles[1]); // Normal
+        glBindTexture(GL_TEXTURE_2D, app->renderer.GBuffer.colorAttachmentHandles[1]); // Normal
         glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, app->GBuffer.depthAttachment); // Depth
+        glBindTexture(GL_TEXTURE_2D, app->renderer.GBuffer.depthAttachment); // Depth
         glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, app->noiseTextureHandle); // SSAO Noise Texture
+        glBindTexture(GL_TEXTURE_2D, app->renderer.noiseTextureHandle); // SSAO Noise Texture
 
-        glBindVertexArray(app->screenQuad.VAO);
+        glBindVertexArray(app->renderer.screenQuad.VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
         glBindVertexArray(0);
         glEnable(GL_BLEND);
         SSAOShader.Unbind();
-        BindDefaultFramebuffer();
+        app->renderer.BindDefaultFramebuffer();
 
         // SSAO Blur
-        app->ssaoBlurBuffer.Bind();
+        app->renderer.ssaoBlurBuffer.Bind();
         glDisable(GL_BLEND);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        Shader& SSAOBlurShader = app->shaderPrograms[app->ssaoBlurShaderID];
+        Shader& SSAOBlurShader = app->shaderPrograms[app->renderer.ssaoBlurShaderID];
         SSAOBlurShader.Bind();
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, app->ssaoBuffer.colorAttachmentHandles[0]); // SSAO Color Texture
+        glBindTexture(GL_TEXTURE_2D, app->renderer.ssaoBuffer.colorAttachmentHandles[0]); // SSAO Color Texture
 
-        glBindVertexArray(app->screenQuad.VAO);
+        glBindVertexArray(app->renderer.screenQuad.VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
         glBindVertexArray(0);
         glEnable(GL_BLEND);
         SSAOBlurShader.Unbind();
-        BindDefaultFramebuffer();
+        app->renderer.BindDefaultFramebuffer();
     }
 
     // DEFERRED SHADING: LIGHTING PASS //
-    app->screenQuad.FBO.Bind();
+    app->renderer.screenQuad.FBO.Bind();
 
     glDisable(GL_DEPTH_TEST);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    Shader& lightingPassShader = app->shaderPrograms[app->lightingPassShaderID];
+    Shader& lightingPassShader = app->shaderPrograms[app->renderer.lightingPassShaderID];
     lightingPassShader.Bind();
 
     // Set the uniform textures from the G-Buffer
-    for (u32 i = 0; i < app->GBuffer.colorAttachmentHandles.size(); ++i)
+    for (u32 i = 0; i < app->renderer.GBuffer.colorAttachmentHandles.size(); ++i)
     {
         glActiveTexture(GL_TEXTURE0 + i);
-        glBindTexture(GL_TEXTURE_2D, app->GBuffer.colorAttachmentHandles[i]);
+        glBindTexture(GL_TEXTURE_2D, app->renderer.GBuffer.colorAttachmentHandles[i]);
     }
     
     // Environment Map
-    glActiveTexture(GL_TEXTURE0 + app->GBuffer.colorAttachmentHandles.size());
-    glBindTexture(GL_TEXTURE_CUBE_MAP, app->environmentMapHandle);
+    glActiveTexture(GL_TEXTURE0 + app->renderer.GBuffer.colorAttachmentHandles.size());
+    glBindTexture(GL_TEXTURE_CUBE_MAP, app->renderer.environmentMapHandle);
 
     // Irradiance Map
-    glActiveTexture(GL_TEXTURE1 + app->GBuffer.colorAttachmentHandles.size());
-    glBindTexture(GL_TEXTURE_CUBE_MAP, app->irradianceMapHandle);
+    glActiveTexture(GL_TEXTURE1 + app->renderer.GBuffer.colorAttachmentHandles.size());
+    glBindTexture(GL_TEXTURE_CUBE_MAP, app->renderer.irradianceMapHandle);
 
     // SSAO Color
-    glActiveTexture(GL_TEXTURE2 + app->GBuffer.colorAttachmentHandles.size());
-    glBindTexture(GL_TEXTURE_2D, app->rendererOptions.activeSSAOBlur ? app->ssaoBlurBuffer.colorAttachmentHandles[0] : app->ssaoBuffer.colorAttachmentHandles[0]);
+    glActiveTexture(GL_TEXTURE2 + app->renderer.GBuffer.colorAttachmentHandles.size());
+    glBindTexture(GL_TEXTURE_2D, app->rendererOptions.activeSSAOBlur ? app->renderer.ssaoBlurBuffer.colorAttachmentHandles[0] : app->renderer.ssaoBuffer.colorAttachmentHandles[0]);
 
     lightingPassShader.SetUniform1i("uRendererOptions.uActiveIrradiance", app->rendererOptions.activeIrradiance);
     lightingPassShader.SetUniform1i("uRendererOptions.uActiveReflection", app->rendererOptions.activeReflection);
     lightingPassShader.SetUniform1i("uRendererOptions.uActiveRefraction", app->rendererOptions.activeRefraction);
     lightingPassShader.SetUniform1i("uRendererOptions.uActiveSSAO", app->rendererOptions.activeSSAO);
 
-    glBindVertexArray(app->screenQuad.VAO);
+    glBindVertexArray(app->renderer.screenQuad.VAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
     glBindVertexArray(0);
     lightingPassShader.Unbind();
 
     // SCREEN-FILLING QUAD //
-    BindDefaultFramebuffer();
+    app->renderer.BindDefaultFramebuffer();
 
     glDisable(GL_DEPTH_TEST);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    Shader& screenQuadShader = app->shaderPrograms[app->screenQuad.shaderID];
+    Shader& screenQuadShader = app->shaderPrograms[app->renderer.screenQuad.shaderID];
     screenQuadShader.Bind();
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, app->screenQuad.currentRenderTarget);
+    glBindTexture(GL_TEXTURE_2D, app->renderer.screenQuad.currentRenderTarget);
 
-    glBindVertexArray(app->screenQuad.VAO);
+    glBindVertexArray(app->renderer.screenQuad.VAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
     glBindVertexArray(0);
     screenQuadShader.Unbind();
 
     // FORWARD SHADING: LIGHTS //
     glEnable(GL_DEPTH_TEST);
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, app->GBuffer.handle);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, app->renderer.GBuffer.handle);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     glBlitFramebuffer(0, 0, app->displaySize.x, app->displaySize.y, 0, 0, app->displaySize.x, app->displaySize.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-    BindDefaultFramebuffer();
+    app->renderer.BindDefaultFramebuffer();
 
-    Shader& lightCasterShader = app->shaderPrograms[app->lightCasterShaderID];
+    Shader& lightCasterShader = app->shaderPrograms[app->renderer.lightCasterShaderID];
     lightCasterShader.Bind();
     u32 lightID = 0;
     for (u32 i = app->firstLightEntityID; i < app->numEntities; ++i)
@@ -699,16 +597,16 @@ void Render(App* app)
     {
         // SKYBOX //
         glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content
-        Shader& skyboxShader = app->shaderPrograms[app->skyboxShaderID];
+        Shader& skyboxShader = app->shaderPrograms[app->renderer.skyboxShaderID];
         skyboxShader.Bind();
         glm::mat4 view = glm::mat4(glm::mat3(app->camera.GetViewMatrix(app->displaySize))); // remove translation from the view matrix
         skyboxShader.SetUniformMat4("uView", view);
         skyboxShader.SetUniformMat4("uProjection", app->camera.GetProjectionMatrix(app->displaySize));
 
         // Skybox Cube
-        glBindVertexArray(app->skyboxCubeVAO);
+        glBindVertexArray(app->renderer.skyboxCubeVAO);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, app->environmentMapHandle);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, app->renderer.environmentMapHandle);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
         glDepthFunc(GL_LESS);
@@ -823,7 +721,7 @@ Entity* CreateEntity(App* app, u32 shaderID, glm::vec3 position, Model* model)
 
 void CreatePointLight(App* app, glm::vec3 position, glm::vec3 color, Model* model, float constant, float scale)
 {
-    Entity lightEntity = Entity(app->lightCasterShaderID, position, model);
+    Entity lightEntity = Entity(app->renderer.lightCasterShaderID, position, model);
     lightEntity.Scale(scale);
     app->entities.push_back(lightEntity);
 
@@ -833,7 +731,7 @@ void CreatePointLight(App* app, glm::vec3 position, glm::vec3 color, Model* mode
 
 void CreateDirectionalLight(App* app, glm::vec3 entityPosition, glm::vec3 direction, glm::vec3 color, Model* model, float scale)
 {
-    Entity lightEntity = Entity(app->lightCasterShaderID, entityPosition, model);
+    Entity lightEntity = Entity(app->renderer.lightCasterShaderID, entityPosition, model);
     lightEntity.Scale(scale);
     app->entities.push_back(lightEntity);
 

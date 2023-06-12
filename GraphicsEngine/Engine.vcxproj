@@ -20,6 +20,7 @@
     <ClCompile Include="src\GLDebugger.cpp" />
     <ClCompile Include="src\platform.cpp" />
     <ClCompile Include="src\Primitives.cpp" />
+    <ClCompile Include="src\Renderer.cpp" />
     <ClCompile Include="src\Shader.cpp" />
     <ClCompile Include="src\Texture.cpp" />
     <ClCompile Include="src\vendor\glad\glad.c" />
@@ -44,6 +45,7 @@
     <ClInclude Include="src\platform.h" />
     <ClInclude Include="src\Layouts.h" />
     <ClInclude Include="src\Primitives.h" />
+    <ClInclude Include="src\Renderer.h" />
     <ClInclude Include="src\Shader.h" />
     <ClInclude Include="src\Texture.h" />
     <ClInclude Include="src\vendor\glad\glad.h" />

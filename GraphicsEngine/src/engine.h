@@ -6,14 +6,16 @@
 
 #include "platform.h"
 #include "Layouts.h"
-#include "Shader.h"
 #include "Texture.h"
 #include "Entity.h"
 #include "Camera.h"
 #include "BufferManagement.h"
-#include "Framebuffer.h"
+
+#include "Renderer.h"
 
 #include <memory>
+
+class Shader;
 
 struct OpenGLGUI
 {
@@ -29,6 +31,7 @@ struct OpenGLGUI
 struct RendererOptions
 {
     bool open;
+
     std::vector<const char*> renderTargets;
 
     // Environment Mapping Options
@@ -44,14 +47,6 @@ struct RendererOptions
     float ssaoRadius;
     float ssaoBias;
     float ssaoPower;
-};
-
-struct Quad
-{
-    Framebuffer FBO;
-    u32 VAO;
-    u32 shaderID;
-    u32 currentRenderTarget;
 };
 
 struct Light
@@ -84,22 +79,14 @@ struct App
     // CAMERA //
     Camera camera;
 
+    // Renderer
+    Renderer renderer;
+
     // UNIFORM BUFFER (CONSTANT BUFFER) //
     int uniformBufferOffsetAlignment;
     Buffer UBO;
     u32 globalParamOffset;
     u32 globalParamSize;
-
-    // DEFERRED SHADING //
-    Framebuffer GBuffer;
-    u32 lightingPassShaderID;
-
-    // SCREEN-FILLING QUAD //
-    Quad screenQuad;
-
-    // SHADERS //
-    u32 defaultShaderID;
-    u32 lightCasterShaderID;
 
     // ENTITIES //
     std::vector<Entity> entities;
@@ -109,20 +96,6 @@ struct App
     u32 firstLightEntityID;
     std::vector<Light> lights;
     u32 numLights;
-
-    // SKYBOX //
-    u32 skyboxShaderID;
-    u32 environmentMapHandle;
-    u32 irradianceMapHandle;
-    u32 skyboxCubeVAO;
-
-    // SSAO //
-    Framebuffer ssaoBuffer;
-    Framebuffer ssaoBlurBuffer;
-    std::vector<glm::vec3> ssaoKernel;
-    u32 noiseTextureHandle;
-    u32 ssaoShaderID;
-    u32 ssaoBlurShaderID;
     
     // RESOURCES //
     std::vector<std::unique_ptr<Model>> models;
@@ -142,8 +115,6 @@ void Render(App* app);
 //void CleanUp(App* app);
 
 // Engine Additional Functions
-inline void BindDefaultFramebuffer() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
-
 u32 FindVAO(Model* model, u32 meshIndex, const Shader& shaderProgram);
 
 void UpdateUniformBuffer(App* app);
