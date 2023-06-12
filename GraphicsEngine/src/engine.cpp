@@ -385,12 +385,17 @@ void ImGuiRender(App* app)
         ImGui::Spacing();
 
         ImGui::Text("Lights");
-        ImGui::DragFloat3("Directional Light Color", &app->lights[0].color[0], 0.05f, 0.0f, 1.0f);
+        ImGui::ColorEdit3("Directional Light Color", &app->lights[0].color[0]);
         ImGui::Spacing();
+        if (ImGui::Button("Turn Off All Point Lights"))
+        {
+            for (u32 i = 1; i < app->numLights; i++)
+                app->lights[i].color = glm::vec3(0.0f, 0.0f, 0.0f);
+        }
         ImGui::Spacing();
         ImGui::Spacing();
         for (u32 i = 1; i < app->numLights; ++i)
-            ImGui::DragFloat3(std::string("Point Light " + std::to_string(i) + " Color").c_str(), &app->lights[i].color[0], 0.05f, 0.0f, 1.0f);
+            ImGui::ColorEdit3(std::string("Point Light " + std::to_string(i) + " Color").c_str(), &app->lights[i].color[0]);
 
         ImGui::End();
     }
