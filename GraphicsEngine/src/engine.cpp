@@ -30,7 +30,7 @@ void Init(App* app)
 
     app->renderer.lightCasterShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::LIGHT_CASTER, "Assets/Shaders/LightCaster.glsl", "LIGHT_CASTER");
 
-    // DEFERRED SHADING: Lighting Pass //
+    // DEFERRED RENDERING: Lighting Pass //
     app->renderer.lightingPassShaderID = LoadShaderProgram(app->shaderPrograms, ShaderType::LIGHTING_PASS, "Assets/Shaders/LightingPass_Deferred.glsl", "DEFERRED_LIGHTING_PASS");
 
     // SHADERS FORWARD //
