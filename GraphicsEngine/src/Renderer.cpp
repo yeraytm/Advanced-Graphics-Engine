@@ -236,7 +236,7 @@ void Renderer::ForwardRender(App* app)
 
 void Renderer::DeferredRender(App* app)
 {
-    // DEFERRED SHADING: GEOMETRY PASS //
+    // DEFERRED RENDERING: GEOMETRY PASS //
     GBuffer.Bind();
 
     glEnable(GL_DEPTH_TEST);
@@ -373,7 +373,7 @@ void Renderer::DeferredRender(App* app)
         }
     }
 
-    // DEFERRED SHADING: LIGHTING PASS //
+    // DEFERRED RENDERING: LIGHTING PASS //
     screenQuad.FBO.Bind();
 
     glDisable(GL_DEPTH_TEST);
@@ -430,7 +430,7 @@ void Renderer::DeferredRender(App* app)
     glBindVertexArray(0);
     screenQuadShader.Unbind();
 
-    // RENDER LIGHTS USIGN FORWARD SHADING //
+    // RENDER LIGHTS USIGN FORWARD RENDERING //
     glEnable(GL_DEPTH_TEST);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, GBuffer.handle);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);

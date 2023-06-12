@@ -41,7 +41,7 @@ public:
 	std::array<u32, 3> forwardShadersID;
 	std::array<u32, 3> deferredShadersID;
 
-	// DEFERRED SHADING //
+	// DEFERRED RENDERING //
 	Framebuffer GBuffer;
 	u32 lightingPassShaderID;
 
