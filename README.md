@@ -13,13 +13,13 @@ Its contributors are:
 - ImGui
 
 ## Renderer Features
-- Forward or Deferred Mode
+- Forward or Deferred Rendering Modes
 - Environment Mapping: Skybox & Irradiance
 
 ![alt text](Docs/EnvMapping_Off.png "Environment Mapping OFF")
 ![alt text](Docs/EnvMapping_On.png "Environment Mapping ON")
 
-### Deferred Specific Features
+### Deferred Renderer Specific Features
 - G-Buffer (Framebuffer Object) with different render targets attached: Position, Normals, Albedo, Specular, Reflective & Depth
 - Render to screen-filling quad
 - Geometry & Lighting Pass
@@ -44,7 +44,7 @@ Its contributors are:
 | **Quit** | ESC |
 
 ## ImGui Windows
-### Renderer
+### Rendering Mode
 Change between Forward and Deferred Rendering through a combo box.
 
 #### Environment Mapping
