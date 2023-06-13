@@ -161,32 +161,35 @@ void Init(App* app)
     containerMat.specularTextureID = LoadTexture2D(app->textures, "Assets/container_specular.png");
 
     // MODELS //
-    Model* planeModel = CreatePrimitive(app, PrimitiveType::PLANE, greyMaterial);
+    Model* planePrimitive = CreatePrimitive(app, PrimitiveType::PLANE, greyMaterial);
 
-    Model* sphereModel = CreatePrimitive(app, PrimitiveType::SPHERE, orangeMaterial);
-    Model* sphereLowModel = CreatePrimitive(app, PrimitiveType::SPHERE, blackMaterial, 16, 16);
+    Model* spherePrimitive = CreatePrimitive(app, PrimitiveType::SPHERE, orangeMaterial);
+    Model* sphereLowPrimitive = CreatePrimitive(app, PrimitiveType::SPHERE, blackMaterial, 16, 16);
 
-    Model* cubeModel = CreatePrimitive(app, PrimitiveType::CUBE, containerMat);
-    Model* cubeModel2 = CreatePrimitive(app, PrimitiveType::CUBE, blackMaterial);
+    Model* containerPrimitive = CreatePrimitive(app, PrimitiveType::CUBE, containerMat);
+    Model* cubePrimitive = CreatePrimitive(app, PrimitiveType::CUBE, blackMaterial);
 
     Model* bunnyModel = LoadModel(app, "Assets/Models/Bunny/bunny.obj");
     Model* patrickModel = LoadModel(app, "Assets/Models/Patrick/patrick.obj");
+    Model* backpackModel = LoadModel(app, "Assets/Models/Backpack/backpack.obj", false);
 
     // ENTITIES //
     // Primitives
-    Entity* planeEntity = CreateEntity(app, app->renderer.deferredShadersID[0], glm::vec3(0.0f, -3.4f, 0.0f), planeModel);
+    Entity* planeEntity = CreateEntity(app, app->renderer.deferredShadersID[0], glm::vec3(0.0f, -3.4f, 0.0f), planePrimitive);
     planeEntity->Rotate(-90.0f, glm::vec3(1.0f, 0.0f, 0.0f));
     planeEntity->Scale(35.0f);
 
-    Entity* sphereEntity = CreateEntity(app, app->renderer.deferredShadersID[0], glm::vec3(0.0f, 1.0f, 7.0f), sphereModel);
+    Entity* sphereEntity = CreateEntity(app, app->renderer.deferredShadersID[0], glm::vec3(0.0f, 1.0f, 7.0f), spherePrimitive);
 
-    Entity* cubeEntity = CreateEntity(app, app->renderer.deferredShadersID[2], glm::vec3(5.0f, 0.0f, 7.0f), cubeModel);
+    //Entity* containerEntity = CreateEntity(app, app->renderer.deferredShadersID[2], glm::vec3(5.0f, 0.0f, 7.0f), containerPrimitive);
 
-    Entity* cubeEntity2 = CreateEntity(app, app->renderer.deferredShadersID[0], glm::vec3(-5.0f, 0.0f, 7.0f), cubeModel2);
+    //Entity* cubeEntity = CreateEntity(app, app->renderer.deferredShadersID[0], glm::vec3(-5.0f, 0.0f, 7.0f), cubePrimitive);
 
     // 3D Models
-    Entity* bunnyEntity = CreateEntity(app, app->renderer.deferredShadersID[0], glm::vec3(0.0f, -3.5f, 7.0f), bunnyModel);
+    Entity* bunnyEntity = CreateEntity(app, app->renderer.deferredShadersID[0], glm::vec3(6.0f, -3.5f, 7.0f), bunnyModel);
     bunnyEntity->Scale(1.5f);
+
+    Entity* backpackEntity = CreateEntity(app, app->renderer.deferredShadersID[2], glm::vec3(-6.0f, 0.0f, 7.0f), backpackModel);
 
     CreateEntity(app, app->renderer.deferredShadersID[1], glm::vec3(-6.0f, 0.0f, 0.0f), patrickModel);
     CreateEntity(app, app->renderer.deferredShadersID[1], glm::vec3(0.0f, 0.0f, 0.0f), patrickModel);
@@ -203,7 +206,7 @@ void Init(App* app)
     app->firstLightEntityID = app->entities.size();
 
     // LIGHTS //
-    CreateDirectionalLight(app, glm::vec3(0.0f, -2.0f, 15.0f), glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.0f), cubeModel2, 0.5f);
+    CreateDirectionalLight(app, glm::vec3(0.0f, -2.0f, 15.0f), glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.0f), cubePrimitive, 0.5f);
 
     srand(14);
     for (unsigned int i = 0; i <= 8; i++)
@@ -219,11 +222,11 @@ void Init(App* app)
         float bColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.0
         glm::vec3 color = glm::vec3(rColor, gColor, bColor);
 
-        CreatePointLight(app, glm::vec3(xPos, yPos, zPos), color, sphereLowModel, 1.0f, 0.1f);
+        CreatePointLight(app, glm::vec3(xPos, yPos, zPos), color, sphereLowPrimitive, 1.0f, 0.1f);
     }
 
-    CreatePointLight(app, glm::vec3(-6.0f, 0.0f, 10.0f), glm::vec3(0.6f), sphereLowModel, 0.5f, 0.1f);
-    CreatePointLight(app, glm::vec3(6.0f, 0.0f, 10.0f), glm::vec3(0.6f), sphereLowModel, 1.0f, 0.1f);
+    CreatePointLight(app, glm::vec3(-6.0f, 1.0f, 14.0f), glm::vec3(0.9f, 0.0f, 0.0f), sphereLowPrimitive, 0.5f, 0.1f);
+    CreatePointLight(app, glm::vec3(6.0f, 1.0f, 14.0f), glm::vec3(0.0f, 0.9f, 0.0f), sphereLowPrimitive, 1.0f, 0.1f);
 
     // ENGINE COUNT OF ENTITIES & LIGHTS //
     app->numEntities = app->entities.size();
@@ -241,8 +244,8 @@ void ImGuiRender(App* app)
 {
     static bool oGLStatusWindow = false;
     static bool rendererWindow = true;
-    static bool sceneWindow = false;
-    static bool performanceWindow = false;
+    static bool sceneWindow = true;
+    static bool performanceWindow = true;
 
     if (ImGui::BeginMainMenuBar())
     {

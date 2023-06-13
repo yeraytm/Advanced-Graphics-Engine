@@ -94,7 +94,7 @@ vec3 ComputePointLight(Light light, vec3 irradiance, vec3 normal, vec3 fragPos, 
 
 void main()
 {
-	vec3 irradiance = vec3(0.2);
+	vec3 irradiance = vec3(0.0);
 	if(uRendererOptions.uActiveIrradiance)
 		irradiance = texture(uIrradianceMap, fs_in.Normal).rgb;
 

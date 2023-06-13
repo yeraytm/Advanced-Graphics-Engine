@@ -99,7 +99,7 @@ void main()
 {
 	vec3 albedo = texture(uMaterial.albedo, fs_in.TexCoord).rgb;
 
-	vec3 irradiance = vec3(0.2);
+	vec3 irradiance = vec3(0.0);
 	if(uRendererOptions.uActiveIrradiance)
 		irradiance = texture(uIrradianceMap, fs_in.Normal).rgb;
 

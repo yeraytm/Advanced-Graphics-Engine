@@ -71,7 +71,7 @@ void main()
 	vec3 reflective = reflectiveShininess.rgb;
 	float shininess = reflectiveShininess.a * 256.0;
 
-	vec3 irradiance = vec3(0.2);
+	vec3 irradiance = vec3(0.0);
 	if(uRendererOptions.uActiveIrradiance)
 		irradiance = texture(uIrradianceMap, normal).rgb;
 
