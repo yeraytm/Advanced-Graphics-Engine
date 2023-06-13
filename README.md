@@ -1,6 +1,10 @@
 # Advanced Graphics Engine
 [GitHub Repository](https://github.com/yeraytm/Advanced-Graphics-Engine) - [Latest Release](https://github.com/yeraytm/Advanced-Graphics-Engine/releases)
 
+Its contributors are:
+- [Yeray Tarifa](https://github.com/yeraytm)
+- [Sergi Colomer](https://github.com/Lladruc37)
+
 ## Engine Features
 - Static 3d model loading
 - Embedded Geometry (Primitives): Plane, Sphere & Cube
@@ -9,16 +13,21 @@
 - ImGui
 
 ## Renderer Features
-- Forward/Deferred Mode
-- Environment Mapping
-- Skybox
+- Forward or Deferred Mode
+- Environment Mapping: Skybox & Irradiance
+
+![alt text](Docs/EnvMapping_Off.png "Environment Mapping OFF")
+![alt text](Docs/EnvMapping_On.png "Environment Mapping ON")
 
 ### Deferred Specific Features
-- G-Buffer (Framebuffer Object) with different render targets attached: Position, Normals, Albedo, Specular & Depth
+- G-Buffer (Framebuffer Object) with different render targets attached: Position, Normals, Albedo, Specular, Reflective & Depth
 - Render to screen-filling quad
 - Geometry & Lighting Pass
-- Light objects are rendered using forward shading
-- SSAO
+- Light caster entities are rendered using forward shading
+- Screen-Space Ambien Occlusion (SSAO)
+
+![alt text](Docs/SSAO_Off.png "SSAO OFF")
+![alt text](Docs/SSAO_On.png "SSAO ON")
 
 ## Controls
 
@@ -36,10 +45,10 @@
 
 ## ImGui Windows
 ### Renderer
-Here the user can change from Forward Rendering and Deferred Rendering through a combo box.
+Change between Forward and Deferred Rendering through a combo box.
 
 #### Environment Mapping
-Here the user can choose to enable or disable the following environment mapping options:
+Enable or disable the following environment mapping options:
 - Skybox
 - Irradiance
 - Reflection
@@ -48,7 +57,7 @@ Here the user can choose to enable or disable the following environment mapping 
 #### SSAO
 `It is of note that these options can only be displayed in Deferred Rendering`
 
-Here the user can enable or disable the SSAO effect, the following SSAO options and variables:
+Enable or disable the SSAO effect and the following SSAO options and variables:
 | SSAO Option | Description |
 | :---: | :---: |
 | **Range check** | Avoid incorrect contribution near edges to the occlusion factor |
@@ -62,7 +71,7 @@ Here the user can enable or disable the SSAO effect, the following SSAO options 
 #### G-Buffer Render Target
 `It is of note that these options can only be displayed in Deferred Rendering`
 
-Here the user can select the render target that will be displayed in screen through a combo box. The following are it's options:
+Select the render target that will be displayed in screen through a combo box. The following are it's options:
 - Final Color
 - Depth
 - Position
@@ -85,11 +94,4 @@ Additionally, there is a button to turn off all point lights which sets their co
 Here the user can see all the information about the current version of OpenGL & GLSL and GPU information. Moreover, a list of all available extension of OpenGL.
 
 ### Performance
-Here the user can check the current framerate (FPS), frametime (dt), render loop time (ms) and time since startup.
-
-## Contribution
-This project has been made for the Advanced Graphics Programming subject from the Videogame Design & Development degree from CITM - UPC.
-
-It's contributors are:
-- [Yeray Tarifa](https://github.com/yeraytm)
-- [Sergi Colomer](https://github.com/Lladruc37)
+Ccheck the current framerate (FPS), frametime (in seconds), render loop time (in milliseconds) and time since startup (in seconds).
