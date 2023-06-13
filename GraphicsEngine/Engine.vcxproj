@@ -48,6 +48,7 @@
     <ClInclude Include="src\Renderer.h" />
     <ClInclude Include="src\Shader.h" />
     <ClInclude Include="src\Texture.h" />
+    <ClInclude Include="src\Timer.h" />
     <ClInclude Include="src\vendor\glad\glad.h" />
     <ClInclude Include="src\vendor\glad\khrplatform.h" />
     <ClInclude Include="src\vendor\glm\common.hpp" />

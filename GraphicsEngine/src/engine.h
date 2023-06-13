@@ -18,8 +18,6 @@ class Shader;
 
 struct OpenGLGUI
 {
-    bool open;
-
     std::string version;
     std::string vendor;
     std::string renderer;
@@ -30,7 +28,8 @@ struct OpenGLGUI
 
 struct RendererOptions
 {
-    bool open;
+    // RENDERING MODE //
+    bool forwardRendering;
 
     std::vector<const char*> renderTargets;
 
@@ -66,6 +65,7 @@ struct App
     // ENGINE PARAMETERS //
     float deltaTime;
     f64 currentTime;
+    f64 renderTime;
     bool isRunning;
     glm::ivec2 displaySize;
 
@@ -75,9 +75,6 @@ struct App
     // IMGUI //
     OpenGLGUI openGLGui;
     RendererOptions rendererOptions;
-    bool sceneGui;
-    bool performanceGui;
-    bool forwardRendering;
 
     // CAMERA //
     Camera camera;

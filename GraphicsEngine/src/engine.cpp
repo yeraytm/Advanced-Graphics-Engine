@@ -10,19 +10,17 @@
 #include "AssimpLoading.h"
 #include "Primitives.h"
 
+#include "Timer.h"
+
 #include "glad/glad.h"
 #include "imgui-docking/imgui.h"
 
 void Init(App* app)
 {
-    // IMGUI SETTINGS //
-    // ImGui Windows
-    app->openGLGui.open = false;
-    app->rendererOptions.open = true;
-    app->sceneGui = false;
-    app->performanceGui = false;
-    app->forwardRendering = false;
+    // RENDERING MODE //
+    app->rendererOptions.forwardRendering = false;
 
+    // IMGUI SETTINGS //
     // ImGui OpenGL Info
     app->openGLGui.version = "Version: " + std::string((const char*)glGetString(GL_VERSION));
     app->openGLGui.renderer = "Renderer: " + std::string((const char*)glGetString(GL_RENDERER));
@@ -241,26 +239,31 @@ void Init(App* app)
 
 void ImGuiRender(App* app)
 {
+    static bool oGLStatusWindow = false;
+    static bool rendererWindow = true;
+    static bool sceneWindow = false;
+    static bool performanceWindow = false;
+
     if (ImGui::BeginMainMenuBar())
     {
         if (ImGui::BeginMenu("Engine"))
         {
-            ImGui::MenuItem("OpenGL", NULL, &app->openGLGui.open);
-            ImGui::MenuItem("Renderer", NULL, &app->rendererOptions.open);
-            ImGui::MenuItem("Scene", NULL, &app->sceneGui);
+            ImGui::MenuItem("OpenGL", NULL, &oGLStatusWindow);
+            ImGui::MenuItem("Renderer", NULL, &rendererWindow);
+            ImGui::MenuItem("Scene", NULL, &sceneWindow);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Debug"))
         {
-            ImGui::MenuItem("Performance", NULL, &app->performanceGui);
+            ImGui::MenuItem("Performance", NULL, &performanceWindow);
             ImGui::EndMenu();
         }
         ImGui::EndMainMenuBar();
     }
 
-    if (app->openGLGui.open)
+    if (oGLStatusWindow)
     {
-        ImGui::Begin("OpenGL", &app->openGLGui.open);
+        ImGui::Begin("OpenGL", &oGLStatusWindow);
 
         ImGui::Text(app->openGLGui.version.c_str());
         ImGui::Text(app->openGLGui.renderer.c_str());
@@ -278,16 +281,16 @@ void ImGuiRender(App* app)
         ImGui::End();
     }
 
-    if (app->rendererOptions.open)
+    if (rendererWindow)
     {
-        ImGui::Begin("Renderer", &app->rendererOptions.open);
+        ImGui::Begin("Renderer", &rendererWindow);
 
         ImGui::Text("Rendering Mode:");
         ImGui::SameLine();
         ImGui::SetCursorPosY((ImGui::GetFontSize() * 1.5f + ImGui::GetStyle().FramePadding.y * 2.0f));
         const char* options[] = { "FORWARD", "DEFERRED" };
         static const char* preview = options[1];
-        if (ImGui::BeginCombo("", preview))
+        if (ImGui::BeginCombo("##1", preview))
         {
             for (u32 i = 0; i < 2; ++i)
             {
@@ -295,7 +298,7 @@ void ImGuiRender(App* app)
                 if (ImGui::Selectable(options[i], isSelected))
                 {
                     preview = options[i];
-                    app->forwardRendering = i == 0;
+                    app->rendererOptions.forwardRendering = i == 0;
 
                     for (u32 i = 0; i < app->numEntities; ++i)
                     {
@@ -303,13 +306,13 @@ void ImGuiRender(App* app)
                         switch (app->shaderPrograms[entity.shaderID].type)
                         {
                         case ShaderType::DEFAULT:
-                            entity.shaderID = app->forwardRendering ? app->renderer.forwardShadersID[0] : app->renderer.deferredShadersID[0];
+                            entity.shaderID = app->rendererOptions.forwardRendering ? app->renderer.forwardShadersID[0] : app->renderer.deferredShadersID[0];
                             break;
                         case ShaderType::TEXTURED_ALBEDO:
-                            entity.shaderID = app->forwardRendering ? app->renderer.forwardShadersID[1] : app->renderer.deferredShadersID[1];
+                            entity.shaderID = app->rendererOptions.forwardRendering ? app->renderer.forwardShadersID[1] : app->renderer.deferredShadersID[1];
                             break;
                         case ShaderType::TEXTURED_ALB_SPEC:
-                            entity.shaderID = app->forwardRendering ? app->renderer.forwardShadersID[2] : app->renderer.deferredShadersID[2];
+                            entity.shaderID = app->rendererOptions.forwardRendering ? app->renderer.forwardShadersID[2] : app->renderer.deferredShadersID[2];
                             break;
                         default:
                             break;
@@ -319,31 +322,6 @@ void ImGuiRender(App* app)
             }
             ImGui::EndCombo();
         }
-
-        /*if (ImGui::Button(app->forwardRendering ? "Switch to Deferred" : "Switch to Forward"))
-        {
-            app->forwardRendering = !app->forwardRendering;
-
-            for (u32 i = 0; i < app->numEntities; ++i)
-            {
-                Entity& entity = app->entities[i];
-                switch (app->shaderPrograms[entity.shaderID].type)
-                {
-                case ShaderType::DEFAULT:
-                    entity.shaderID = app->forwardRendering ? app->renderer.forwardShadersID[0] : app->renderer.deferredShadersID[0];
-                    break;
-                case ShaderType::TEXTURED_ALBEDO:
-                    entity.shaderID = app->forwardRendering ? app->renderer.forwardShadersID[1] : app->renderer.deferredShadersID[1];
-                    break;
-                case ShaderType::TEXTURED_ALB_SPEC:
-                    entity.shaderID = app->forwardRendering ? app->renderer.forwardShadersID[2] : app->renderer.deferredShadersID[2];
-                    break;
-                default:
-                    break;
-                }
-            }
-        }
-        */
 
         ImGui::Spacing();
         ImGui::Separator();
@@ -363,7 +341,7 @@ void ImGuiRender(App* app)
             ImGui::Checkbox("Refraction", &app->rendererOptions.activeRefraction);
         }
 
-        if (!app->forwardRendering)
+        if (!app->rendererOptions.forwardRendering)
         {
             ImGui::Spacing();
             ImGui::Separator();
@@ -400,9 +378,9 @@ void ImGuiRender(App* app)
             ImGui::Separator();
             ImGui::Spacing();
 
-            ImGui::Text("Render Target");
+            ImGui::Text("G-Buffer Render Target");
             static const char* preview = "FINAL COLOR";
-            if (ImGui::BeginCombo("", preview))
+            if (ImGui::BeginCombo("##2", preview))
             {
                 for (int i = 0; i < app->rendererOptions.renderTargets.size(); ++i)
                 {
@@ -425,9 +403,9 @@ void ImGuiRender(App* app)
         ImGui::End();
     }
 
-    if (app->sceneGui)
+    if (sceneWindow)
     {
-        ImGui::Begin("Scene", &app->sceneGui);
+        ImGui::Begin("Scene", &sceneWindow);
 
         ImGui::Text("Camera");
         ImGui::DragFloat3("Position", &app->camera.position[0]);
@@ -439,7 +417,13 @@ void ImGuiRender(App* app)
         ImGui::Spacing();
 
         ImGui::Text("Lights");
-        ImGui::ColorEdit3("Directional Light Color", &app->lights[0].color[0]);
+        ImGui::Spacing();
+        ImGui::Text("Directional Light");
+        ImGui::SameLine();
+        ImGui::ColorEdit3("##3", &app->lights[0].color[0]);
+        ImGui::Spacing();
+
+        ImGui::Text("Point Lights");
         ImGui::Spacing();
         if (ImGui::Button("Turn Off All Point Lights"))
         {
@@ -447,18 +431,21 @@ void ImGuiRender(App* app)
                 app->lights[i].color = glm::vec3(0.0f, 0.0f, 0.0f);
         }
         ImGui::Spacing();
-        ImGui::Spacing();
         for (u32 i = 1; i < app->numLights; ++i)
-            ImGui::ColorEdit3(std::string("Point Light " + std::to_string(i) + " Color").c_str(), &app->lights[i].color[0]);
-
+        {
+            ImGui::Text(std::string("Light " + std::to_string(i)).c_str());
+            ImGui::SameLine();
+            ImGui::ColorEdit3(std::string("##" + std::to_string(i + 3)).c_str(), &app->lights[i].color[0]);
+        }
         ImGui::End();
     }
 
-    if (app->performanceGui)
+    if (performanceWindow)
     {
-        ImGui::Begin("Performance", &app->performanceGui);
+        ImGui::Begin("Performance", &performanceWindow);
         ImGui::Text("FPS: %f", 1.0f / app->deltaTime);
         ImGui::Text("Frametime: %f", app->deltaTime);
+        ImGui::Text("Render Loop Time: %f ms", app->renderTime);
         ImGui::Text("Time: %f", app->currentTime);
         ImGui::End();
     }
@@ -493,7 +480,9 @@ void Render(App* app)
 
     glBindBufferRange(GL_UNIFORM_BUFFER, 0, app->UBO.handle, app->globalParamOffset, app->globalParamSize);
 
-    if (app->forwardRendering)
+    Timer timer(&app->renderTime);
+
+    if (app->rendererOptions.forwardRendering)
         app->renderer.ForwardRender(app);
     else
         app->renderer.DeferredRender(app);

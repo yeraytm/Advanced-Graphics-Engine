@@ -348,6 +348,7 @@
     <ClInclude Include="src\Primitives.h" />
     <ClInclude Include="src\Framebuffer.h" />
     <ClInclude Include="src\Renderer.h" />
+    <ClInclude Include="src\Timer.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source">
