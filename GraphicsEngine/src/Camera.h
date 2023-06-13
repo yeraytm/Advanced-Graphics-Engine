@@ -18,9 +18,9 @@ class Camera
 {
 public:
     Camera(float speed = CAMERA_DEFAULT_SPEED);
-	Camera(glm::vec3 position, float FOV, float nearPlane, float farPlane, float speed = CAMERA_DEFAULT_SPEED);
+	Camera(glm::vec3 position, float FOV, float nearPlane, float farPlane, float speed = CAMERA_DEFAULT_SPEED, bool freeCam = true);
 
-    void Update(const Input& input, const glm::ivec2& displaySize, float deltaTime);
+    void Update(const Input& input, const glm::ivec2& displaySize, float deltaTime, float currentTime);
 
     void Zoom(float scrollY);
 
@@ -37,10 +37,17 @@ public:
     // Projection Options
     float FOV;
 
+    //Pivot Camera Options
+    bool freeCamera;
+    float m_Radius;
+    bool autoRotate;
+    float m_RotationSpeed;
+
 private:
     void ProcessKeyboard(CameraDirection direction, float dt);
     void ProcessMouse(const glm::vec2& mouseDelta);
     void UpdateVectors();
+    void UpdateVectorsPivotCamera();
 
 private:
     // Matrices

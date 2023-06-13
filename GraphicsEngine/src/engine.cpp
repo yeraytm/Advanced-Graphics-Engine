@@ -411,6 +411,14 @@ void ImGuiRender(App* app)
         ImGui::DragFloat3("Position", &app->camera.position[0]);
         ImGui::DragFloat("Speed", &app->camera.speed, 1.0f, 1.0f, 10.0f);
         ImGui::DragFloat("Zoom", &app->camera.FOV, 1.0f, 5.0f, 45.0f);
+        ImGui::Checkbox("Free Camera", &app->camera.freeCamera);
+        if (!app->camera.freeCamera)
+        {
+            ImGui::DragFloat("Radius", &app->camera.m_Radius, 1.0f, 1.0f, 40.0f);
+            ImGui::Checkbox("Auto Rotate", &app->camera.autoRotate);
+            if(app->camera.autoRotate)
+                ImGui::DragFloat("RotationSpeed", &app->camera.m_RotationSpeed, 0.1f, 0.1f, 1.0f,"%.1f");
+        }
 
         ImGui::Spacing();
         ImGui::Separator();
@@ -457,7 +465,7 @@ void Update(App* app)
     if (app->input.keys[K_ESCAPE] == BUTTON_PRESS)
         app->isRunning = false;
     
-    app->camera.Update(app->input, app->displaySize, app->deltaTime);
+    app->camera.Update(app->input, app->displaySize, app->deltaTime, app->currentTime);
 
     for (u32 i = 0; i < app->shaderPrograms.size(); ++i)
     {

@@ -3,44 +3,72 @@
 Camera::Camera(float speed) :
 	position(glm::vec3(0.0f)), m_Front(glm::vec3(0.0f, 0.0f, -1.0f)), m_Up(glm::vec3(0.0f)), m_Right(glm::vec3(0.0f)), m_WorldUp(glm::vec3(0.0f, 1.0f, 0.0f)),
 	speed(speed), defaultSpeed(speed), m_Sensitivity(0.1f), m_Yaw(-90.0f), m_Pitch(0.0f),
-	FOV(45.0f), m_DefaultFOV(45.0f), m_NearPlane(0.1f), m_FarPlane(100.0f)
+	FOV(45.0f), m_DefaultFOV(45.0f), m_NearPlane(0.1f), m_FarPlane(100.0f), freeCamera(true), m_Radius(20.0f), autoRotate(true), m_RotationSpeed(0.5f)
 {
 	UpdateVectors();
 }
 
-Camera::Camera(glm::vec3 position, float FOV, float nearPlane, float farPlane, float speed) :
+Camera::Camera(glm::vec3 position, float FOV, float nearPlane, float farPlane, float speed, bool freeCam) :
 	position(position), m_Front(glm::vec3(0.0f, 0.0f, -1.0f)), m_Up(glm::vec3(0.0f)), m_Right(glm::vec3(0.0f)), m_WorldUp(glm::vec3(0.0f, 1.0f, 0.0f)),
 	speed(speed), defaultSpeed(speed), m_Sensitivity(0.1f), m_Yaw(-90.0f), m_Pitch(0.0f),
-	FOV(FOV), m_DefaultFOV(FOV), m_NearPlane(nearPlane), m_FarPlane(farPlane)
+	FOV(FOV), m_DefaultFOV(FOV), m_NearPlane(nearPlane), m_FarPlane(farPlane), freeCamera(freeCam), m_Radius(20.0f), autoRotate(true), m_RotationSpeed(0.5f)
 {
 	UpdateVectors();
 }
 
-void Camera::Update(const Input& input, const glm::ivec2& displaySize, float deltaTime)
+void Camera::Update(const Input& input, const glm::ivec2& displaySize, float deltaTime, float currentTime)
 {
-	if (input.keys[K_LSHIFT] == BUTTON_PRESS)
-		speed *= 3.0f;
-	if (input.keys[K_LSHIFT] == BUTTON_RELEASE)
-		speed = defaultSpeed;
+	if (freeCamera)
+	{
+		if (input.keys[K_LSHIFT] == BUTTON_PRESS)
+			speed *= 3.0f;
+		if (input.keys[K_LSHIFT] == BUTTON_RELEASE)
+			speed = defaultSpeed;
 
-	if (input.keys[K_W] == BUTTON_PRESSED)
-		ProcessKeyboard(CameraDirection::CAMERA_FORWARD, deltaTime);
-	if (input.keys[K_S] == BUTTON_PRESSED)
-		ProcessKeyboard(CameraDirection::CAMERA_BACKWARD, deltaTime);
-	if (input.keys[K_A] == BUTTON_PRESSED)
-		ProcessKeyboard(CameraDirection::CAMERA_LEFT, deltaTime);
-	if (input.keys[K_D] == BUTTON_PRESSED)
-		ProcessKeyboard(CameraDirection::CAMERA_RIGHT, deltaTime);
-	if (input.keys[K_Q] == BUTTON_PRESSED)
-		ProcessKeyboard(CameraDirection::CAMERA_UP, deltaTime);
-	if (input.keys[K_E] == BUTTON_PRESSED)
-		ProcessKeyboard(CameraDirection::CAMERA_DOWN, deltaTime);
+		if (input.keys[K_W] == BUTTON_PRESSED)
+			ProcessKeyboard(CameraDirection::CAMERA_FORWARD, deltaTime);
+		if (input.keys[K_S] == BUTTON_PRESSED)
+			ProcessKeyboard(CameraDirection::CAMERA_BACKWARD, deltaTime);
+		if (input.keys[K_A] == BUTTON_PRESSED)
+			ProcessKeyboard(CameraDirection::CAMERA_LEFT, deltaTime);
+		if (input.keys[K_D] == BUTTON_PRESSED)
+			ProcessKeyboard(CameraDirection::CAMERA_RIGHT, deltaTime);
+		if (input.keys[K_Q] == BUTTON_PRESSED)
+			ProcessKeyboard(CameraDirection::CAMERA_UP, deltaTime);
+		if (input.keys[K_E] == BUTTON_PRESSED)
+			ProcessKeyboard(CameraDirection::CAMERA_DOWN, deltaTime);
 
-	if (input.mouseButtons[MOUSE_LEFT] == BUTTON_PRESSED)
-		ProcessMouse(input.mouseDelta);
+		if (input.mouseButtons[MOUSE_LEFT] == BUTTON_PRESSED)
+			ProcessMouse(input.mouseDelta);
 
-	m_View = glm::lookAt(position, position + m_Front, m_Up);
-	m_Projection = glm::perspective(glm::radians(FOV), float(displaySize.x) / float(displaySize.y), m_NearPlane, m_FarPlane);
+		m_View = glm::lookAt(position, position + m_Front, m_Up);
+		m_Projection = glm::perspective(glm::radians(FOV), float(displaySize.x) / float(displaySize.y), m_NearPlane, m_FarPlane);
+	}
+	else
+	{
+		if (autoRotate)
+		{
+			position.x = sin(currentTime * m_RotationSpeed) * m_Radius;
+			position.z = cos(currentTime * m_RotationSpeed) * m_Radius;
+			m_View = glm::lookAt(position, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+			m_Projection = glm::perspective(glm::radians(FOV), float(displaySize.x) / float(displaySize.y), m_NearPlane, m_FarPlane);
+		}
+		else
+		{
+			glm::mat3 rot = glm::mat3(
+				glm::vec3(glm::cos(glm::radians(m_Yaw)), 0.0f, glm::sin(glm::radians(m_Yaw))),
+				m_WorldUp,
+				glm::vec3(-glm::sin(glm::radians(m_Yaw)), 0.0f, glm::cos(glm::radians(m_Yaw))));
+			position = glm::vec3(0.0f, 5.0f, m_Radius);
+			position = position * rot;
+
+			if (input.mouseButtons[MOUSE_LEFT] == BUTTON_PRESSED)
+				ProcessMouse(input.mouseDelta);
+
+			m_View = glm::lookAt(position, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+			m_Projection = glm::perspective(glm::radians(FOV), float(displaySize.x) / float(displaySize.y), m_NearPlane, m_FarPlane);
+		}
+	}
 }
 
 void Camera::ProcessKeyboard(CameraDirection direction, float dt)
@@ -79,16 +107,20 @@ void Camera::ProcessMouse(const glm::vec2& mouseDelta)
 	// Constrain yaw to only use values between 0-360 as float precision could be lost
 	m_Yaw = glm::mod(m_Yaw + mDx, 360.0f);
 
-	// Negative to invert vertical movement
-	m_Pitch -= mDy;
+	if (freeCamera)
+	{
+		// Negative to invert vertical movement
+		m_Pitch -= mDy;
 
-	// Avoid locking the camera completely up or down (pitch would be put of bounds and the screen would get flipped)
-	if (m_Pitch > 89.0f)
-		m_Pitch = 89.0f;
-	if (m_Pitch < -89.0f)
-		m_Pitch = -89.0f;
-
-	UpdateVectors();
+		// Avoid locking the camera completely up or down (pitch would be put of bounds and the screen would get flipped)
+		if (m_Pitch > 89.0f)
+			m_Pitch = 89.0f;
+		if (m_Pitch < -89.0f)
+			m_Pitch = -89.0f;
+		UpdateVectors();
+	}
+	else
+		UpdateVectorsPivotCamera();
 }
 
 void Camera::UpdateVectors()
@@ -99,6 +131,13 @@ void Camera::UpdateVectors()
 	m_Front.z = glm::sin(glm::radians(m_Yaw)) * glm::cos(glm::radians(m_Pitch));
 	m_Front = glm::normalize(m_Front);
 
+	m_Right = glm::normalize(glm::cross(m_Front, m_WorldUp));
+	m_Up = glm::normalize(glm::cross(m_Right, m_Front));
+}
+
+void Camera::UpdateVectorsPivotCamera()
+{
+	m_Front = glm::normalize(glm::vec3(0.0f) - position);
 	m_Right = glm::normalize(glm::cross(m_Front, m_WorldUp));
 	m_Up = glm::normalize(glm::cross(m_Right, m_Front));
 }
