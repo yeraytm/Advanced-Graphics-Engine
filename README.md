@@ -57,7 +57,7 @@ Enable or disable the following environment mapping options:
 #### SSAO
 `It is of note that these options can only be displayed in Deferred Rendering`
 
-Enable or disable the SSAO effect and the following SSAO options and variables:
+Enable or disable the SSAO effect and tweak the following SSAO options:
 | SSAO Option | Description |
 | :---: | :---: |
 | **Range check** | Avoid incorrect contribution near edges to the occlusion factor |
@@ -71,7 +71,7 @@ Enable or disable the SSAO effect and the following SSAO options and variables:
 #### G-Buffer Render Target
 `It is of note that these options can only be displayed in Deferred Rendering`
 
-Select the render target that will be displayed in screen through a combo box. The following are it's options:
+Select the render target that will be displayed in screen through a combo box. The following are its options:
 - Final Color
 - Depth
 - Position
