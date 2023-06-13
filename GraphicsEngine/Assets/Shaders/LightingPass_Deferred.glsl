@@ -53,8 +53,8 @@ struct RendererOptions
 };
 uniform RendererOptions uRendererOptions;
 
-vec3 ComputeDirLight(Light light, vec3 albedo, float specularC, float shininess, vec3 irradiance, float ambientOcclusion, vec3 normal, vec3 viewDir);
-vec3 ComputePointLight(Light light, vec3 albedo, float specularC,  float shininess, vec3 irradiance, float ambientOcclusion, vec3 normal, vec3 fragPos, vec3 viewDir);
+vec3 ComputeDirLight(Light light, vec3 albedo, float specularC, float shininess, vec3 normal, vec3 viewDir);
+vec3 ComputePointLight(Light light, vec3 albedo, float specularC,  float shininess, vec3 normal, vec3 fragPos, vec3 viewDir);
 
 void main()
 {
@@ -81,14 +81,15 @@ void main()
 
 	vec3 viewDir = normalize(uViewPos - fragPos);
 
-	vec3 result = vec3(0.0);
-
+	// Ambient
+	vec3 result = albedo * ambientOcclusion * irradiance;
+	
 	for(int i = 0; i < uNumLights; ++i)
 	{
 		if(uLights[i].lightVector.w == 0.0)
-			result += ComputeDirLight(uLights[i], albedo, specularC, shininess, irradiance, ambientOcclusion, normal, viewDir);
+			result += ComputeDirLight(uLights[i], albedo, specularC, shininess, normal, viewDir);
 		else if(uLights[i].lightVector.w == 1.0)
-			result += ComputePointLight(uLights[i], albedo, specularC, shininess, irradiance, ambientOcclusion, normal, fragPos, viewDir);
+			result += ComputePointLight(uLights[i], albedo, specularC, shininess, normal, fragPos, viewDir);
 	}
 
 	if(uRendererOptions.uActiveReflection)
@@ -107,12 +108,9 @@ void main()
 	FinalColor = vec4(result, 1.0);
 }
 
-vec3 ComputeDirLight(Light light, vec3 albedo, float specularC, float shininess, vec3 irradiance, float ambientOcclusion, vec3 normal, vec3 viewDir)
+vec3 ComputeDirLight(Light light, vec3 albedo, float specularC, float shininess, vec3 normal, vec3 viewDir)
 {
 	vec3 lightDir = normalize(-light.lightVector.xyz);
-
-	// Ambient
-	vec3 ambient = albedo * ambientOcclusion * irradiance;
 
 	// Diffuse
 	float diff = max(dot(normal, lightDir), 0.0);
@@ -123,19 +121,16 @@ vec3 ComputeDirLight(Light light, vec3 albedo, float specularC, float shininess,
 	float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
 	vec3 specular = light.color * spec * specularC;
 
-	return (ambient + diffuse + specular);
+	return (diffuse + specular);
 }
 
-vec3 ComputePointLight(Light light, vec3 albedo, float specularC, float shininess, vec3 irradiance, float ambientOcclusion, vec3 normal, vec3 fragPos, vec3 viewDir)
+vec3 ComputePointLight(Light light, vec3 albedo, float specularC, float shininess, vec3 normal, vec3 fragPos, vec3 viewDir)
 {
 	vec3 lightPosition = light.lightVector.xyz;
 	vec3 lightDir = normalize(lightPosition - fragPos);
 
 	float distance = length(lightPosition - fragPos);
 	float attenuation = 1.0 / (light.constant + 0.09 * distance + 0.032 * (distance * distance));
-
-	// Ambient
-	vec3 ambient = albedo * attenuation * ambientOcclusion * irradiance;
 
 	// Diffuse
 	float diff = max(dot(normal, lightDir), 0.0);
@@ -148,7 +143,7 @@ vec3 ComputePointLight(Light light, vec3 albedo, float specularC, float shinines
 	vec3 specular = light.color * spec * specularC;
 	specular *= attenuation;
 
-	return (ambient + diffuse + specular);
+	return (diffuse + specular);
 }
 
 #endif /////////////////////////////////////////////////////////////////

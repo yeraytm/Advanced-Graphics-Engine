@@ -89,8 +89,8 @@ struct RendererOptions
 };
 uniform RendererOptions uRendererOptions;
 
-vec3 ComputeDirLight(Light light, vec3 irradiance, vec3 normal, vec3 viewDir);
-vec3 ComputePointLight(Light light, vec3 irradiance, vec3 normal, vec3 fragPos, vec3 viewDir);
+vec3 ComputeDirLight(Light light, vec3 normal, vec3 viewDir);
+vec3 ComputePointLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir);
 
 void main()
 {
@@ -98,13 +98,15 @@ void main()
 	if(uRendererOptions.uActiveIrradiance)
 		irradiance = texture(uIrradianceMap, fs_in.Normal).rgb;
 
-	vec3 result = vec3(0.0);
+	// Ambient
+	vec3 result = uMaterial.albedo * irradiance;
+	
 	for(int i = 0; i < uNumLights; ++i)
 	{
 		if(uLights[i].lightVector.w == 0.0)
-			result += ComputeDirLight(uLights[i], irradiance, fs_in.Normal, fs_in.ViewDir);
+			result += ComputeDirLight(uLights[i], fs_in.Normal, fs_in.ViewDir);
 		else if(uLights[i].lightVector.w == 1.0)
-			result += ComputePointLight(uLights[i], irradiance, fs_in.Normal, fs_in.FragPos, fs_in.ViewDir);
+			result += ComputePointLight(uLights[i], fs_in.Normal, fs_in.FragPos, fs_in.ViewDir);
 	}
 
 	if(uRendererOptions.uActiveReflection)
@@ -122,12 +124,9 @@ void main()
 	FragColor = vec4(result, 1.0);
 }
 
-vec3 ComputeDirLight(Light light, vec3 irradiance, vec3 normal, vec3 viewDir)
+vec3 ComputeDirLight(Light light, vec3 normal, vec3 viewDir)
 {
 	vec3 lightDir = normalize(-light.lightVector.xyz);
-
-	// Ambient
-	vec3 ambient = uMaterial.albedo * irradiance;
 
 	// Diffuse
 	float diff = max(dot(normal, lightDir), 0.0);
@@ -138,19 +137,16 @@ vec3 ComputeDirLight(Light light, vec3 irradiance, vec3 normal, vec3 viewDir)
 	float spec = pow(max(dot(normal, halfwayDir), 0.0), uMaterial.shininess);
 	vec3 specular = light.color * spec * uMaterial.specular;
 
-	return (ambient + diffuse + specular);
+	return (diffuse + specular);
 }
 
-vec3 ComputePointLight(Light light, vec3 irradiance, vec3 normal, vec3 fragPos, vec3 viewDir)
+vec3 ComputePointLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir)
 {
 	vec3 lightPosition = light.lightVector.xyz;
 	vec3 lightDir = normalize(lightPosition - fragPos);
 	
 	float distance = length(lightPosition - fragPos);
 	float attenuation = 1.0 / (light.constant + 0.09 * distance + 0.032 * (distance * distance));
-
-	// Ambient
-	vec3 ambient = uMaterial.albedo * attenuation * irradiance;
 
 	// Diffuse
 	float diff = max(dot(normal, lightDir), 0.0);
@@ -163,7 +159,7 @@ vec3 ComputePointLight(Light light, vec3 irradiance, vec3 normal, vec3 fragPos, 
 	vec3 specular = light.color * spec * uMaterial.specular;
 	specular *= attenuation;
 
-	return (ambient + diffuse + specular);
+	return (diffuse + specular);
 }
 
 #endif /////////////////////////////////////////////////////////////////
