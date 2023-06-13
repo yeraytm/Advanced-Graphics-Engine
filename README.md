@@ -44,7 +44,7 @@ Its contributors are:
 | **Quit** | ESC |
 
 ## ImGui Windows
-### Rendering Mode
+### Renderer
 Change between Forward and Deferred Rendering through a combo box.
 
 #### Environment Mapping
@@ -68,6 +68,8 @@ Enable or disable the SSAO effect and tweak the following SSAO options:
 | **Kernel Size** | The amount of random samples |
 | **Noise Size Scale** | The amount of semi-random rotations |
 
+![alt text](Docs/ImGui_SSAO.png "SSAO Options")
+
 #### G-Buffer Render Target
 `It is of note that these options can only be displayed in Deferred Rendering`
 
@@ -86,12 +88,16 @@ Here the user can modify the camera's parameters of position, speed and zoom.
 In addition, the user can switch from free camera (the controls have been explained above) and pivot camera (where the camera pivots around the center of the scene).
 If the camera is in pivot mode, the user can also modify it's radius from the center and if it auto rotates (and at which speed) or not (the user can rotate around the pivot with _MOUSE LEFT_ similarly to the free camera).
 
+![alt text](Docs/ImGui_Camera.png "Lights Options")
+
 #### Lights
 Here the user can change the color of the directional light and of all point lights.
 Additionally, there is a button to turn off all point lights which sets their color to black thus giving no light.
+
+![alt text](Docs/ImGui_Lights.png "Lights Options")
 
 ### OpenGL
 Here the user can see all the information about the current version of OpenGL & GLSL and GPU information. Moreover, a list of all available extension of OpenGL.
 
 ### Performance
-Ccheck the current framerate (FPS), frametime (in seconds), render loop time (in milliseconds) and time since startup (in seconds).
+Check the current framerate (FPS), frametime (in seconds), render loop time (in milliseconds) and time since startup (in seconds).
