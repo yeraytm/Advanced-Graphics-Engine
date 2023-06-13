@@ -132,7 +132,7 @@ void Init(App* app)
     };
     app->cubemapTextureID = LoadCubemap(cubemapFaces);
     */
-    glm::uvec2 cubemapTextures = LoadCubemap(app->textures, "Assets/Skybox/little_paris_eiffel_tower_4k.hdr", equirectToCubemapShader, irradianceConvShader, app->renderer.skyboxCubeVAO);
+    glm::uvec2 cubemapTextures = LoadCubemap(app->textures, "Assets/Skybox/lilienstein_4k.hdr", equirectToCubemapShader, irradianceConvShader, app->renderer.skyboxCubeVAO);
 
     app->renderer.environmentMapHandle = cubemapTextures.x;
     app->renderer.irradianceMapHandle = cubemapTextures.y;
@@ -452,9 +452,9 @@ void ImGuiRender(App* app)
     {
         ImGui::Begin("Performance", &performanceWindow);
         ImGui::Text("FPS: %f", 1.0f / app->deltaTime);
-        ImGui::Text("Frametime: %f", app->deltaTime);
-        ImGui::Text("Render Loop Time: %f ms", app->renderTime);
-        ImGui::Text("Time: %f", app->currentTime);
+        ImGui::Text("Frametime (s): %f", app->deltaTime);
+        ImGui::Text("Render Loop (ms): %f", app->renderTime);
+        ImGui::Text("Time (s): %f", app->currentTime);
         ImGui::End();
     }
 }
