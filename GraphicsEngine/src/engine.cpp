@@ -60,7 +60,7 @@ void Init(App* app)
     app->rendererOptions.ssaoNoiseSize = 16;
 
     // CAMERA //
-    app->camera = Camera(glm::vec3(0.0f, 3.0f, 10.0f), 45.0f, 1.0f, 100.0f);
+    app->camera = Camera(glm::vec3(0.0f, 3.0f, 20.0f), 45.0f, 1.0f, 100.0f);
 
     // UNIFORM BUFFER (CONSTANT BUFFER) //
     int maxUniformBlockSize;
@@ -145,15 +145,22 @@ void Init(App* app)
     Material greyMaterial = {};
     greyMaterial.name = "Grey Material";
     greyMaterial.albedo = glm::vec3(0.4f, 0.4f, 0.4f);
+    greyMaterial.reflective = glm::vec3(0.8f);
 
     Material orangeMaterial = {};
     orangeMaterial.name = "Orange Material";
     orangeMaterial.albedo = glm::vec3(1.0f, 0.5f, 0.31f);
     orangeMaterial.reflective = glm::vec3(0.5f);
 
+    Material blueMaterial = {};
+    blueMaterial.name = "Blue Material";
+    blueMaterial.albedo = glm::vec3(0.0f, 0.0f, 0.6f);
+    blueMaterial.reflective = glm::vec3(0.5f);
+
     Material blackMaterial = {};
     blackMaterial.name = "Black Material";
     blackMaterial.albedo = glm::vec3(0.1f, 0.1f, 0.1f);
+    blackMaterial.reflective = glm::vec3(0.5f);
 
     Material containerMat = {};
     containerMat.name = "Container Material";
@@ -163,7 +170,8 @@ void Init(App* app)
     // MODELS //
     Model* planePrimitive = CreatePrimitive(app, PrimitiveType::PLANE, greyMaterial);
 
-    Model* spherePrimitive = CreatePrimitive(app, PrimitiveType::SPHERE, orangeMaterial);
+    Model* spherePrimitive1 = CreatePrimitive(app, PrimitiveType::SPHERE, orangeMaterial);
+    Model* spherePrimitive2 = CreatePrimitive(app, PrimitiveType::SPHERE, blueMaterial);
     Model* sphereLowPrimitive = CreatePrimitive(app, PrimitiveType::SPHERE, blackMaterial, 16, 16);
 
     Model* containerPrimitive = CreatePrimitive(app, PrimitiveType::CUBE, containerMat);
@@ -179,17 +187,16 @@ void Init(App* app)
     planeEntity->Rotate(-90.0f, glm::vec3(1.0f, 0.0f, 0.0f));
     planeEntity->Scale(35.0f);
 
-    Entity* sphereEntity = CreateEntity(app, app->renderer.deferredShadersID[0], glm::vec3(0.0f, 1.0f, 7.0f), spherePrimitive);
-
-    //Entity* containerEntity = CreateEntity(app, app->renderer.deferredShadersID[2], glm::vec3(5.0f, 0.0f, 7.0f), containerPrimitive);
-
-    //Entity* cubeEntity = CreateEntity(app, app->renderer.deferredShadersID[0], glm::vec3(-5.0f, 0.0f, 7.0f), cubePrimitive);
+    Entity* sphereEntity1 = CreateEntity(app, app->renderer.deferredShadersID[0], glm::vec3(10.0f, 1.0f, -4.0f), spherePrimitive1);
+    Entity* sphereEntity2 = CreateEntity(app, app->renderer.deferredShadersID[0], glm::vec3(-10.0f, 1.0f, -4.0f), spherePrimitive2);
+    Entity* containerEntity = CreateEntity(app, app->renderer.deferredShadersID[2], glm::vec3(-7.0f, 0.0f, 7.0f), containerPrimitive);
+    Entity* cubeEntity = CreateEntity(app, app->renderer.deferredShadersID[0], glm::vec3(-11.0f, 0.0f, 7.0f), cubePrimitive);
 
     // 3D Models
-    Entity* bunnyEntity = CreateEntity(app, app->renderer.deferredShadersID[0], glm::vec3(6.0f, -3.5f, 7.0f), bunnyModel);
+    Entity* bunnyEntity = CreateEntity(app, app->renderer.deferredShadersID[0], glm::vec3(7.0f, -3.5f, 7.0f), bunnyModel);
     bunnyEntity->Scale(1.5f);
 
-    Entity* backpackEntity = CreateEntity(app, app->renderer.deferredShadersID[2], glm::vec3(-6.0f, 0.0f, 7.0f), backpackModel);
+    Entity* backpackEntity = CreateEntity(app, app->renderer.deferredShadersID[2], glm::vec3(0.0f, 1.0f, 7.0f), backpackModel);
 
     CreateEntity(app, app->renderer.deferredShadersID[1], glm::vec3(-6.0f, 0.0f, 0.0f), patrickModel);
     CreateEntity(app, app->renderer.deferredShadersID[1], glm::vec3(0.0f, 0.0f, 0.0f), patrickModel);
@@ -369,7 +376,7 @@ void ImGuiRender(App* app)
                 static int increment = 2;
                 if (ImGui::SliderInt("Noise Size Scale", &increment, 1, 8))
                 {
-                    app->rendererOptions.ssaoNoiseSize = glm::pow(2 * increment, 2);
+                    app->rendererOptions.ssaoNoiseSize = (int)glm::pow(2 * increment, 2);
                     
                     glDeleteTextures(1, &app->renderer.noiseTextureHandle);
                     app->renderer.ssaoNoise.clear();
@@ -468,7 +475,7 @@ void Update(App* app)
     if (app->input.keys[K_ESCAPE] == BUTTON_PRESS)
         app->isRunning = false;
     
-    app->camera.Update(app->input, app->displaySize, app->deltaTime, app->currentTime);
+    app->camera.Update(app->input, app->displaySize, app->deltaTime, float(app->currentTime));
 
     for (u32 i = 0; i < app->shaderPrograms.size(); ++i)
     {
