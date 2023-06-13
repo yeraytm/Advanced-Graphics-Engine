@@ -54,7 +54,9 @@ Enable or disable the following environment mapping options:
 - Reflection
 - Refraction
 
-#### SSAO
+Shaders for Environment Mapping: "EquirectToCubemap.glsl", "Irradiance_Convolution.glsl" and "Skybox.glsl"
+
+#### Screen-Space Ambient Occlusion (SSAO)
 `It is of note that these options can only be displayed in Deferred Rendering`
 
 Enable or disable the SSAO effect and tweak the following SSAO options:
@@ -69,6 +71,8 @@ Enable or disable the SSAO effect and tweak the following SSAO options:
 | **Noise Size Scale** | The amount of semi-random rotations |
 
 ![alt text](Docs/ImGui_SSAO.png "SSAO Options")
+
+Shaders for SSAO: "SSAO.glsl" and "SSAO_Blur.glsl"
 
 #### G-Buffer Render Target
 `It is of note that these options can only be displayed in Deferred Rendering`
